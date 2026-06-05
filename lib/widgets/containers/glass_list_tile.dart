@@ -1,3 +1,4 @@
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 
 import '../../src/renderer/liquid_glass_renderer.dart';
@@ -50,7 +51,7 @@ import 'glass_divider.dart';
 ///   onTap: () { },
 /// )
 /// ```
-class GlassListTile extends StatelessWidget {
+class GlassListTile extends StatefulWidget {
   /// Creates a glass list tile for use inside a [GlassCard] or other glass
   /// container. Does not create its own glass layer.
   const GlassListTile({
@@ -190,27 +191,34 @@ class GlassListTile extends StatelessWidget {
 
   /// A standard iOS-style disclosure chevron for use as [trailing].
   static Widget get chevron => const Icon(
-        Icons.chevron_right,
+        CupertinoIcons.chevron_forward,
         color: Colors.white54,
         size: 20,
       );
 
   /// A standard iOS-style detail disclosure (circle with 'i') for [trailing].
   static Widget get infoButton => const Icon(
-        Icons.info_outline,
+        CupertinoIcons.info,
         color: Colors.white54,
         size: 20,
       );
 
   @override
+  State<GlassListTile> createState() => _GlassListTileState();
+}
+
+class _GlassListTileState extends State<GlassListTile> {
+  bool _isPressed = false;
+
+  @override
   Widget build(BuildContext context) {
     final content = _buildContent(context);
 
-    if (_useOwnLayer) {
+    if (widget._useOwnLayer) {
       return GlassContainer(
         shape: const LiquidRoundedSuperellipse(borderRadius: 12),
-        settings: _settings,
-        quality: _quality,
+        settings: widget._settings,
+        quality: widget._quality,
         padding: EdgeInsets.zero,
         child: content,
       );
@@ -220,13 +228,13 @@ class GlassListTile extends StatelessWidget {
   }
 
   Widget _buildContent(BuildContext context) {
-    final effectiveTitleStyle = titleStyle ??
+    final effectiveTitleStyle = widget.titleStyle ??
         const TextStyle(
           color: Colors.white,
           fontSize: 16,
           fontWeight: FontWeight.w500,
         );
-    final effectiveSubtitleStyle = subtitleStyle ??
+    final effectiveSubtitleStyle = widget.subtitleStyle ??
         TextStyle(
           color: Colors.white.withValues(alpha: 0.65),
           fontSize: 13,
@@ -234,13 +242,13 @@ class GlassListTile extends StatelessWidget {
 
     Widget row = Row(
       children: [
-        if (leading != null) ...[
+        if (widget.leading != null) ...[
           IconTheme(
             data: IconThemeData(
-              color: leadingIconColor ?? Colors.white,
+              color: widget.leadingIconColor ?? Colors.white,
               size: 22,
             ),
-            child: SizedBox(width: 32, child: leading),
+            child: SizedBox(width: 32, child: widget.leading),
           ),
           const SizedBox(width: 12),
         ],
@@ -249,44 +257,55 @@ class GlassListTile extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             mainAxisSize: MainAxisSize.min,
             children: [
-              DefaultTextStyle(style: effectiveTitleStyle, child: title),
-              if (subtitle != null) ...[
+              DefaultTextStyle(style: effectiveTitleStyle, child: widget.title),
+              if (widget.subtitle != null) ...[
                 const SizedBox(height: 2),
                 DefaultTextStyle(
                   style: effectiveSubtitleStyle,
-                  child: subtitle!,
+                  child: widget.subtitle!,
                 ),
               ],
             ],
           ),
         ),
-        if (trailing != null) ...[
+        if (widget.trailing != null) ...[
           const SizedBox(width: 8),
           IconTheme(
             data: const IconThemeData(color: Colors.white54, size: 20),
-            child: trailing!,
+            child: widget.trailing!,
           ),
         ],
       ],
     );
 
-    Widget tile = Padding(padding: contentPadding, child: row);
+    Widget tile = Padding(padding: widget.contentPadding, child: row);
 
-    if (onTap != null || onLongPress != null) {
+    if (widget.onTap != null || widget.onLongPress != null) {
       tile = Semantics(
         button: true,
-        child: InkWell(
-          onTap: onTap,
-          onLongPress: onLongPress,
-          splashColor: Colors.white.withValues(alpha: 0.08),
-          highlightColor: Colors.transparent,
-          child: tile,
+        child: GestureDetector(
+          onTap: widget.onTap,
+          onLongPress: widget.onLongPress,
+          onTapDown: (_) => setState(() => _isPressed = true),
+          onTapUp: (_) => setState(() => _isPressed = false),
+          onTapCancel: () => setState(() => _isPressed = false),
+          behavior: HitTestBehavior.opaque,
+          child: AnimatedContainer(
+            duration:
+                _isPressed ? Duration.zero : const Duration(milliseconds: 150),
+            curve: Curves.easeOutCubic,
+            color: _isPressed
+                ? Colors.white.withValues(alpha: 0.08)
+                : Colors.transparent,
+            child: tile,
+          ),
         ),
       );
     }
 
-    if (showDivider && !isLast) {
-      final indent = dividerIndent ?? (leading != null ? 56.0 : 16.0);
+    if (widget.showDivider && !widget.isLast) {
+      final indent =
+          widget.dividerIndent ?? (widget.leading != null ? 56.0 : 16.0);
       return Column(
         mainAxisSize: MainAxisSize.min,
         children: [

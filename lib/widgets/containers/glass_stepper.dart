@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
@@ -258,7 +259,7 @@ class _GlassStepperState extends State<GlassStepper> {
                 // ── Decrement side ──────────────────────────────────────────────
                 Expanded(
                   child: _StepperSide(
-                    icon: Icons.remove,
+                    icon: CupertinoIcons.minus,
                     isPressed: _decrementPressed,
                     isEnabled: _canDecrement,
                     onTapDown: () {
@@ -289,7 +290,7 @@ class _GlassStepperState extends State<GlassStepper> {
                 // ── Increment side ──────────────────────────────────────────────
                 Expanded(
                   child: _StepperSide(
-                    icon: Icons.add,
+                    icon: CupertinoIcons.plus,
                     isPressed: _incrementPressed,
                     isEnabled: _canIncrement,
                     onTapDown: () {

@@ -1,3 +1,4 @@
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 
 /// A menu item for use within a [GlassMenu].
@@ -185,21 +186,19 @@ class _GlassMenuItemState extends State<GlassMenuItem> {
     // Priority: iconColor > titleStyle.color > destructiveRed > white
     final Color baseColor = widget.iconColor ??
         widget.titleStyle?.color ??
-        (widget.isDestructive
-            ? const Color(0xFFEF5350) // Colors.red.shade400
-            : Colors.white);
+        (widget.isDestructive ? CupertinoColors.destructiveRed : Colors.white);
 
     // Apply specific opacities based on original design specs:
     // Icon: 100% (enabled), 50% (disabled)
     // Text: 90% (static for enabled/disabled)
     final Color iconColor = widget.iconColor ??
         (widget.isDestructive
-            ? Colors.redAccent
+            ? CupertinoColors.destructiveRed
             : baseColor.withValues(alpha: widget.enabled ? 1.0 : 0.5));
 
     final Color textColor = widget.titleStyle?.color ??
         (widget.isDestructive
-            ? const Color(0xFFEF5350) // Colors.red.shade400
+            ? CupertinoColors.destructiveRed
             : baseColor.withValues(alpha: 0.9));
     // Dynamic background for hover/press states
     // We use a subtle white overlay to "brighten" the glass

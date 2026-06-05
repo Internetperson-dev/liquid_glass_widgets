@@ -1,3 +1,4 @@
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:liquid_glass_widgets/liquid_glass_widgets.dart';
@@ -89,7 +90,7 @@ void main() {
       expect(find.text('Title'), findsOneWidget);
       expect(find.text('Sub'), findsOneWidget);
       expect(find.byIcon(Icons.star), findsOneWidget);
-      expect(find.byIcon(Icons.chevron_right), findsOneWidget);
+      expect(find.byIcon(CupertinoIcons.chevron_forward), findsOneWidget);
     });
 
     testWidgets('fires onTap', (tester) async {
@@ -158,8 +159,8 @@ void main() {
         ),
       );
       await tester.pump();
-      expect(find.byIcon(Icons.remove), findsOneWidget);
-      expect(find.byIcon(Icons.add), findsOneWidget);
+      expect(find.byIcon(CupertinoIcons.minus), findsOneWidget);
+      expect(find.byIcon(CupertinoIcons.plus), findsOneWidget);
     });
 
     testWidgets('calls onChanged with incremented value on + tap',
@@ -177,7 +178,7 @@ void main() {
         ),
       );
       await tester.pump();
-      await tester.tap(find.byIcon(Icons.add));
+      await tester.tap(find.byIcon(CupertinoIcons.plus));
       expect(result, 6);
     });
 
@@ -196,7 +197,7 @@ void main() {
         ),
       );
       await tester.pump();
-      await tester.tap(find.byIcon(Icons.remove));
+      await tester.tap(find.byIcon(CupertinoIcons.minus));
       expect(result, 4);
     });
 
@@ -214,7 +215,7 @@ void main() {
         ),
       );
       await tester.pump();
-      await tester.tap(find.byIcon(Icons.remove));
+      await tester.tap(find.byIcon(CupertinoIcons.minus));
       expect(result, 0); // unchanged
     });
 
@@ -232,7 +233,7 @@ void main() {
         ),
       );
       await tester.pump();
-      await tester.tap(find.byIcon(Icons.add));
+      await tester.tap(find.byIcon(CupertinoIcons.plus));
       expect(result, 10); // unchanged
     });
 
@@ -251,7 +252,7 @@ void main() {
         ),
       );
       await tester.pump();
-      await tester.tap(find.byIcon(Icons.add));
+      await tester.tap(find.byIcon(CupertinoIcons.plus));
       expect(result, 5);
     });
 
@@ -272,7 +273,7 @@ void main() {
         ),
       );
       await tester.pump();
-      await tester.tap(find.byIcon(Icons.remove));
+      await tester.tap(find.byIcon(CupertinoIcons.minus));
       expect(result, greaterThan(0)); // wrapped to near max
     });
 
@@ -295,7 +296,7 @@ void main() {
         ),
       );
       await tester.pump();
-      await tester.tap(find.byIcon(Icons.add));
+      await tester.tap(find.byIcon(CupertinoIcons.plus));
       // Wrapped from 10 to near min=0
       expect(result, lessThan(10));
     });
@@ -464,8 +465,8 @@ void main() {
       );
 
       // Long-press the increment icon to trigger _startRepeat
-      final gesture =
-          await tester.startGesture(tester.getCenter(find.byIcon(Icons.add)));
+      final gesture = await tester
+          .startGesture(tester.getCenter(find.byIcon(CupertinoIcons.plus)));
       await tester.pump();
       // Wait past autoRepeatDelay so the timer fires at least once
       await tester.pump(const Duration(milliseconds: 150));
@@ -495,8 +496,8 @@ void main() {
       );
 
       // Press and then cancel — exercises onTapCancel → _cancelRepeat
-      final gesture =
-          await tester.startGesture(tester.getCenter(find.byIcon(Icons.add)));
+      final gesture = await tester
+          .startGesture(tester.getCenter(find.byIcon(CupertinoIcons.plus)));
       await tester.pump();
       await gesture.cancel();
       await tester.pump();
@@ -523,7 +524,7 @@ void main() {
       );
 
       final gesture = await tester
-          .startGesture(tester.getCenter(find.byIcon(Icons.remove)));
+          .startGesture(tester.getCenter(find.byIcon(CupertinoIcons.minus)));
       await tester.pump();
       await gesture.cancel();
       await tester.pump();

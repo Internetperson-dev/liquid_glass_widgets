@@ -1,3 +1,4 @@
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import '../../src/renderer/liquid_glass_renderer.dart';
 
@@ -120,7 +121,7 @@ class GlassBadge extends StatelessWidget {
   const GlassBadge.dot({
     required this.child,
     super.key,
-    this.dotColor = Colors.green,
+    this.dotColor = CupertinoColors.systemGreen,
     this.position = BadgePosition.topRight,
     this.settings,
     this.quality,
@@ -282,7 +283,7 @@ class GlassBadge extends StatelessWidget {
   }
 
   Widget _buildDotBadge(BuildContext context) {
-    final color = dotColor ?? Colors.green;
+    final color = dotColor ?? CupertinoColors.systemGreen;
 
     return AdaptiveLiquidGlassLayer(
       settings: settings ??

@@ -1,3 +1,4 @@
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import '../../src/renderer/liquid_glass_renderer.dart';
 
@@ -242,7 +243,10 @@ class _GlassActionSheetContent extends StatelessWidget {
                     thickness: 0.5,
                     color: Colors.white.withValues(alpha: 0.2),
                   ),
-                _buildActionButton(context, actions[i], glowColors),
+                _ActionSheetButton(
+                  action: actions[i],
+                  glowColors: glowColors,
+                ),
               ],
             ],
           ),
@@ -282,55 +286,6 @@ class _GlassActionSheetContent extends StatelessWidget {
     );
   }
 
-  Widget _buildActionButton(
-    BuildContext context,
-    GlassActionSheetAction action,
-    GlassGlowColors glowColors,
-  ) {
-    final Color textColor = _getTextColor(action.style, glowColors);
-    final FontWeight fontWeight = action.style == GlassActionSheetStyle.cancel
-        ? FontWeight.w600
-        : FontWeight.w400;
-
-    return Material(
-      color: Colors.transparent,
-      child: InkWell(
-        onTap: () {
-          action.onPressed();
-          Navigator.of(context).pop();
-        },
-        child: Container(
-          width: double.infinity,
-          padding: const EdgeInsets.symmetric(
-            horizontal: 16,
-            vertical: 16,
-          ),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              if (action.icon != null) ...[
-                IconTheme(
-                  data: IconThemeData(color: textColor, size: 20),
-                  child: action.icon!,
-                ),
-                const SizedBox(width: 12),
-              ],
-              Text(
-                action.label,
-                style: TextStyle(
-                  color: textColor,
-                  fontSize: 17,
-                  fontWeight: fontWeight,
-                  letterSpacing: -0.3,
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
   Widget _buildCancelButton(BuildContext context) {
     return AdaptiveLiquidGlassLayer(
       settings: settings ??
@@ -348,44 +303,101 @@ class _GlassActionSheetContent extends StatelessWidget {
         ),
         child: ClipRRect(
           borderRadius: BorderRadius.circular(14),
-          child: Material(
-            color: Colors.transparent,
-            child: InkWell(
-              onTap: () => Navigator.of(context).pop(),
-              child: Container(
-                width: double.infinity,
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 16,
-                  vertical: 16,
-                ),
-                child: Text(
-                  cancelLabel,
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontSize: 17,
-                    fontWeight: FontWeight.w600,
-                    letterSpacing: -0.3,
-                  ),
-                  textAlign: TextAlign.center,
-                ),
-              ),
+          child: _ActionSheetButton(
+            action: GlassActionSheetAction(
+              label: cancelLabel,
+              style: GlassActionSheetStyle.cancel,
+              onPressed: () => Navigator.of(context).pop(),
             ),
+            glowColors: null,
           ),
         ),
       ),
     );
   }
+}
 
-  Color _getTextColor(
-    GlassActionSheetStyle style,
-    GlassGlowColors glowColors,
-  ) {
+/// A single action button within the action sheet — manages its own pressed
+/// state to provide iOS-style opacity highlight on tap-down.
+class _ActionSheetButton extends StatefulWidget {
+  const _ActionSheetButton({
+    required this.action,
+    required this.glowColors,
+  });
+
+  final GlassActionSheetAction action;
+  final GlassGlowColors? glowColors;
+
+  @override
+  State<_ActionSheetButton> createState() => _ActionSheetButtonState();
+}
+
+class _ActionSheetButtonState extends State<_ActionSheetButton> {
+  bool _isPressed = false;
+
+  @override
+  Widget build(BuildContext context) {
+    final action = widget.action;
+    final Color textColor = _getTextColor(action.style);
+    final FontWeight fontWeight = action.style == GlassActionSheetStyle.cancel
+        ? FontWeight.w600
+        : FontWeight.w400;
+
+    return GestureDetector(
+      onTap: () {
+        action.onPressed();
+        if (action.style != GlassActionSheetStyle.cancel) {
+          Navigator.of(context).pop();
+        }
+      },
+      onTapDown: (_) => setState(() => _isPressed = true),
+      onTapUp: (_) => setState(() => _isPressed = false),
+      onTapCancel: () => setState(() => _isPressed = false),
+      behavior: HitTestBehavior.opaque,
+      child: AnimatedContainer(
+        duration:
+            _isPressed ? Duration.zero : const Duration(milliseconds: 150),
+        curve: Curves.easeOutCubic,
+        color: _isPressed
+            ? Colors.white.withValues(alpha: 0.08)
+            : Colors.transparent,
+        width: double.infinity,
+        padding: const EdgeInsets.symmetric(
+          horizontal: 16,
+          vertical: 16,
+        ),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            if (action.icon != null) ...[
+              IconTheme(
+                data: IconThemeData(color: textColor, size: 20),
+                child: action.icon!,
+              ),
+              const SizedBox(width: 12),
+            ],
+            Text(
+              action.label,
+              style: TextStyle(
+                color: textColor,
+                fontSize: 17,
+                fontWeight: fontWeight,
+                letterSpacing: -0.3,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Color _getTextColor(GlassActionSheetStyle style) {
     switch (style) {
       case GlassActionSheetStyle.defaultStyle:
       case GlassActionSheetStyle.cancel:
         return Colors.white;
       case GlassActionSheetStyle.destructive:
-        return glowColors.danger ?? const Color(0xFFFF3B30);
+        return widget.glowColors?.danger ?? CupertinoColors.destructiveRed;
     }
   }
 }

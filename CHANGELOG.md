@@ -1,3 +1,20 @@
+# 0.14.2
+
+## 🧹 Material Artifact Purge
+
+Replaced internal Material primitives with Cupertino-native equivalents for
+better iOS 26 fidelity. No public API changes.
+
+- **Tap feedback:** `InkWell` → `GestureDetector` + iOS-style opacity highlight
+  in `GlassListTile` and `GlassActionSheet`.
+- **Icons:** `Icons.chevron_right`, `Icons.add`, `Icons.remove`, `Icons.info_outline`
+  → `CupertinoIcons` equivalents in `GlassListTile` and `GlassStepper`.
+- **Colours:** Hardcoded `Colors.green` / `Colors.red` → `CupertinoColors.systemGreen`
+  / `CupertinoColors.destructiveRed` across `GlassSwitch`, `GlassBadge`,
+  `GlassWizard`, `GlassDialog`, `GlassMenuItem`, and `GlassFormField`.
+
+---
+
 # 0.14.1
 
 ## 🐛 Fixed — `GlassScaffold` black background

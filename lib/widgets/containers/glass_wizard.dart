@@ -1,3 +1,4 @@
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 
 import '../../src/renderer/liquid_glass_renderer.dart';
@@ -126,7 +127,7 @@ class GlassWizard extends StatelessWidget {
 
   /// Colour of completed step indicators.
   ///
-  /// Defaults to `Colors.green.shade300`.
+  /// Defaults to `CupertinoColors.systemGreen`.
   final Color? completedColor;
 
   /// Colour of inactive step indicators.
@@ -170,7 +171,7 @@ class GlassWizard extends StatelessWidget {
                 totalSteps: steps.length,
                 indicatorSize: indicatorSize,
                 activeColor: activeColor ?? Colors.white,
-                completedColor: completedColor ?? Colors.green.shade300,
+                completedColor: completedColor ?? CupertinoColors.systemGreen,
                 inactiveColor:
                     inactiveColor ?? Colors.white.withValues(alpha: 0.3),
                 onTap: onStepTapped != null ? () => onStepTapped!(i) : null,
@@ -359,7 +360,7 @@ class _WizardStepConnector extends StatelessWidget {
         height: 16,
         child: ColoredBox(
           color: isCompleted
-              ? Colors.green.shade300.withValues(alpha: 0.7)
+              ? CupertinoColors.systemGreen.withValues(alpha: 0.7)
               : Colors.white.withValues(alpha: 0.2),
         ),
       ),

@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import '../../src/renderer/liquid_glass_renderer.dart';
@@ -92,7 +93,7 @@ class GlassSwitch extends StatefulWidget {
 
   /// The color of the track when the switch is on.
   ///
-  /// If null, defaults to green color.
+  /// If null, defaults to system green (`CupertinoColors.systemGreen`).
   final Color? activeColor;
 
   /// The color of the track when the switch is off.
@@ -456,7 +457,7 @@ class _GlassSwitchState extends State<GlassSwitch>
     // Performance: Cache color calculations as const to avoid allocation
     final inactiveTrackColor =
         widget.inactiveColor ?? const Color(0x33FFFFFF); // alpha: 0.2
-    final activeTrackColor = widget.activeColor ?? Colors.green;
+    final activeTrackColor = widget.activeColor ?? CupertinoColors.systemGreen;
 
     return GestureDetector(
       // NOTE: We do NOT use onTap here. Having both onTap and onHorizontalDrag*

@@ -1,3 +1,4 @@
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 
 /// A standard form field wrapper for glass inputs following iOS design patterns.
@@ -100,7 +101,7 @@ class GlassFormField extends StatelessWidget {
             errorText!,
             style: TextStyle(
               fontSize: 12,
-              color: Colors.redAccent.shade100,
+              color: CupertinoColors.systemRed,
               fontWeight: FontWeight.w500,
             ),
           ),
