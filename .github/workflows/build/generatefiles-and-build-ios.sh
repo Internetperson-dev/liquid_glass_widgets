@@ -1,8 +1,33 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-# Use current directory as workspace
-WORKSPACE="$(pwd)"
+###############################################################################
+# Find Repository Root
+###############################################################################
+
+# Try using git first
+WORKSPACE="$(git rev-parse --show-toplevel 2>/dev/null || true)"
+
+# Fallback: search upward for pubspec.yaml
+if [ -z "$WORKSPACE" ] || [ ! -f "$WORKSPACE/pubspec.yaml" ]; then
+  WORKSPACE="$(pwd)"
+  while [ "$WORKSPACE" != "/" ]; do
+    if [ -f "$WORKSPACE/pubspec.yaml" ]; then
+      break
+    fi
+    WORKSPACE="$(dirname "$WORKSPACE")"
+  done
+fi
+
+# Verify we found the repository root
+if [ ! -f "$WORKSPACE/pubspec.yaml" ] && [ ! -d "$WORKSPACE/example" ]; then
+  echo "Error: Could not find repository root"
+  echo "Last checked: $WORKSPACE"
+  exit 1
+fi
+
+echo "Repository root: $WORKSPACE"
+cd "$WORKSPACE"
 
 FLUTTER_VERSION="3.41.9"
 
@@ -11,18 +36,7 @@ APPS=(
   apple_podcasts
   apple_messages
   apple_news
-  showcase
 )
-
-###############################################################################
-# Verify we're in the right directory
-###############################################################################
-
-if [ ! -f "pubspec.yaml" ] && [ ! -d "example" ]; then
-  echo "Error: This script must be run from the repository root"
-  echo "Current directory: $WORKSPACE"
-  exit 1
-fi
 
 ###############################################################################
 # Flutter
@@ -40,17 +54,12 @@ flutter config \
 # Platform scaffolding
 ###############################################################################
 
-cd example
-
-flutter create . \
-  --platforms=android,ios,web,linux,macos,windows
-
-cd showcase
-
-flutter create . \
-  --platforms=android,ios,web,linux,macos,windows
-
-cd ..
+if [ -d "$WORKSPACE/example" ]; then
+  cd "$WORKSPACE/example"
+  flutter create . \
+    --platforms=android,ios,web,linux,macos,windows
+  cd "$WORKSPACE"
+fi
 
 ###############################################################################
 # Dependencies
@@ -58,13 +67,11 @@ cd ..
 
 flutter pub get
 
-cd example
-flutter pub get
-
-cd showcase
-flutter pub get
-
-cd "$WORKSPACE"
+if [ -d "$WORKSPACE/example" ]; then
+  cd "$WORKSPACE/example"
+  flutter pub get
+  cd "$WORKSPACE"
+fi
 
 ###############################################################################
 # Artifacts
@@ -83,15 +90,9 @@ for APP in "${APPS[@]}"; do
   echo "BUILDING $APP"
   echo "===================================="
 
-  if [ "$APP" = "showcase" ]; then
-    ROOT="example/showcase"
-    ENTRY="lib/main.dart"
-  else
-    ROOT="example"
-    ENTRY="lib/${APP}/${APP}_demo.dart"
-  fi
+  ROOT="$WORKSPACE/example"
 
-  cd "$WORKSPACE/$ROOT"
+  cd "$ROOT"
 
   flutter clean
   flutter pub get
@@ -102,14 +103,13 @@ for APP in "${APPS[@]}"; do
 
   flutter build ios \
     --release \
-    --no-codesign \
-    -t "$ENTRY"
+    --no-codesign
 
   APP_PATH="build/ios/iphoneos/Runner.app"
 
   if [ -d "$APP_PATH" ]; then
       echo "iOS build generated for $APP"
-      echo "Xcode project: $WORKSPACE/$ROOT/ios/Runner.xcworkspace"
+      echo "Xcode project: $ROOT/ios/Runner.xcworkspace"
       echo "Complete signing and building in Xcode GUI"
   fi
 
@@ -128,7 +128,7 @@ echo ""
 echo "Build complete."
 echo ""
 echo "Artifacts:"
-find artifacts
+find artifacts -type f
 
 echo ""
 echo "Next - Continue Development in the GUI of Xcode for building, deployment, and profiling,"
