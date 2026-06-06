@@ -1,11 +1,8 @@
-# This is for local versions of the repoistary (git clone), adapated from the github CI and designe dto aubil dconflicting with the files or the original repositary.
-# This is because I build with GitHub CI, but do local testing with Xcode, and syncing the two, while not divering too much from the original repoistary is painful.
-
 #!/usr/bin/env bash
 set -euo pipefail
 
-REPO_URL="https://github.com/Internetperson-dev/liquid_glass_widgets/new/main/.github/workflows"
-WORKSPACE="$HOME/projects/liquid_glass_widgets"
+# Use current directory as workspace
+WORKSPACE="$(pwd)"
 
 FLUTTER_VERSION="3.41.9"
 
@@ -18,25 +15,14 @@ APPS=(
 )
 
 ###############################################################################
-# Clone
+# Verify we're in the right directory
 ###############################################################################
 
-rm -rf "$WORKSPACE"
-
-git clone "$REPO_URL" "$WORKSPACE"
-cd "$WORKSPACE"
-
-###############################################################################
-# Patch GlassQuality
-###############################################################################
-
-find . -type f -name "*.dart" | while read -r file; do
-  sed -i.bak \
-    's/GlassQuality\.premium/GlassQuality.standard/g' \
-    "$file" || true
-
-  rm -f "${file}.bak"
-done
+if [ ! -f "pubspec.yaml" ] && [ ! -d "example" ]; then
+  echo "Error: This script must be run from the repository root"
+  echo "Current directory: $WORKSPACE"
+  exit 1
+fi
 
 ###############################################################################
 # Flutter
@@ -84,14 +70,7 @@ cd "$WORKSPACE"
 # Artifacts
 ###############################################################################
 
-mkdir -p artifacts
-
-mkdir -p artifacts/android
-mkdir -p artifacts/ios
-mkdir -p artifacts/web
-mkdir -p artifacts/linux
-mkdir -p artifacts/windows
-mkdir -p artifacts/macos
+mkdir -p artifacts/{android,ios,web,linux,windows,macos}
 
 ###############################################################################
 # Build Loop
