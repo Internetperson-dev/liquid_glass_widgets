@@ -204,7 +204,7 @@ void main() {
       );
       await tester.pumpAndSettle();
 
-      final textField = find.byType(TextField);
+      final textField = find.byType(CupertinoTextField);
       if (textField.evaluate().isNotEmpty) {
         await tester.enterText(textField.first, 'glass');
         await tester.pump();
@@ -920,7 +920,7 @@ void main() {
       );
       await tester.pumpAndSettle();
 
-      final textField = find.byType(TextField);
+      final textField = find.byType(CupertinoTextField);
       if (textField.evaluate().isNotEmpty) {
         await tester.tap(textField.first);
         await tester.pump();
@@ -949,7 +949,7 @@ void main() {
       );
       await tester.pumpAndSettle();
 
-      final textField = find.byType(TextField);
+      final textField = find.byType(CupertinoTextField);
       if (textField.evaluate().isNotEmpty) {
         await tester.tap(textField.first);
         await tester.pump();

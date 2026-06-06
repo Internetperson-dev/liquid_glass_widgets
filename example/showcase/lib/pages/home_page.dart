@@ -595,7 +595,7 @@ class _HomePageState extends State<HomePage> {
         verticalPadding: 0,
         horizontalPadding: 8,
         indicatorColor: Colors.black26,
-        glassSettings: LiquidGlassSettings(
+        settings: LiquidGlassSettings(
           thickness: 30,
           blur: 3,
           chromaticAberration: 0.3,

@@ -103,13 +103,18 @@ class GlassMenuDivider extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = CupertinoTheme.of(context);
+    // Resolve from theme's label color, falling back to text color at 15%
+    final defaultLineColor =
+        (theme.textTheme.tabLabelTextStyle.color ?? CupertinoColors.label)
+            .withValues(alpha: 0.15);
     return SizedBox(
       height: height,
       child: Center(
         child: Container(
           height: 0.5,
           margin: EdgeInsets.symmetric(horizontal: indent),
-          color: color ?? const Color(0x26FFFFFF), // 15% white line default
+          color: color ?? defaultLineColor,
         ),
       ),
     );
@@ -151,6 +156,11 @@ class GlassMenuLabel extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = CupertinoTheme.of(context);
+    // Use the theme's secondary label color for muted captions
+    final defaultLabelColor = (theme.textTheme.tabLabelTextStyle.color ??
+            CupertinoColors.secondaryLabel)
+        .withValues(alpha: 0.45);
     return Container(
       height: height,
       padding: EdgeInsets.symmetric(horizontal: horizontalPadding),
@@ -160,7 +170,7 @@ class GlassMenuLabel extends StatelessWidget {
             title!.toUpperCase(),
             style: style ??
                 TextStyle(
-                  color: Colors.white.withValues(alpha: 0.45),
+                  color: defaultLabelColor,
                   fontSize: 11,
                   fontWeight: FontWeight.w600,
                   letterSpacing: 0.8,
@@ -181,12 +191,19 @@ class _GlassMenuItemState extends State<GlassMenuItem> {
 
   @override
   Widget build(BuildContext context) {
-    // Performance: Cache static colors to avoid recalculation on every build
+    // Resolve foreground color from the current CupertinoTheme.
+    // This automatically supports Light Mode, Dark Mode, and custom themes.
+    final theme = CupertinoTheme.of(context);
+    final defaultForeground =
+        theme.textTheme.textStyle.color ?? CupertinoColors.label;
+
     // Determine the base color of the item (inheritance logic)
-    // Priority: iconColor > titleStyle.color > destructiveRed > white
+    // Priority: iconColor > titleStyle.color > destructiveRed > theme foreground
     final Color baseColor = widget.iconColor ??
         widget.titleStyle?.color ??
-        (widget.isDestructive ? CupertinoColors.destructiveRed : Colors.white);
+        (widget.isDestructive
+            ? CupertinoColors.destructiveRed
+            : defaultForeground);
 
     // Apply specific opacities based on original design specs:
     // Icon: 100% (enabled), 50% (disabled)

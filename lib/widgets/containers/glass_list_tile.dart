@@ -22,16 +22,16 @@ import 'glass_divider.dart';
 ///   child: Column(
 ///     children: [
 ///       GlassListTile(
-///         leading: Icon(CupertinoIcons.person, color: Colors.white),
+///         leading: Icon(CupertinoIcons.person, color: CupertinoColors.white),
 ///         title: Text('Account'),
 ///       ),
 ///       GlassListTile(
-///         leading: Icon(CupertinoIcons.bell, color: Colors.white),
+///         leading: Icon(CupertinoIcons.bell, color: CupertinoColors.white),
 ///         title: Text('Notifications'),
 ///         trailing: GlassListTile.chevron,
 ///       ),
 ///       GlassListTile(
-///         leading: Icon(CupertinoIcons.lock, color: Colors.white),
+///         leading: Icon(CupertinoIcons.lock, color: CupertinoColors.white),
 ///         title: Text('Privacy'),
 ///         subtitle: Text('Manage your data'),
 ///         trailing: GlassListTile.chevron,
@@ -192,14 +192,14 @@ class GlassListTile extends StatefulWidget {
   /// A standard iOS-style disclosure chevron for use as [trailing].
   static Widget get chevron => const Icon(
         CupertinoIcons.chevron_forward,
-        color: Colors.white54,
+        color: CupertinoColors.systemGrey,
         size: 20,
       );
 
   /// A standard iOS-style detail disclosure (circle with 'i') for [trailing].
   static Widget get infoButton => const Icon(
         CupertinoIcons.info,
-        color: Colors.white54,
+        color: CupertinoColors.systemGrey,
         size: 20,
       );
 
@@ -228,15 +228,19 @@ class _GlassListTileState extends State<GlassListTile> {
   }
 
   Widget _buildContent(BuildContext context) {
+    final dynamicLabelColor =
+        CupertinoTheme.of(context).textTheme.textStyle.color ??
+            CupertinoColors.label;
+
     final effectiveTitleStyle = widget.titleStyle ??
-        const TextStyle(
-          color: Colors.white,
+        TextStyle(
+          color: dynamicLabelColor,
           fontSize: 16,
           fontWeight: FontWeight.w500,
         );
     final effectiveSubtitleStyle = widget.subtitleStyle ??
         TextStyle(
-          color: Colors.white.withValues(alpha: 0.65),
+          color: dynamicLabelColor.withValues(alpha: 0.65),
           fontSize: 13,
         );
 
@@ -245,7 +249,7 @@ class _GlassListTileState extends State<GlassListTile> {
         if (widget.leading != null) ...[
           IconTheme(
             data: IconThemeData(
-              color: widget.leadingIconColor ?? Colors.white,
+              color: widget.leadingIconColor ?? dynamicLabelColor,
               size: 22,
             ),
             child: SizedBox(width: 32, child: widget.leading),
@@ -271,7 +275,8 @@ class _GlassListTileState extends State<GlassListTile> {
         if (widget.trailing != null) ...[
           const SizedBox(width: 8),
           IconTheme(
-            data: const IconThemeData(color: Colors.white54, size: 20),
+            data: IconThemeData(
+                color: dynamicLabelColor.withValues(alpha: 0.54), size: 20),
             child: widget.trailing!,
           ),
         ],
@@ -295,7 +300,9 @@ class _GlassListTileState extends State<GlassListTile> {
                 _isPressed ? Duration.zero : const Duration(milliseconds: 150),
             curve: Curves.easeOutCubic,
             color: _isPressed
-                ? Colors.white.withValues(alpha: 0.08)
+                ? (CupertinoTheme.brightnessOf(context) == Brightness.light
+                    ? CupertinoColors.black.withValues(alpha: 0.08)
+                    : CupertinoColors.white.withValues(alpha: 0.08))
                 : Colors.transparent,
             child: tile,
           ),

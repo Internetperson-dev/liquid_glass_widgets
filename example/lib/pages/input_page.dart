@@ -145,7 +145,8 @@ class _InputPageState extends State<InputPage> {
                       // ── Example Form ─────────────────────────────────
                       const _SectionTitle(title: 'Example Form'),
                       const SizedBox(height: 16),
-                      GlassPanel(
+                      GlassCard(
+                        padding: const EdgeInsets.all(24),
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
@@ -203,6 +204,90 @@ class _InputPageState extends State<InputPage> {
                                   fontSize: 14,
                                   color: Colors.white.withValues(alpha: 0.7),
                                 ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+
+                      const SizedBox(height: 40),
+
+                      // ── GlassPasswordField ─────────────────────────
+                      const _SectionTitle(title: 'GlassPasswordField'),
+                      const SizedBox(height: 16),
+                      const GlassPasswordField(
+                        placeholder: 'Enter password',
+                      ),
+
+                      const SizedBox(height: 40),
+
+                      // ── GlassTextArea ──────────────────────────────
+                      const _SectionTitle(title: 'GlassTextArea'),
+                      const SizedBox(height: 16),
+                      const GlassTextArea(
+                        placeholder: 'Write a short description...',
+                        minLines: 4,
+                      ),
+
+                      const SizedBox(height: 40),
+
+                      // ── GlassPicker ────────────────────────────────
+                      const _SectionTitle(title: 'GlassPicker'),
+                      const SizedBox(height: 16),
+                      Row(
+                        children: [
+                          Expanded(
+                            child: GlassPicker(
+                              value: 'Administrator',
+                              icon: const Icon(CupertinoIcons.briefcase),
+                              useOwnLayer: true,
+                              quality: GlassQuality.premium,
+                              onTap: () {},
+                            ),
+                          ),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: GlassPicker(
+                              value: null,
+                              placeholder: 'Select role',
+                              useOwnLayer: true,
+                              quality: GlassQuality.premium,
+                              onTap: () {},
+                            ),
+                          ),
+                        ],
+                      ),
+
+                      const SizedBox(height: 40),
+
+                      // ── GlassFormField ─────────────────────────────
+                      const _SectionTitle(title: 'GlassFormField'),
+                      const SizedBox(height: 16),
+                      GlassCard(
+                        padding: const EdgeInsets.all(24),
+                        child: Column(
+                          children: [
+                            const GlassFormField(
+                              label: 'Account Email',
+                              child: GlassTextField(
+                                placeholder: 'example@email.com',
+                                keyboardType: TextInputType.emailAddress,
+                                prefixIcon: Icon(CupertinoIcons.mail,
+                                    color: Colors.white70, size: 20),
+                              ),
+                            ),
+                            const SizedBox(height: 16),
+                            const GlassFormField(
+                              label: 'Password',
+                              helperText: 'Must be at least 8 characters',
+                              child: GlassPasswordField(),
+                            ),
+                            const SizedBox(height: 16),
+                            GlassFormField(
+                              label: 'Bio / Description',
+                              child: GlassTextArea(
+                                placeholder: 'Write a short description...',
+                                minLines: 3,
                               ),
                             ),
                           ],

@@ -138,7 +138,7 @@ class _HomePageState extends State<_HomePage> {
                 (
                   Icons.grid_view_rounded,
                   'Containers',
-                  'GlassCard, GlassPanel, GlassContainer'
+                  'GlassCard, GlassContainer'
                 ),
                 (
                   Icons.touch_app_rounded,

@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 
 import '../liquid_glass_setup.dart';
@@ -126,7 +127,6 @@ class GlassThemeHelpers {
   /// |---|---|---|
   /// | [GlassBottomBar] | `premium` | Static footer — full quality expected |
   /// | [GlassToolbar] | `premium` | Static surface |
-  /// | [GlassSideBar] | `premium` | Static surface |
   /// | [GlassTabBar] | `standard` | May be in a scrollable context |
   /// | [GlassButton] | `standard` | Interactive, potentially many on screen |
   /// | [GlassTextField] | `standard` | Interactive |
@@ -301,7 +301,7 @@ class GlassThemeHelpers {
     // 0. If user specified a global radius in the theme, respect it.
     if (themeRadius != null) return themeRadius;
 
-    final platform = Theme.of(context).platform;
+    final platform = defaultTargetPlatform;
     final height = mq.size.height;
     final isIOS = platform == TargetPlatform.iOS;
 

@@ -23,11 +23,15 @@ class _ReproApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
+    return CupertinoApp(
       title: 'SearchableBottomBar Repro',
       debugShowCheckedModeBanner: false,
-      theme: ThemeData.dark().copyWith(
-        scaffoldBackgroundColor: const Color(0xFF0A0A0F),
+      theme: const CupertinoThemeData(brightness: Brightness.dark),
+      builder: (context, child) => Theme(
+        data: ThemeData.dark(useMaterial3: true).copyWith(
+          scaffoldBackgroundColor: const Color(0xFF0A0A0F),
+        ),
+        child: child!,
       ),
       home: const _ReproHome(),
     );

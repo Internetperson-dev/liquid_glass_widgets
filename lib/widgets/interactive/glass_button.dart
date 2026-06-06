@@ -1,4 +1,4 @@
-import 'package:flutter/cupertino.dart' show CupertinoColors;
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import '../../src/renderer/liquid_glass_renderer.dart';
 
@@ -131,7 +131,7 @@ class GlassButton extends StatefulWidget {
     this.width = 56,
     this.height = 56,
     this.iconSize = 24.0,
-    this.iconColor = Colors.white,
+    this.iconColor,
     this.shape = const LiquidOval(),
     this.settings,
     this.useOwnLayer = false,
@@ -210,7 +210,7 @@ class GlassButton extends StatefulWidget {
     this.ambientBaseLight = 0.08,
   })  : icon = null,
         iconSize = 24.0,
-        iconColor = Colors.white;
+        iconColor = null;
 
   // ===========================================================================
   // Content Properties
@@ -236,8 +236,8 @@ class GlassButton extends StatefulWidget {
 
   /// Color of the icon (only used when [icon] is provided).
   ///
-  /// Defaults to [CupertinoColors.white].
-  final Color iconColor;
+  /// Defaults to [CupertinoColors.white] for prominent buttons, and [CupertinoColors.label] otherwise.
+  final Color? iconColor;
 
   // ===========================================================================
   // Button Properties
@@ -592,8 +592,14 @@ class _GlassButtonState extends State<GlassButton>
 
     final resolvedGlowColors =
         GlassThemeData.of(context).glowColorsFor(context);
-    final effectiveGlowColor =
-        widget.glowColor ?? resolvedGlowColors.primary ?? Colors.white24;
+    final effectiveGlowColor = widget.glowColor ??
+        resolvedGlowColors.primary ??
+        CupertinoTheme.of(context)
+            .textTheme
+            .textStyle
+            .color
+            ?.withValues(alpha: 0.24) ??
+        CupertinoColors.white.withValues(alpha: 0.24);
     final effectiveGlowBlurRadius =
         widget.glowBlurRadius ?? resolvedGlowColors.glowBlurRadius;
     final effectiveGlowSpreadRadius =
@@ -610,7 +616,14 @@ class _GlassButtonState extends State<GlassButton>
         child: widget.child ??
             IconTheme(
               data: IconThemeData(
-                color: widget.iconColor,
+                color: widget.iconColor ??
+                    (widget.style == GlassButtonStyle.prominent
+                        ? CupertinoColors.white
+                        : (CupertinoTheme.of(context)
+                                .textTheme
+                                .textStyle
+                                .color ??
+                            CupertinoColors.label)),
                 size: widget.iconSize,
               ),
               child: widget.icon ?? const SizedBox.shrink(),
@@ -633,7 +646,7 @@ class _GlassButtonState extends State<GlassButton>
               return Positioned.fill(
                 child: IgnorePointer(
                   child: ColoredBox(
-                    color: Colors.white.withValues(alpha: opacity),
+                    color: CupertinoColors.white.withValues(alpha: opacity),
                   ),
                 ),
               );
@@ -667,16 +680,34 @@ class _GlassButtonState extends State<GlassButton>
       child: glowContent,
       builder: (context, child) {
         if (widget.style == GlassButtonStyle.transparent) {
-          return child!;
+          // Clip interaction glow to the button's shape so it doesn't
+          // bleed into a rectangle.
+          return ClipPath(
+            clipper: _ExpandedShapeClipper(shape: widget.shape, expansion: 0),
+            clipBehavior: Clip.antiAlias,
+            child: child!,
+          );
         }
 
         // Resolve settings: widget explicit → app bar default → inherited.
         final effectiveExplicit =
             widget.settings ?? DefaultButtonSettings.of(context);
-        final baseSettings = GlassThemeHelpers.resolveSettings(
+        var baseSettings = GlassThemeHelpers.resolveSettings(
           context,
           explicit: effectiveExplicit,
         );
+
+        // Prominent style: thicker, more opaque, brighter glass for primary CTAs.
+        // iOS 26's `.glassProminent` is visibly more frosted than `.glass`.
+        if (widget.style == GlassButtonStyle.prominent) {
+          baseSettings = baseSettings.copyWith(
+            thickness: (baseSettings.effectiveThickness * 2.5).clamp(30, 100),
+            glassColor: baseSettings.glassColor.withValues(
+                alpha: (baseSettings.glassColor.a * 2.5).clamp(0.4, 0.9)),
+            lightIntensity:
+                (baseSettings.effectiveLightIntensity * 1.5).clamp(0.3, 1.0),
+          );
+        }
 
         // Fix jagged edges on premium glass during stretch animations while
         // preserving crisp rim rendering at rest.

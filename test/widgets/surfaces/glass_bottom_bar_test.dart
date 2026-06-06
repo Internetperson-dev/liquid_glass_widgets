@@ -410,14 +410,14 @@ void main() {
       expect(find.byType(GlassBottomBar), findsOneWidget);
     });
 
-    testWidgets('custom glassSettings is accepted', (tester) async {
+    testWidgets('custom settings is accepted', (tester) async {
       await tester.pumpWidget(
         createTestApp(
           child: GlassBottomBar(
             tabs: testTabs3,
             selectedIndex: 0,
             onTabSelected: (_) {},
-            glassSettings: const LiquidGlassSettings(thickness: 40),
+            settings: const LiquidGlassSettings(thickness: 40),
             maskingQuality: MaskingQuality.off,
           ),
         ),

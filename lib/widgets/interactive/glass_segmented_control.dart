@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+import 'package:flutter/cupertino.dart';
 
 import '../../constants/glass_defaults.dart';
 import '../../src/renderer/liquid_glass_renderer.dart';
@@ -25,7 +25,7 @@ import 'shared/segmented_control_internal.dart';
 ///
 /// ## Performance Note
 ///
-/// When placing inside glass containers (GlassCard, GlassPanel) with blur,
+/// When placing inside glass containers (GlassCard) with blur,
 /// use one of these approaches for best performance:
 /// - Set parent container to `quality: GlassQuality.premium` (no BackdropFilter)
 /// - Or set parent settings to `blur: 0` (skips BackdropFilter)
@@ -100,12 +100,12 @@ import 'shared/segmented_control_internal.dart';
 ///   selectedTextStyle: TextStyle(
 ///     fontSize: 14,
 ///     fontWeight: FontWeight.w600,
-///     color: Colors.white,
+///     color: CupertinoColors.white,
 ///   ),
 ///   unselectedTextStyle: TextStyle(
 ///     fontSize: 14,
 ///     fontWeight: FontWeight.w500,
-///     color: Colors.white.withOpacity(0.6),
+///     color: CupertinoColors.white.withOpacity(0.6),
 ///   ),
 /// )
 /// ```
@@ -124,7 +124,7 @@ class GlassSegmentedControl extends StatefulWidget {
     this.backgroundColor,
     this.indicatorColor,
     this.indicatorSettings,
-    this.glassSettings,
+    this.settings,
     this.useOwnLayer = false,
     this.quality,
     this.backgroundKey,
@@ -203,7 +203,7 @@ class GlassSegmentedControl extends StatefulWidget {
 
   /// Background color of the segmented control.
   ///
-  /// If null, uses a semi-transparent white (Colors.white12).
+  /// If null, uses a semi-transparent fill depending on brightness.
   final Color? backgroundColor;
 
   /// Color of the indicator when not being dragged.
@@ -235,7 +235,7 @@ class GlassSegmentedControl extends StatefulWidget {
   /// - chromaticAberration: 0.5
   /// - lightIntensity: 2
   /// - refractiveIndex: 1.15
-  final LiquidGlassSettings? glassSettings;
+  final LiquidGlassSettings? settings;
 
   /// Whether to create its own layer or use grouped glass.
   ///
@@ -283,9 +283,6 @@ class GlassSegmentedControl extends StatefulWidget {
 }
 
 class _GlassSegmentedControlState extends State<GlassSegmentedControl> {
-  // Cache default background color to avoid allocations
-  static const _defaultBackgroundColor = Color(0x1FFFFFFF); // Colors.white12
-
   @override
   Widget build(BuildContext context) {
     // Inherit quality from parent layer if not explicitly set
@@ -295,7 +292,7 @@ class _GlassSegmentedControlState extends State<GlassSegmentedControl> {
     );
 
     // Use custom glass settings or optimized defaults
-    final glassSettings = widget.glassSettings ??
+    final effectiveSettings = widget.settings ??
         const LiquidGlassSettings(
           thickness: GlassDefaults.thickness,
           blur: GlassDefaults.blur,
@@ -305,7 +302,10 @@ class _GlassSegmentedControlState extends State<GlassSegmentedControl> {
           lightAngle: GlassDefaults.lightAngle,
         );
 
-    final backgroundColor = widget.backgroundColor ?? _defaultBackgroundColor;
+    final backgroundColor = widget.backgroundColor ??
+        (CupertinoTheme.brightnessOf(context) == Brightness.light
+            ? CupertinoColors.black.withValues(alpha: 0.08)
+            : CupertinoColors.white.withValues(alpha: 0.12));
 
     // Build the control
     final control = Container(
@@ -339,7 +339,7 @@ class _GlassSegmentedControlState extends State<GlassSegmentedControl> {
     // Wrap with layer if needed
     if (widget.useOwnLayer) {
       return AdaptiveLiquidGlassLayer(
-        settings: glassSettings,
+        settings: effectiveSettings,
         quality: effectiveQuality,
         child: isolatedControl,
       );

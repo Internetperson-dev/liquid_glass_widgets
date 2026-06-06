@@ -104,7 +104,7 @@ class GlassMenu extends StatefulWidget {
   final double itemBorderRadius;
 
   /// Custom glass settings for the menu container.
-  final LiquidGlassSettings? glassSettings;
+  final LiquidGlassSettings? settings;
 
   /// Rendering quality for the glass effect.
   final GlassQuality? quality;
@@ -197,7 +197,7 @@ class GlassMenu extends StatefulWidget {
     this.menuWidth = 200,
     this.menuBorderRadius = 32.0,
     this.itemBorderRadius = 24.0,
-    this.glassSettings,
+    this.settings,
     this.quality,
     this.stretch = 0.5,
     this.interactionScale = 1.02,

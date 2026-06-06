@@ -452,7 +452,6 @@ void main() {
         EdgeInsets viewPadding = const EdgeInsets.only(top: 44, bottom: 34),
         TargetPlatform platform = TargetPlatform.iOS}) {
       return MaterialApp(
-        theme: ThemeData(platform: platform),
         home: Builder(builder: (context) {
           return MediaQuery(
             data: MediaQuery.of(context).copyWith(
@@ -479,7 +478,7 @@ void main() {
         ),
       );
       expect(result, 54.0);
-    });
+    }, variant: TargetPlatformVariant.only(TargetPlatform.iOS));
 
     testWidgets('Pro height (>= 800, < 900) → 46.0', (tester) async {
       double? result;
@@ -494,7 +493,7 @@ void main() {
         ),
       );
       expect(result, 46.0);
-    });
+    }, variant: TargetPlatformVariant.only(TargetPlatform.iOS));
 
     testWidgets(
         'regression: high top padding on Pro height must NOT return Pro Max radius',
@@ -514,7 +513,7 @@ void main() {
       );
       expect(result, 46.0); // must be Pro, NOT Pro Max
       expect(result, isNot(54.0));
-    });
+    }, variant: TargetPlatformVariant.only(TargetPlatform.iOS));
 
     testWidgets('Android with bottom safe area → 28.0', (tester) async {
       double? result;
@@ -526,11 +525,10 @@ void main() {
           },
           size: const Size(412, 892),
           viewPadding: const EdgeInsets.only(top: 28, bottom: 24),
-          platform: TargetPlatform.android,
         ),
       );
       expect(result, 28.0);
-    });
+    }, variant: TargetPlatformVariant.only(TargetPlatform.android));
 
     testWidgets('device without bottom safe area → 0.0 (home button)',
         (tester) async {
@@ -546,7 +544,7 @@ void main() {
         ),
       );
       expect(result, 0.0);
-    });
+    }, variant: TargetPlatformVariant.only(TargetPlatform.iOS));
   });
 
   // ─────────────────────────────────────────────────────────────────────────

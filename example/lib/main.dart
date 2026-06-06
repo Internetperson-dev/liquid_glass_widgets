@@ -34,15 +34,23 @@ class AppleLiquidGlassShowcaseApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
+    return CupertinoApp(
       title: 'Liquid Glass Widgets',
-      theme: ThemeData(
+      theme: const CupertinoThemeData(
         brightness: Brightness.dark,
-        useMaterial3: true,
-        colorScheme: ColorScheme.dark(
-          primary: Colors.blue,
-          surface: Colors.black,
-        ),
+      ),
+      // Demo pages use Material widgets (Scaffold, showModalBottomSheet)
+      // that require these localizations. Not needed for glass widgets.
+      localizationsDelegates: const [
+        DefaultMaterialLocalizations.delegate,
+        DefaultWidgetsLocalizations.delegate,
+      ],
+      // Provide a dark Material Theme for any Scaffold widgets in demo pages.
+      // CupertinoApp doesn't inject ThemeData, so bare Scaffolds would default
+      // to a white background without this.
+      builder: (context, child) => Theme(
+        data: ThemeData.dark(useMaterial3: true),
+        child: child!,
       ),
       home: const ShowcaseHomePage(),
       debugShowCheckedModeBanner: false,
@@ -104,7 +112,7 @@ class _ShowcaseHomePageState extends State<ShowcaseHomePage> {
         iconSize: 28,
         labelFontSize: 10,
         iconLabelSpacing: 0,
-        glassSettings: const LiquidGlassSettings(
+        settings: const LiquidGlassSettings(
           glassColor: Color.fromRGBO(255, 255, 255, 0.08),
           thickness: 30,
           blur: 3,

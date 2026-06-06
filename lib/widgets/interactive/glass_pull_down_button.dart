@@ -1,5 +1,4 @@
 import 'package:flutter/cupertino.dart';
-import 'package:flutter/material.dart';
 
 import '../../types/glass_quality.dart';
 import '../overlays/glass_menu.dart';
@@ -59,6 +58,10 @@ class GlassPullDownButton extends StatelessWidget {
       widgetQuality: quality,
     );
 
+    final effectiveTextColor =
+        CupertinoTheme.of(context).textTheme.textStyle.color ??
+            CupertinoColors.label;
+
     return GlassMenu(
       menuWidth: menuWidth,
       quality: effectiveQuality,
@@ -75,16 +78,16 @@ class GlassPullDownButton extends StatelessWidget {
               mainAxisSize: MainAxisSize.min,
               children: [
                 IconTheme(
-                  data: const IconThemeData(size: 20, color: Colors.white),
+                  data: IconThemeData(size: 20, color: effectiveTextColor),
                   child: icon,
                 ),
                 const SizedBox(width: 8),
                 Text(
                   label!,
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 16,
                     fontWeight: FontWeight.w500,
-                    color: Colors.white,
+                    color: effectiveTextColor,
                   ),
                 ),
               ],

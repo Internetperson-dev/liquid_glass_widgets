@@ -653,7 +653,7 @@ class TabBarContentState extends State<TabBarContent>
                   indicatorColor: indicatorColor,
                   isBackgroundIndicator: false,
                   borderRadius: widget.indicatorBorderRadius?.topLeft.x ?? 16,
-                  glassSettings: widget.indicatorSettings,
+                  settings: widget.indicatorSettings,
                   backgroundKey: widget.backgroundKey,
                   expansion:
                       widget.maskingQuality == MaskingQuality.off ? 0.0 : 8.0,

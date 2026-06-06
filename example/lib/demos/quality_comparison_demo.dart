@@ -186,10 +186,15 @@ class _App extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return const MaterialApp(
+    return CupertinoApp(
       title: 'Quality Comparison',
       debugShowCheckedModeBanner: false,
-      home: _ComparisonPage(),
+      theme: const CupertinoThemeData(brightness: Brightness.dark),
+      builder: (context, child) => Theme(
+        data: ThemeData.dark(useMaterial3: true),
+        child: child!,
+      ),
+      home: const _ComparisonPage(),
     );
   }
 }
@@ -728,7 +733,7 @@ class _ComparisonPageState extends State<_ComparisonPage> {
             label: 'GlassSegmentedControl',
             premium: GlassSegmentedControl(
               useOwnLayer: true,
-              glassSettings: _kGlass,
+              settings: _kGlass,
               indicatorSettings: _kGlass,
               quality: GlassQuality.premium,
               segments: const ['Day', 'Week', 'Month'],
@@ -737,7 +742,7 @@ class _ComparisonPageState extends State<_ComparisonPage> {
             ),
             standard: GlassSegmentedControl(
               useOwnLayer: true,
-              glassSettings: _kGlassCard, // surface / background
+              settings: _kGlassCard, // surface / background
               indicatorSettings: _kGlassPill, // animated pill indicator
               quality: GlassQuality.standard,
               segments: const ['Day', 'Week', 'Month'],

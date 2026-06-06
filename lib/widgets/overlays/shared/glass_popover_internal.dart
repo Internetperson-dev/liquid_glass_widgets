@@ -303,7 +303,7 @@ class _GlassPopoverState extends State<GlassPopover>
     final currentWidth = lerpDouble(tw, popoverWidth, state.sizeT)!;
 
     final inheritedSettings = InheritedLiquidGlass.of(context);
-    final effectiveSettings = widget.glassSettings ??
+    final effectiveSettings = widget.settings ??
         inheritedSettings ??
         const LiquidGlassSettings(
           blur: 10,
@@ -442,7 +442,7 @@ class _GlassPopoverState extends State<GlassPopover>
     final containerScale = state.containerScale;
 
     final inheritedSettings = InheritedLiquidGlass.of(context);
-    final effectiveSettings = widget.glassSettings ??
+    final effectiveSettings = widget.settings ??
         inheritedSettings ??
         const LiquidGlassSettings(
           blur: 10,

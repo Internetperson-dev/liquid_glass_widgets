@@ -49,7 +49,7 @@ class AnimatedGlassIndicator extends StatelessWidget {
   final double borderRadius;
 
   /// Optional glass settings override.
-  final LiquidGlassSettings? glassSettings;
+  final LiquidGlassSettings? settings;
 
   /// Padding to apply around the indicator (e.g., for GlassBottomBar).
   final EdgeInsetsGeometry padding;
@@ -84,7 +84,7 @@ class AnimatedGlassIndicator extends StatelessWidget {
     required this.indicatorColor,
     required this.isBackgroundIndicator,
     required this.borderRadius,
-    this.glassSettings,
+    this.settings,
     this.padding = EdgeInsets.zero,
     this.expansion = 8.0,
     this.useSuperellipse = true,
@@ -161,7 +161,7 @@ class AnimatedGlassIndicator extends StatelessWidget {
     // We fade the glass in/out by setting `visibility` on the settings rather
     // than wrapping the widget in `Opacity`.
     final fade = thickness.clamp(0.0, 1.0);
-    final base = glassSettings ?? _baseGlassSettings;
+    final base = settings ?? _baseGlassSettings;
     final effectiveSettings = base.copyWith(visibility: fade);
 
     final shape = useSuperellipse
@@ -178,11 +178,11 @@ class AnimatedGlassIndicator extends StatelessWidget {
       interactionIntensity: thickness,
       backgroundKey: backgroundKey,
       clipExpansion: _jellyClipExpansion,
-      // Map glassSettings.thickness → rimThickness (logical px rim width).
+      // Map settings.thickness → rimThickness (logical px rim width).
       // uThickness is declared but unused in interactive_indicator.frag;
       // uRimThickness is what actually controls the visible hairline rim width.
       // Clamp to 0–8 px: beyond 8 the rim bleeds into the pill body.
-      rimThickness: (glassSettings?.effectiveThickness ?? 0.5).clamp(0.0, 8.0),
+      rimThickness: (settings?.effectiveThickness ?? 0.5).clamp(0.0, 8.0),
       // Calibrate standard-tier indicator styling in Dart space instead of the shader:
       // Soften the forced rim outline to match premium's elegance and keep the body translucent.
       ambientRim: isStdPath ? 0.08 : 0.1,

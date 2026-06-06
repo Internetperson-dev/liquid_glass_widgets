@@ -16,7 +16,7 @@
 // Both the tab bar and segmented control already share the right abstractions:
 // DraggableIndicatorPhysics, AnimatedGlassIndicator, and GlassSpring.
 
-import 'package:flutter/material.dart';
+import 'package:flutter/cupertino.dart';
 
 import '../../../src/renderer/liquid_glass_renderer.dart';
 import '../../../src/types/glass_interaction_behavior.dart';
@@ -75,11 +75,7 @@ class SegmentedControlContent extends StatefulWidget {
 // =============================================================================
 
 class SegmentedControlContentState extends State<SegmentedControlContent> {
-  // ── Default colours ──────────────────────────────────────────────────────
-  static const _defaultIndicatorColor =
-      Color(0x33FFFFFF); // white.withValues(alpha: 0.2)
-  static const _defaultUnselectedTextColor =
-      Color(0x99FFFFFF); // white.withValues(alpha: 0.6)
+  // Colours are resolved dynamically in build() based on CupertinoTheme
 
   // ── Gesture state ─────────────────────────────────────────────────────────
   bool _isDown = false;
@@ -195,25 +191,32 @@ class SegmentedControlContentState extends State<SegmentedControlContent> {
 
   @override
   Widget build(BuildContext context) {
-    final indicatorColor = widget.indicatorColor ?? _defaultIndicatorColor;
+    final indicatorColor = widget.indicatorColor ??
+        (CupertinoTheme.brightnessOf(context) == Brightness.light
+            ? CupertinoColors.black.withValues(alpha: 0.08)
+            : CupertinoColors.white.withValues(alpha: 0.2));
     final targetAlignment = _computeXAlignmentForSegment(widget.selectedIndex);
 
     // Indicator is slightly less rounded than the container to account for
     // the inset padding.
     final indicatorRadius = widget.borderRadius - 3;
 
+    final dynamicLabelColor =
+        CupertinoTheme.of(context).textTheme.textStyle.color ??
+            CupertinoColors.label;
+
     final selectedTextStyle = widget.selectedTextStyle ??
-        const TextStyle(
+        TextStyle(
           fontSize: 13,
           fontWeight: FontWeight.w600,
-          color: Colors.white,
+          color: dynamicLabelColor,
         );
 
     final unselectedTextStyle = widget.unselectedTextStyle ??
-        const TextStyle(
+        TextStyle(
           fontSize: 13,
           fontWeight: FontWeight.w500,
-          color: _defaultUnselectedTextColor,
+          color: dynamicLabelColor.withValues(alpha: 0.6),
         );
 
     return Listener(
@@ -266,7 +269,7 @@ class SegmentedControlContentState extends State<SegmentedControlContent> {
                         indicatorColor: indicatorColor,
                         isBackgroundIndicator: false,
                         borderRadius: indicatorRadius,
-                        glassSettings: widget.indicatorSettings,
+                        settings: widget.indicatorSettings,
                         backgroundKey: widget.backgroundKey,
                       ),
                       // Segment labels always paint above the glass indicator.

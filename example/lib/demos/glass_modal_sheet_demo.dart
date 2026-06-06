@@ -32,14 +32,17 @@ class _ShowcaseAppState extends State<ShowcaseApp> {
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
+    return CupertinoApp(
       title: 'Glass Showcase',
       debugShowCheckedModeBanner: false,
-      themeMode: ThemeMode.dark,
-      darkTheme: ThemeData(
-        useMaterial3: true,
-        brightness: Brightness.dark,
-        colorSchemeSeed: Colors.blue,
+      theme: const CupertinoThemeData(brightness: Brightness.dark),
+      builder: (context, child) => Theme(
+        data: ThemeData(
+          useMaterial3: true,
+          brightness: Brightness.dark,
+          colorSchemeSeed: Colors.blue,
+        ),
+        child: child!,
       ),
       home: ShowcaseHomeScreen(
         onQualityChanged: _setQuality,
@@ -120,7 +123,7 @@ class _ShowcaseHomeScreenState extends State<ShowcaseHomeScreen> {
           selectedIconColor: Colors.blue,
           unselectedIconColor: Colors.white60,
           quality: GlassQuality.premium,
-          glassSettings: const LiquidGlassSettings(
+          settings: const LiquidGlassSettings(
             glassColor: Color(0xAA1C1C1E),
             blur: 25,
           ),
@@ -340,10 +343,10 @@ class _ShowcaseHomeScreenState extends State<ShowcaseHomeScreen> {
           // Peek Scenarios
           if (_selectedTab == 1) ...[
             _buildScenarioTile(
-              title: 'Glass Panel',
-              description: 'Standalone GlassPanel component demo',
+              title: 'Glass Card',
+              description: 'Standalone GlassCard component demo',
               icon: Icons.window_rounded,
-              onTap: () => _showGlassPanel(context),
+              onTap: () => _showGlassCard(context),
               color: Colors.green,
             ),
             const SizedBox(height: 24),
@@ -355,7 +358,7 @@ class _ShowcaseHomeScreenState extends State<ShowcaseHomeScreen> {
                 GlassMenu(
                   menuWidth: 240,
                   quality: widget.currentQuality,
-                  glassSettings: LiquidGlassSettings(
+                  settings: LiquidGlassSettings(
                     glassColor: Colors.transparent,
                     thickness: 30,
                     blur: 2,
@@ -454,7 +457,7 @@ class _ShowcaseHomeScreenState extends State<ShowcaseHomeScreen> {
                   menuWidth: 220,
                   quality: widget.currentQuality,
                   stretch: 0.0, // Disable liquid stretch physics
-                  glassSettings: LiquidGlassSettings(
+                  settings: LiquidGlassSettings(
                     glassColor: Colors.transparent,
                     thickness: 30,
                     blur: 2,
@@ -654,7 +657,7 @@ class _ShowcaseHomeScreenState extends State<ShowcaseHomeScreen> {
     );
   }
 
-  void _showGlassPanel(BuildContext context) {
+  void _showGlassCard(BuildContext context) {
     GlassSheet.show(
       context: context,
       quality: widget.currentQuality,
@@ -663,13 +666,14 @@ class _ShowcaseHomeScreenState extends State<ShowcaseHomeScreen> {
         children: [
           Padding(
             padding: EdgeInsets.all(24),
-            child: GlassPanel(
+            child: GlassCard(
               useOwnLayer: true,
+              padding: EdgeInsets.all(24),
               child: SizedBox(
                 height: 120,
                 child: Center(
                   child: Text(
-                    'Glass Panel',
+                    'Glass Card',
                     style: TextStyle(
                       color: Colors.white,
                       fontSize: 20,
@@ -681,7 +685,7 @@ class _ShowcaseHomeScreenState extends State<ShowcaseHomeScreen> {
             ),
           ),
           Text(
-            'Standalone GlassPanel component demo.',
+            'Standalone GlassCard component demo.',
             style: TextStyle(color: Colors.white54),
           ),
           SizedBox(height: 24),

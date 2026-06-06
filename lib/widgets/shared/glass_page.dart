@@ -399,11 +399,28 @@ class _GlassPageState extends State<GlassPage> {
             child: AdaptiveLiquidGlassLayer(
               settings: widget.settings,
               child: widget.background != null
-                  ? Theme(
-                      data: Theme.of(context).copyWith(
-                        scaffoldBackgroundColor: Colors.transparent,
-                      ),
-                      child: widget.child,
+                  ? Builder(
+                      builder: (context) {
+                        // Make the scaffold background transparent so the
+                        // glass layer shows through. Use MaterialLocalizations
+                        // presence to guard against pure CupertinoApp hosts
+                        // which have no Material Theme in scope.
+                        final hasMaterial =
+                            Localizations.of<MaterialLocalizations>(
+                                  context,
+                                  MaterialLocalizations,
+                                ) !=
+                                null;
+                        final child = widget.child;
+                        if (!hasMaterial) return child;
+                        return Theme(
+                          data: Theme.of(context).copyWith(
+                            scaffoldBackgroundColor:
+                                const Color(0x00000000), // transparent
+                          ),
+                          child: child,
+                        );
+                      },
                     )
                   : widget.child,
             ),

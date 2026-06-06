@@ -1,5 +1,5 @@
 import 'dart:async';
-
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import '../../src/renderer/liquid_glass_renderer.dart';
@@ -116,7 +116,7 @@ class GlassSlider extends StatefulWidget {
     this.label,
     this.activeColor,
     this.inactiveColor,
-    this.thumbColor = Colors.white,
+    this.thumbColor = CupertinoColors.white,
     this.trackHeight = 4.0,
     this.thumbRadius = 15.0,
     this.settings,
@@ -426,10 +426,15 @@ class _GlassSliderState extends State<GlassSlider>
             .clamp(0.0, 1.0);
 
     // Performance: Cache color calculations - these allocate on every build
-    final activeColor =
-        widget.activeColor ?? const Color(0xCCFFFFFF); // alpha: 0.8
-    final inactiveColor =
-        widget.inactiveColor ?? const Color(0x33FFFFFF); // alpha: 0.2
+    final brightness = CupertinoTheme.brightnessOf(context);
+    final activeColor = widget.activeColor ??
+        (brightness == Brightness.light
+            ? CupertinoColors.black.withValues(alpha: 0.8)
+            : CupertinoColors.white.withValues(alpha: 0.8));
+    final inactiveColor = widget.inactiveColor ??
+        (brightness == Brightness.light
+            ? CupertinoColors.black.withValues(alpha: 0.2)
+            : CupertinoColors.white.withValues(alpha: 0.2));
 
     return LayoutBuilder(
       builder: (context, constraints) {

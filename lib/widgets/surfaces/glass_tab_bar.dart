@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+import 'package:flutter/cupertino.dart';
 import '../../src/renderer/liquid_glass_renderer.dart';
 
 import '../../types/glass_quality.dart';
@@ -111,7 +111,7 @@ class GlassTabBar extends StatefulWidget {
     this.unselectedIconColor,
     this.iconSize = 24.0,
     this.labelPadding = const EdgeInsets.symmetric(horizontal: 16),
-    this.backgroundColor = Colors.transparent,
+    this.backgroundColor = const Color(0x00000000),
     this.settings,
     this.useOwnLayer = false,
     this.quality,
@@ -236,7 +236,8 @@ class GlassTabBar extends StatefulWidget {
 
 class _GlassTabBarState extends State<GlassTabBar> {
   // Cache default background color to avoid allocations
-  static const _defaultBackgroundColor = Color(0x1FFFFFFF); // Colors.white12
+  static const _defaultDarkBackgroundColor = Color(0x1FFFFFFF); // white12
+  static const _defaultLightBackgroundColor = Color(0x1F000000); // black12
 
   final ScrollController _scrollController = ScrollController();
 
@@ -268,10 +269,12 @@ class _GlassTabBarState extends State<GlassTabBar> {
       widgetQuality: widget.quality,
     );
 
-    final glassSettings = widget.settings ?? _defaultGlassSettings;
+    final effectiveSettings = widget.settings ?? _defaultGlassSettings;
 
-    final backgroundColor = widget.backgroundColor == Colors.transparent
-        ? _defaultBackgroundColor
+    final backgroundColor = widget.backgroundColor == const Color(0x00000000)
+        ? (CupertinoTheme.brightnessOf(context) == Brightness.light
+            ? _defaultLightBackgroundColor
+            : _defaultDarkBackgroundColor)
         : widget.backgroundColor;
 
     final borderRadius =
@@ -313,7 +316,7 @@ class _GlassTabBarState extends State<GlassTabBar> {
 
     if (widget.useOwnLayer) {
       return AdaptiveLiquidGlassLayer(
-        settings: glassSettings,
+        settings: effectiveSettings,
         quality: effectiveQuality,
         child: content,
       );

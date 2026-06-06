@@ -1,3 +1,4 @@
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:liquid_glass_widgets/liquid_glass_widgets.dart';
@@ -80,7 +81,7 @@ void main() {
         ),
       );
 
-      await tester.enterText(find.byType(TextField).first, 'flutter');
+      await tester.enterText(find.byType(CupertinoTextField).first, 'flutter');
 
       expect(text, equals('flutter'));
     });
@@ -99,7 +100,7 @@ void main() {
         ),
       );
 
-      await tester.enterText(find.byType(TextField).first, 'test');
+      await tester.enterText(find.byType(CupertinoTextField).first, 'test');
       await tester.testTextInput.receiveAction(TextInputAction.done);
 
       expect(submitted, equals('test'));
@@ -138,7 +139,8 @@ void main() {
         ),
       );
 
-      final textField = tester.widget<TextField>(find.byType(TextField).first);
+      final textField = tester
+          .widget<CupertinoTextField>(find.byType(CupertinoTextField).first);
       expect(textField.obscureText, isTrue);
     });
 
@@ -154,7 +156,8 @@ void main() {
         ),
       );
 
-      final textField = tester.widget<TextField>(find.byType(TextField).first);
+      final textField = tester
+          .widget<CupertinoTextField>(find.byType(CupertinoTextField).first);
       expect(textField.enabled, isFalse);
     });
 

@@ -1,6 +1,9 @@
 /// GlassMenu Demo — all 9 alignment positions, adjustable item count,
 /// scrollable overflow handling, and premium glass quality.
 ///
+/// Includes test controls for text scaling and light/dark theme to verify
+/// the fixes for GitHub issues (auto-scroll with large text, light mode colors).
+///
 /// Run standalone:
 ///   flutter run -t example/lib/demos/glass_menu_demo.dart
 library;
@@ -44,15 +47,28 @@ void main() async {
   ));
 }
 
-class _App extends StatelessWidget {
+class _App extends StatefulWidget {
   const _App();
 
   @override
+  State<_App> createState() => _AppState();
+}
+
+class _AppState extends State<_App> {
+  bool _isDark = true;
+
+  @override
   Widget build(BuildContext context) {
-    return const MaterialApp(
+    return CupertinoApp(
       title: 'GlassMenu Demo',
       debugShowCheckedModeBanner: false,
-      home: MenuDemoPage(),
+      theme: CupertinoThemeData(
+        brightness: _isDark ? Brightness.dark : Brightness.light,
+      ),
+      home: MenuDemoPage(
+        isDark: _isDark,
+        onThemeToggle: () => setState(() => _isDark = !_isDark),
+      ),
     );
   }
 }
@@ -60,7 +76,17 @@ class _App extends StatelessWidget {
 // ── Demo screen ─────────────────────────────────────────────────────────────
 
 class MenuDemoPage extends StatefulWidget {
-  const MenuDemoPage({super.key});
+  const MenuDemoPage({
+    super.key,
+    this.isDark,
+    this.onThemeToggle,
+  });
+
+  /// External theme state. If null, the widget manages its own toggle.
+  final bool? isDark;
+
+  /// External theme toggle callback. If null, the widget manages its own toggle.
+  final VoidCallback? onThemeToggle;
 
   @override
   State<MenuDemoPage> createState() => _MenuDemoPageState();
@@ -68,169 +94,271 @@ class MenuDemoPage extends StatefulWidget {
 
 class _MenuDemoPageState extends State<MenuDemoPage> {
   int _itemCount = 5;
+  double _textScale = 1.0;
+  bool _internalIsDark = true;
 
-  List<Widget> get _items => List.generate(
-        _itemCount,
-        (i) => GlassMenuItem(
-          title: 'Option ${i + 1}',
-          icon: const Icon(CupertinoIcons.star_fill),
-          onTap: () => debugPrint('tapped ${i + 1}'),
+  bool get _isDark => widget.isDark ?? _internalIsDark;
+
+  void _toggleTheme() {
+    if (widget.onThemeToggle != null) {
+      widget.onThemeToggle!();
+    } else {
+      setState(() => _internalIsDark = !_internalIsDark);
+    }
+  }
+
+  List<Widget> get _items => [
+        // Section label — tests theme color inheritance
+        const GlassMenuLabel(title: 'Actions'),
+        ...List.generate(
+          _itemCount,
+          (i) => GlassMenuItem(
+            title: 'Option ${i + 1}',
+            icon: const Icon(CupertinoIcons.star_fill),
+            onTap: () => debugPrint('tapped ${i + 1}'),
+          ),
         ),
-      );
+        // Divider — tests theme color inheritance
+        const GlassMenuDivider(),
+        GlassMenuItem(
+          title: 'Delete',
+          icon: const Icon(CupertinoIcons.trash),
+          isDestructive: true,
+          onTap: () => debugPrint('delete'),
+        ),
+      ];
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      body: Stack(
-        fit: StackFit.expand,
-        children: [
-          // Vibrant wallpaper so glass refraction is clearly visible
-          Image.asset(
-            'assets/wallpaper.jpg',
-            fit: BoxFit.cover,
-          ),
+    final labelColor = _isDark ? Colors.white70 : Colors.black54;
+    final titleColor = _isDark ? Colors.white : Colors.black87;
 
-          // Dark scrim so the buttons are readable but glass still refracts
-          Container(color: Colors.black.withValues(alpha: 0.25)),
+    // Wrap with MediaQuery to override text scale for testing
+    return MediaQuery(
+      data: MediaQuery.of(context).copyWith(
+        textScaler: TextScaler.linear(_textScale),
+      ),
+      child: CupertinoPageScaffold(
+        child: Stack(
+          fit: StackFit.expand,
+          children: [
+            // Wallpaper
+            Image.asset(
+              'assets/wallpaper.jpg',
+              fit: BoxFit.cover,
+            ),
 
-          SafeArea(
-            child: Column(
-              children: [
-                // ── Title ────────────────────────────────────────────────
-                const Padding(
-                  padding: EdgeInsets.symmetric(vertical: 12),
-                  child: Text(
-                    'GlassMenu — All Alignments',
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontSize: 17,
-                      fontWeight: FontWeight.w600,
-                      letterSpacing: -0.3,
+            // Theme-aware scrim
+            Container(
+              color: _isDark
+                  ? Colors.black.withValues(alpha: 0.25)
+                  : Colors.white.withValues(alpha: 0.15),
+            ),
+
+            SafeArea(
+              child: Column(
+                children: [
+                  // ── Title ────────────────────────────────────────────
+                  Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 8),
+                    child: Text(
+                      'GlassMenu — All Alignments',
+                      style: TextStyle(
+                        color: titleColor,
+                        fontSize: 17,
+                        fontWeight: FontWeight.w600,
+                        letterSpacing: -0.3,
+                      ),
                     ),
                   ),
-                ),
 
-                // ── Item count slider ─────────────────────────────────────
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 20),
-                  child: Row(
-                    children: [
-                      Text(
-                        'Items: $_itemCount',
-                        style: const TextStyle(
-                          color: Colors.white70,
-                          fontSize: 13,
-                          fontWeight: FontWeight.w500,
-                        ),
-                      ),
-                      Expanded(
-                        child: Slider(
-                          value: _itemCount.toDouble(),
-                          min: 1,
-                          max: 20,
-                          divisions: 19,
-                          activeColor: Colors.white,
-                          inactiveColor: Colors.white30,
-                          onChanged: (v) =>
-                              setState(() => _itemCount = v.round()),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-
-                const SizedBox(height: 8),
-
-                // ── 3×3 grid of menu triggers ─────────────────────────────
-                Expanded(
-                  child: Padding(
-                    padding:
-                        const EdgeInsets.symmetric(horizontal: 24, vertical: 8),
+                  // ── Controls row ─────────────────────────────────────
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 20),
                     child: Column(
-                      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                       children: [
-                        _row([
-                          _Trigger(
-                            label: '↖ TL',
-                            alignment: GlassMenuAlignment.topLeft,
-                            items: _items,
-                            width: 52,
-                            height: 52,
-                            shape: const LiquidOval(),
-                          ),
-                          _Trigger(
-                            label: '↑ TC',
-                            alignment: GlassMenuAlignment.topCenter,
-                            items: _items,
-                            width: 96,
-                            height: 40,
-                          ),
-                          _Trigger(
-                            label: '↗ TR',
-                            alignment: GlassMenuAlignment.topRight,
-                            items: _items,
-                            width: 52,
-                            height: 52,
-                            shape: const LiquidOval(),
-                          ),
-                        ]),
-                        _row([
-                          _Trigger(
-                            label: '← CL',
-                            alignment: GlassMenuAlignment.centerLeft,
-                            items: _items,
-                            width: 96,
-                            height: 40,
-                          ),
-                          _Trigger(
-                            label: '●',
-                            alignment: GlassMenuAlignment.center,
-                            items: _items,
-                            width: 56,
-                            height: 56,
-                            shape: const LiquidOval(),
-                          ),
-                          _Trigger(
-                            label: 'CR →',
-                            alignment: GlassMenuAlignment.centerRight,
-                            items: _items,
-                            width: 96,
-                            height: 40,
-                          ),
-                        ]),
-                        _row([
-                          _Trigger(
-                            label: '↙ BL',
-                            alignment: GlassMenuAlignment.bottomLeft,
-                            items: _items,
-                            width: 52,
-                            height: 52,
-                            shape: const LiquidOval(),
-                          ),
-                          _Trigger(
-                            label: '↓ BC',
-                            alignment: GlassMenuAlignment.bottomCenter,
-                            items: _items,
-                            width: 96,
-                            height: 40,
-                          ),
-                          _Trigger(
-                            label: '↘ BR',
-                            alignment: GlassMenuAlignment.bottomRight,
-                            items: _items,
-                            width: 52,
-                            height: 52,
-                            shape: const LiquidOval(),
-                          ),
-                        ]),
+                        // Item count slider
+                        Row(
+                          children: [
+                            Text(
+                              'Items: $_itemCount',
+                              style: TextStyle(
+                                color: labelColor,
+                                fontSize: 13,
+                                fontWeight: FontWeight.w500,
+                              ),
+                            ),
+                            Expanded(
+                              child: CupertinoSlider(
+                                value: _itemCount.toDouble(),
+                                min: 1,
+                                max: 20,
+                                divisions: 19,
+                                onChanged: (v) =>
+                                    setState(() => _itemCount = v.round()),
+                              ),
+                            ),
+                          ],
+                        ),
+
+                        // Text scale slider (to test the auto-scroll fix)
+                        Row(
+                          children: [
+                            Text(
+                              'Text: ${_textScale.toStringAsFixed(1)}×',
+                              style: TextStyle(
+                                color: labelColor,
+                                fontSize: 13,
+                                fontWeight: FontWeight.w500,
+                              ),
+                            ),
+                            Expanded(
+                              child: CupertinoSlider(
+                                value: _textScale,
+                                min: 1.0,
+                                max: 3.0,
+                                divisions: 20,
+                                onChanged: (v) =>
+                                    setState(() => _textScale = v),
+                              ),
+                            ),
+                          ],
+                        ),
+
+                        // Theme toggle
+                        Row(
+                          children: [
+                            Text(
+                              'Theme:',
+                              style: TextStyle(
+                                color: labelColor,
+                                fontSize: 13,
+                                fontWeight: FontWeight.w500,
+                              ),
+                            ),
+                            const SizedBox(width: 8),
+                            CupertinoButton(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 12,
+                                vertical: 4,
+                              ),
+                              onPressed: _toggleTheme,
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Icon(
+                                    _isDark
+                                        ? CupertinoIcons.moon_fill
+                                        : CupertinoIcons.sun_max_fill,
+                                    size: 16,
+                                  ),
+                                  const SizedBox(width: 6),
+                                  Text(
+                                    _isDark ? 'Dark' : 'Light',
+                                    style: const TextStyle(fontSize: 14),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ],
+                        ),
                       ],
                     ),
                   ),
-                ),
-              ],
+
+                  const SizedBox(height: 8),
+
+                  // ── 3×3 grid of menu triggers ─────────────────────────
+                  Expanded(
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 24, vertical: 8),
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                        children: [
+                          _row([
+                            _Trigger(
+                              label: '↖ TL',
+                              alignment: GlassMenuAlignment.topLeft,
+                              items: _items,
+                              width: 52,
+                              height: 52,
+                              shape: const LiquidOval(),
+                            ),
+                            _Trigger(
+                              label: '↑ TC',
+                              alignment: GlassMenuAlignment.topCenter,
+                              items: _items,
+                              width: 96,
+                              height: 40,
+                            ),
+                            _Trigger(
+                              label: '↗ TR',
+                              alignment: GlassMenuAlignment.topRight,
+                              items: _items,
+                              width: 52,
+                              height: 52,
+                              shape: const LiquidOval(),
+                            ),
+                          ]),
+                          _row([
+                            _Trigger(
+                              label: '← CL',
+                              alignment: GlassMenuAlignment.centerLeft,
+                              items: _items,
+                              width: 96,
+                              height: 40,
+                            ),
+                            _Trigger(
+                              label: '●',
+                              alignment: GlassMenuAlignment.center,
+                              items: _items,
+                              width: 56,
+                              height: 56,
+                              shape: const LiquidOval(),
+                            ),
+                            _Trigger(
+                              label: 'CR →',
+                              alignment: GlassMenuAlignment.centerRight,
+                              items: _items,
+                              width: 96,
+                              height: 40,
+                            ),
+                          ]),
+                          _row([
+                            _Trigger(
+                              label: '↙ BL',
+                              alignment: GlassMenuAlignment.bottomLeft,
+                              items: _items,
+                              width: 52,
+                              height: 52,
+                              shape: const LiquidOval(),
+                            ),
+                            _Trigger(
+                              label: '↓ BC',
+                              alignment: GlassMenuAlignment.bottomCenter,
+                              items: _items,
+                              width: 96,
+                              height: 40,
+                            ),
+                            _Trigger(
+                              label: '↘ BR',
+                              alignment: GlassMenuAlignment.bottomRight,
+                              items: _items,
+                              width: 52,
+                              height: 52,
+                              shape: const LiquidOval(),
+                            ),
+                          ]),
+                        ],
+                      ),
+                    ),
+                  ),
+                ],
+              ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
@@ -270,7 +398,7 @@ class _Trigger extends StatelessWidget {
       menuAlignment: alignment,
       autoAdjustToScreen: true,
       items: items,
-      glassSettings: _kMenuGlass,
+      settings: _kMenuGlass,
       quality: GlassQuality.premium,
       triggerBuilder: (ctx, toggle) => AdaptiveLiquidGlassLayer(
         child: GlassButton.custom(

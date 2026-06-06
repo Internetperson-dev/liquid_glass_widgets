@@ -6,6 +6,7 @@
 // pattern (LiquidGlassWidgets.initialize + wrap) for consistency with
 // other examples.
 
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:liquid_glass_widgets/liquid_glass_widgets.dart';
 
@@ -21,10 +22,14 @@ class TabBarTestApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
+    return CupertinoApp(
       title: 'GlassTabBar Scrollable Demo',
-      theme: ThemeData.dark().copyWith(
-        scaffoldBackgroundColor: const Color(0xFF1E1E1E),
+      theme: const CupertinoThemeData(brightness: Brightness.dark),
+      builder: (context, child) => Theme(
+        data: ThemeData.dark(useMaterial3: true).copyWith(
+          scaffoldBackgroundColor: const Color(0xFF1E1E1E),
+        ),
+        child: child!,
       ),
       home: const TabBarTestHome(),
       debugShowCheckedModeBanner: false,

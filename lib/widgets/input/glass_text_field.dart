@@ -1,3 +1,4 @@
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import '../../src/renderer/liquid_glass_renderer.dart';
@@ -631,7 +632,7 @@ class _GlassTextFieldState extends State<GlassTextField> {
 
         // Text field
         Expanded(
-          child: TextField(
+          child: CupertinoTextField(
             key: _textFieldKey,
             controller: widget.controller,
             focusNode: _focusNode,
@@ -653,14 +654,11 @@ class _GlassTextFieldState extends State<GlassTextField> {
                 (event) => FocusManager.instance.primaryFocus?.unfocus(),
             inputFormatters: widget.inputFormatters,
             style: widget.textStyle ?? defaultTextStyle,
-            decoration: InputDecoration(
-              hintText: widget.placeholder,
-              hintStyle: widget.placeholderStyle ?? defaultPlaceholderStyle,
-              border: InputBorder.none,
-              isDense: true,
-              contentPadding: EdgeInsets.zero,
-              counterText: '', // Hide character counter
-            ),
+            placeholder: widget.placeholder,
+            placeholderStyle:
+                widget.placeholderStyle ?? defaultPlaceholderStyle,
+            padding: EdgeInsets.zero,
+            decoration: null,
           ),
         ),
 

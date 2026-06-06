@@ -163,12 +163,12 @@ void main() {
       expect(find.byType(GlassPicker), findsOneWidget);
     });
 
-    testWidgets('renders with custom glassSettings', (tester) async {
+    testWidgets('renders with custom settings', (tester) async {
       await tester.pumpWidget(
         createTestApp(
           child: const GlassPicker(
             value: 'G',
-            glassSettings: LiquidGlassSettings(thickness: 20),
+            settings: LiquidGlassSettings(thickness: 20),
           ),
         ),
       );

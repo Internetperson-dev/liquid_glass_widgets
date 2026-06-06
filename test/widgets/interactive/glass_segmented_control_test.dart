@@ -359,8 +359,7 @@ void main() {
       expect(find.byType(GlassSegmentedControl), findsOneWidget);
     });
 
-    testWidgets('explicit glassSettings works with useOwnLayer',
-        (tester) async {
+    testWidgets('explicit settings works with useOwnLayer', (tester) async {
       await tester.pumpWidget(
         createTestApp(
           child: GlassSegmentedControl(
@@ -368,7 +367,7 @@ void main() {
             selectedIndex: 0,
             onSegmentSelected: (_) {},
             useOwnLayer: true,
-            glassSettings: const LiquidGlassSettings(thickness: 25),
+            settings: const LiquidGlassSettings(thickness: 25),
           ),
         ),
       );

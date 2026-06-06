@@ -22,11 +22,15 @@ class _DemoApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
+    return CupertinoApp(
       title: 'tabWidth Demo',
       debugShowCheckedModeBanner: false,
-      theme: ThemeData.dark().copyWith(
-        scaffoldBackgroundColor: const Color(0xFF0A0A0F),
+      theme: const CupertinoThemeData(brightness: Brightness.dark),
+      builder: (context, child) => Theme(
+        data: ThemeData.dark(useMaterial3: true).copyWith(
+          scaffoldBackgroundColor: const Color(0xFF0A0A0F),
+        ),
+        child: child!,
       ),
       home: const TabWidthDemoPage(),
     );

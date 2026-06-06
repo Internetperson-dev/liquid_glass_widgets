@@ -1,7 +1,6 @@
 import 'dart:async';
 
 import 'package:flutter/cupertino.dart';
-import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
 import '../../src/renderer/liquid_glass_renderer.dart';
@@ -37,7 +36,7 @@ import '../shared/adaptive_glass.dart';
 ///   children: [
 ///     Text(
 ///       '$_quantity',
-///       style: TextStyle(fontSize: 22, color: Colors.white, fontWeight: FontWeight.w600),
+///       style: TextStyle(fontSize: 22, color: CupertinoColors.white, fontWeight: FontWeight.w600),
 ///     ),
 ///     const SizedBox(width: 16),
 ///     GlassStepper(
@@ -283,7 +282,10 @@ class _GlassStepperState extends State<GlassStepper> {
                   width: widget.dividerWidth,
                   height: widget.height,
                   child: ColoredBox(
-                    color: Colors.white.withValues(alpha: 0.25),
+                    color:
+                        CupertinoTheme.brightnessOf(context) == Brightness.light
+                            ? CupertinoColors.black.withValues(alpha: 0.25)
+                            : CupertinoColors.white.withValues(alpha: 0.25),
                   ),
                 ),
 
@@ -355,7 +357,8 @@ class _StepperSide extends StatelessWidget {
             opacity: isEnabled ? 1.0 : 0.3,
             child: Icon(
               icon,
-              color: Colors.white,
+              color: CupertinoTheme.of(context).textTheme.textStyle.color ??
+                  CupertinoColors.label,
               size: 20,
             ),
           ),

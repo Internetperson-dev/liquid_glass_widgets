@@ -2,7 +2,7 @@
 // GlassSearchableBottomBar into searchable_bottom_bar_internal.dart.
 //
 // Covers:
-//   • DismissPill — render, tap, indicatorColor/glassSettings branches
+//   • DismissPill — render, tap, indicatorColor/settings branches
 //   • SearchableTabIndicator — drag, tap, cancel, didUpdateWidget, search-active state
 //   • SearchPill — collapsed/expanded render, text clear, focus, didUpdateWidget
 import 'package:flutter/cupertino.dart';
@@ -118,8 +118,7 @@ void main() {
       expect(tapped, isTrue);
     });
 
-    testWidgets('renders with indicatorColor but no glassSettings',
-        (tester) async {
+    testWidgets('renders with indicatorColor but no settings', (tester) async {
       await tester.pumpWidget(
         _wrap(
           DismissPill(
@@ -137,7 +136,7 @@ void main() {
       expect(find.byType(DismissPill), findsOneWidget);
     });
 
-    testWidgets('renders with glassSettings and indicatorColor merged',
+    testWidgets('renders with settings and indicatorColor merged',
         (tester) async {
       await tester.pumpWidget(
         _wrap(
@@ -147,7 +146,7 @@ void main() {
             barBorderRadius: 16,
             quality: GlassQuality.minimal,
             indicatorColor: const Color(0xFF123456),
-            glassSettings: const LiquidGlassSettings(blur: 4),
+            settings: const LiquidGlassSettings(blur: 4),
           ),
           width: 56,
           height: 56,
@@ -617,7 +616,7 @@ void main() {
       await tester.pump();
 
       // TextField should exist in expanded state
-      expect(find.byType(TextField), findsAtLeastNWidgets(1));
+      expect(find.byType(CupertinoTextField), findsAtLeastNWidgets(1));
     });
 
     testWidgets('shows mic icon when onMicTap provided', (tester) async {
@@ -661,7 +660,7 @@ void main() {
       await tester.pump();
 
       // Enter text
-      await tester.enterText(find.byType(TextField), 'hello');
+      await tester.enterText(find.byType(CupertinoTextField), 'hello');
       await tester.pump();
 
       expect(find.byIcon(CupertinoIcons.clear_circled_solid), findsOneWidget);

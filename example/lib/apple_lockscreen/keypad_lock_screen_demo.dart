@@ -19,9 +19,13 @@ void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await LiquidGlassWidgets.initialize();
   runApp(LiquidGlassWidgets.wrap(
-    child: MaterialApp(
+    child: CupertinoApp(
       debugShowCheckedModeBanner: false,
-      theme: ThemeData(brightness: Brightness.dark, useMaterial3: true),
+      theme: const CupertinoThemeData(brightness: Brightness.dark),
+      builder: (context, child) => Theme(
+        data: ThemeData.dark(useMaterial3: true),
+        child: child!,
+      ),
       home: const KeypadLockScreenDemo(),
     ),
   ));

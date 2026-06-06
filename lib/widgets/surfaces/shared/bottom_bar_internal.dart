@@ -596,7 +596,7 @@ class TabIndicatorState extends State<TabIndicator>
                 borderRadius: thickness < 1 ? backgroundRadius : glassRadius,
                 padding: const EdgeInsets.all(4),
                 expansion: widget.indicatorExpansion,
-                glassSettings: widget.indicatorSettings,
+                settings: widget.indicatorSettings,
                 backgroundKey: widget.backgroundKey,
               ),
 
@@ -668,7 +668,7 @@ class TabIndicatorState extends State<TabIndicator>
               borderRadius: thickness < 1 ? backgroundRadius : glassRadius,
               padding: const EdgeInsets.all(4),
               expansion: widget.indicatorExpansion,
-              glassSettings: widget.indicatorSettings,
+              settings: widget.indicatorSettings,
               backgroundKey: widget.backgroundKey,
             ),
 
@@ -736,7 +736,7 @@ class TabIndicatorState extends State<TabIndicator>
               borderRadius: thickness < 1 ? backgroundRadius : glassRadius,
               padding: const EdgeInsets.all(4),
               expansion: widget.indicatorExpansion,
-              glassSettings: widget.indicatorSettings,
+              settings: widget.indicatorSettings,
               backgroundKey: widget.backgroundKey,
             ),
           ],

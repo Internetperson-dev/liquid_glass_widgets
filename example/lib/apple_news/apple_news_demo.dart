@@ -214,14 +214,18 @@ class AppleNewsDemoApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
+    return CupertinoApp(
       title: 'Apple News',
-      theme: ThemeData.dark().copyWith(
-        scaffoldBackgroundColor: _kBackground,
-        colorScheme: const ColorScheme.dark(
-          primary: _kNewsRed,
-          surface: _kBackground,
+      theme: const CupertinoThemeData(brightness: Brightness.dark),
+      builder: (context, child) => Theme(
+        data: ThemeData.dark(useMaterial3: true).copyWith(
+          scaffoldBackgroundColor: _kBackground,
+          colorScheme: const ColorScheme.dark(
+            primary: _kNewsRed,
+            surface: _kBackground,
+          ),
         ),
+        child: child!,
       ),
       home: const AppleNewsHomeScreen(),
       debugShowCheckedModeBanner: false,
@@ -299,7 +303,7 @@ class _AppleNewsHomeScreenState extends State<AppleNewsHomeScreen> {
           indicatorColor: Colors.white.withValues(alpha: 0.20),
           quality: GlassQuality.premium,
           interactionBehavior: GlassInteractionBehavior.full,
-          glassSettings: LiquidGlassSettings(
+          settings: LiquidGlassSettings(
             glassColor: const Color(0xAA1C1C1E),
             thickness: 30,
             blur: 2,

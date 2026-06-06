@@ -72,14 +72,18 @@ class AppleMusicDemoApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
+    return CupertinoApp(
       title: 'Apple Music',
-      theme: ThemeData.dark().copyWith(
-        scaffoldBackgroundColor: _kBackground,
-        colorScheme: const ColorScheme.dark(
-          primary: _kMusicRed,
-          surface: _kBackground,
+      theme: const CupertinoThemeData(brightness: Brightness.dark),
+      builder: (context, child) => Theme(
+        data: ThemeData.dark(useMaterial3: true).copyWith(
+          scaffoldBackgroundColor: _kBackground,
+          colorScheme: const ColorScheme.dark(
+            primary: _kMusicRed,
+            surface: _kBackground,
+          ),
         ),
+        child: child!,
       ),
       home: const AppleMusicHomeScreen(),
       debugShowCheckedModeBanner: false,
@@ -356,7 +360,7 @@ class _AppleMusicHomeScreenState extends State<AppleMusicHomeScreen> {
           iconLabelSpacing: 0,
           quality: GlassQuality.premium,
           interactionBehavior: GlassInteractionBehavior.full,
-          glassSettings: _barGlassSettings,
+          settings: _barGlassSettings,
           searchConfig: GlassSearchBarConfig(
             focusNode: _searchFocusNode,
             autoFocusOnExpand: false,

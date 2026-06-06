@@ -14,6 +14,7 @@
 ///   flutter run -t lib/apple_messages/apple_messages_demo.dart
 library;
 
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:liquid_glass_widgets/liquid_glass_widgets.dart';
@@ -211,14 +212,18 @@ class AppleMessagesDemoApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
+    return CupertinoApp(
       title: 'Messages',
-      theme: ThemeData.dark().copyWith(
-        scaffoldBackgroundColor: _kBg,
-        colorScheme: const ColorScheme.dark(
-          primary: _kBlue,
-          surface: _kBg,
+      theme: const CupertinoThemeData(brightness: Brightness.dark),
+      builder: (context, child) => Theme(
+        data: ThemeData.dark(useMaterial3: true).copyWith(
+          scaffoldBackgroundColor: _kBg,
+          colorScheme: const ColorScheme.dark(
+            primary: _kBlue,
+            surface: _kBg,
+          ),
         ),
+        child: child!,
       ),
       home: const MessagesScreen(),
       debugShowCheckedModeBanner: false,
@@ -404,7 +409,7 @@ class _EditMenu extends StatelessWidget {
   Widget build(BuildContext context) {
     return GlassMenu(
       menuWidth: 260,
-      glassSettings: _kMenuGlass,
+      settings: _kMenuGlass,
       menuBorderRadius: 16,
       quality: GlassQuality.premium,
       triggerBuilder: (context, toggleMenu) => GlassButton.custom(
@@ -465,7 +470,7 @@ class _FilterMenu extends StatelessWidget {
   Widget build(BuildContext context) {
     return GlassMenu(
       menuWidth: 240,
-      glassSettings: _kMenuGlass,
+      settings: _kMenuGlass,
       menuBorderRadius: 16,
       quality: GlassQuality.premium,
       triggerBuilder: (context, toggleMenu) => GlassButton(

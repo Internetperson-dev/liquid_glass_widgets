@@ -21,9 +21,14 @@ class TextFieldDemoApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return const MaterialApp(
+    return CupertinoApp(
       debugShowCheckedModeBanner: false,
-      home: TextFieldDemo(),
+      theme: const CupertinoThemeData(brightness: Brightness.dark),
+      builder: (context, child) => Theme(
+        data: ThemeData.dark(useMaterial3: true),
+        child: child!,
+      ),
+      home: const TextFieldDemo(),
     );
   }
 }

@@ -201,45 +201,6 @@ class ContainersPage extends StatelessWidget {
 
                         const SizedBox(height: 40),
 
-                        // ── GlassPanel ─────────────────────────────────────
-                        const _SectionTitle(title: 'GlassPanel'),
-                        const SizedBox(height: 16),
-                        GlassPanel(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              const Text(
-                                'Settings Panel',
-                                style: TextStyle(
-                                  fontSize: 24,
-                                  fontWeight: FontWeight.bold,
-                                  color: Colors.white,
-                                ),
-                              ),
-                              const SizedBox(height: 20),
-                              _SettingsRow(
-                                icon: Icon(CupertinoIcons.bell_fill),
-                                title: 'Notifications',
-                                subtitle: 'Manage notification settings',
-                              ),
-                              const SizedBox(height: 16),
-                              _SettingsRow(
-                                icon: Icon(CupertinoIcons.lock_fill),
-                                title: 'Privacy',
-                                subtitle: 'Control your privacy settings',
-                              ),
-                              const SizedBox(height: 16),
-                              _SettingsRow(
-                                icon: Icon(CupertinoIcons.paintbrush_fill),
-                                title: 'Appearance',
-                                subtitle: 'Customize the look and feel',
-                              ),
-                            ],
-                          ),
-                        ),
-
-                        const SizedBox(height: 40),
-
                         // ── GlassDivider ───────────────────────────────────
                         const _SectionTitle(title: 'GlassDivider'),
                         const SizedBox(height: 16),
@@ -318,17 +279,106 @@ class ContainersPage extends StatelessWidget {
 
                         const SizedBox(height: 40),
 
+                        // ── GlassGroupedSection ─────────────────────────
+                        const _SectionTitle(title: 'GlassGroupedSection'),
+                        const SizedBox(height: 8),
+                        Text(
+                          'Auto-manages isLast on final tile',
+                          style: TextStyle(
+                            fontSize: 13,
+                            color: Colors.white.withValues(alpha: 0.5),
+                          ),
+                        ),
+                        const SizedBox(height: 16),
+                        GlassGroupedSection(
+                          header: Padding(
+                            padding: const EdgeInsets.only(left: 16, bottom: 8),
+                            child: Text(
+                              'NETWORK',
+                              style: TextStyle(
+                                color: Colors.white.withValues(alpha: 0.5),
+                                fontSize: 13,
+                                fontWeight: FontWeight.w600,
+                                letterSpacing: 0.5,
+                              ),
+                            ),
+                          ),
+                          children: [
+                            GlassListTile(
+                              leading: const Icon(CupertinoIcons.wifi,
+                                  color: Colors.blue),
+                              title: const Text('Wi-Fi'),
+                              subtitle: const Text('Connected'),
+                              trailing: GlassListTile.chevron,
+                              onTap: () {},
+                            ),
+                            GlassListTile(
+                              leading: Icon(CupertinoIcons.bluetooth,
+                                  color: Colors.blue.shade300),
+                              title: const Text('Bluetooth'),
+                              subtitle: const Text('On'),
+                              trailing: GlassListTile.chevron,
+                              onTap: () {},
+                            ),
+                            GlassListTile(
+                              leading: const Icon(
+                                  CupertinoIcons.antenna_radiowaves_left_right,
+                                  color: Colors.green),
+                              title: const Text('VPN'),
+                              trailing: GlassListTile.chevron,
+                              onTap: () {},
+                              // No isLast needed — GlassGroupedSection handles it!
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 16),
+                        GlassGroupedSection(
+                          header: Padding(
+                            padding: const EdgeInsets.only(left: 16, bottom: 8),
+                            child: Text(
+                              'DISPLAY',
+                              style: TextStyle(
+                                color: Colors.white.withValues(alpha: 0.5),
+                                fontSize: 13,
+                                fontWeight: FontWeight.w600,
+                                letterSpacing: 0.5,
+                              ),
+                            ),
+                          ),
+                          footer: Padding(
+                            padding: const EdgeInsets.only(left: 16, top: 8),
+                            child: Text(
+                              'Adjusts the colour temperature of your display.',
+                              style: TextStyle(
+                                color: Colors.white.withValues(alpha: 0.4),
+                                fontSize: 12,
+                              ),
+                            ),
+                          ),
+                          children: [
+                            GlassListTile(
+                              leading: const Icon(CupertinoIcons.brightness,
+                                  color: Colors.orange),
+                              title: const Text('Brightness'),
+                              trailing: GlassListTile.chevron,
+                              onTap: () {},
+                            ),
+                            GlassListTile(
+                              leading: const Icon(CupertinoIcons.moon_fill,
+                                  color: Colors.indigo),
+                              title: const Text('Night Shift'),
+                              trailing: GlassListTile.chevron,
+                              onTap: () {},
+                            ),
+                          ],
+                        ),
+
+                        const SizedBox(height: 40),
+
                         // ── GlassStepper ───────────────────────────────────
                         const _SectionTitle(title: 'GlassStepper'),
                         const SizedBox(height: 16),
                         const _StepperDemo(),
-
-                        const SizedBox(height: 40),
-
-                        // ── GlassWizard ────────────────────────────────────
-                        const _SectionTitle(title: 'GlassWizard'),
-                        const SizedBox(height: 16),
-                        const _WizardDemo(),
 
                         const SizedBox(height: 100),
                       ],
@@ -394,63 +444,6 @@ class _MiniCard extends StatelessWidget {
           ],
         ),
       ),
-    );
-  }
-}
-
-class _SettingsRow extends StatelessWidget {
-  const _SettingsRow({
-    required this.icon,
-    required this.title,
-    required this.subtitle,
-  });
-
-  final Widget icon;
-  final String title;
-  final String subtitle;
-
-  @override
-  Widget build(BuildContext context) {
-    return Row(
-      children: [
-        Container(
-          width: 40,
-          height: 40,
-          decoration: BoxDecoration(
-            color: Colors.white.withValues(alpha: 0.1),
-            borderRadius: BorderRadius.circular(10),
-          ),
-          child: icon,
-        ),
-        const SizedBox(width: 16),
-        Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                title,
-                style: const TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.w600,
-                  color: Colors.white,
-                ),
-              ),
-              Text(
-                subtitle,
-                style: TextStyle(
-                  fontSize: 13,
-                  color: Colors.white.withValues(alpha: 0.6),
-                ),
-              ),
-            ],
-          ),
-        ),
-        Icon(
-          CupertinoIcons.chevron_right,
-          color: Colors.white.withValues(alpha: 0.4),
-          size: 20,
-        ),
-      ],
     );
   }
 }
@@ -565,56 +558,6 @@ class _StepperDemoState extends State<_StepperDemo> {
               ),
             ],
           ),
-        ),
-      ],
-    );
-  }
-}
-
-class _WizardDemo extends StatefulWidget {
-  const _WizardDemo();
-
-  @override
-  State<_WizardDemo> createState() => _WizardDemoState();
-}
-
-class _WizardDemoState extends State<_WizardDemo> {
-  int _currentStep = 0;
-
-  @override
-  Widget build(BuildContext context) {
-    return GlassWizard(
-      currentStep: _currentStep,
-      onStepTapped: (i) => setState(() => _currentStep = i),
-      steps: [
-        GlassWizardStep(
-          title: const Text('Account'),
-          subtitle: const Text('Enter your credentials'),
-          content: Padding(
-            padding: const EdgeInsets.only(bottom: 8),
-            child: GlassButton(
-              icon: const Icon(CupertinoIcons.arrow_right),
-              label: 'Continue',
-              onTap: () => setState(() => _currentStep = 1),
-            ),
-          ),
-        ),
-        GlassWizardStep(
-          title: const Text('Profile'),
-          subtitle: const Text('Tell us about yourself'),
-          content: Padding(
-            padding: const EdgeInsets.only(bottom: 8),
-            child: GlassButton(
-              icon: const Icon(CupertinoIcons.arrow_right),
-              label: 'Continue',
-              onTap: () => setState(() => _currentStep = 2),
-            ),
-          ),
-        ),
-        const GlassWizardStep(
-          title: Text('All done'),
-          subtitle: Text('Your account is ready'),
-          isCompleted: true,
         ),
       ],
     );

@@ -43,7 +43,7 @@ class DismissPill extends StatelessWidget {
     this.cancelIcon,
     this.cancelIconSize = 24,
     this.indicatorColor,
-    this.glassSettings,
+    this.settings,
     super.key,
   });
 
@@ -55,7 +55,7 @@ class DismissPill extends StatelessWidget {
   final Widget? cancelIcon;
   final double cancelIconSize;
   final Color? indicatorColor;
-  final LiquidGlassSettings? glassSettings;
+  final LiquidGlassSettings? settings;
 
   @override
   Widget build(BuildContext context) {
@@ -68,11 +68,11 @@ class DismissPill extends StatelessWidget {
       // useOwnLayer defaults to false — the pill participates in the parent
       // AdaptiveLiquidGlassLayer so glass colour, blur and lighting are
       // identical to the adjacent search pill.
-      settings: glassSettings?.copyWith(
-              glassColor: safeColor ?? glassSettings?.glassColor) ??
-          (safeColor != null
-              ? LiquidGlassSettings(glassColor: safeColor)
-              : null),
+      settings:
+          settings?.copyWith(glassColor: safeColor ?? settings?.glassColor) ??
+              (safeColor != null
+                  ? LiquidGlassSettings(glassColor: safeColor)
+                  : null),
       shape: LiquidRoundedSuperellipse(borderRadius: barBorderRadius),
       icon: cancelIcon ??
           Icon(
@@ -409,7 +409,7 @@ class SearchableTabIndicatorState extends State<SearchableTabIndicator>
                   borderRadius: thickness < 1 ? backgroundRadius : glassRadius,
                   padding: const EdgeInsets.all(4),
                   expansion: widget.indicatorExpansion,
-                  glassSettings: widget.indicatorSettings,
+                  settings: widget.indicatorSettings,
                   backgroundKey: widget.backgroundKey,
                 ),
 
@@ -476,7 +476,7 @@ class SearchableTabIndicatorState extends State<SearchableTabIndicator>
                 borderRadius: effRadius,
                 padding: const EdgeInsets.all(4),
                 expansion: widget.indicatorExpansion,
-                glassSettings: widget.indicatorSettings,
+                settings: widget.indicatorSettings,
                 backgroundKey: widget.backgroundKey,
               ),
 
@@ -537,7 +537,7 @@ class SearchableTabIndicatorState extends State<SearchableTabIndicator>
                 borderRadius: effRadius,
                 padding: const EdgeInsets.all(4),
                 expansion: widget.indicatorExpansion,
-                glassSettings: widget.indicatorSettings,
+                settings: widget.indicatorSettings,
                 backgroundKey: widget.backgroundKey,
               ),
             ],
@@ -854,7 +854,7 @@ class SearchPillState extends State<SearchPill> {
           Icon(CupertinoIcons.search, color: iconColor, size: 18),
           const SizedBox(width: 8),
           Expanded(
-            child: TextField(
+            child: CupertinoTextField(
               controller: _controller,
               focusNode: _focusNode,
               autofocus: false,
@@ -878,16 +878,13 @@ class SearchPillState extends State<SearchPill> {
               // pre-0.13.0 "cursor matches textColor" behaviour pass
               // `cursorColor: textColor` explicitly via [config].
               cursorColor: config.cursorColor,
-              decoration: InputDecoration(
-                hintText: config.hintText,
-                hintStyle: (config.hintStyle ??
-                        const TextStyle(
-                            fontSize: 17, fontWeight: FontWeight.w400))
-                    .copyWith(color: iconColor),
-                border: InputBorder.none,
-                isDense: true,
-                contentPadding: EdgeInsets.zero,
-              ),
+              placeholder: config.hintText,
+              placeholderStyle: (config.hintStyle ??
+                      const TextStyle(
+                          fontSize: 17, fontWeight: FontWeight.w400))
+                  .copyWith(color: iconColor),
+              padding: EdgeInsets.zero,
+              decoration: null,
             ),
           ),
           const SizedBox(width: 8),

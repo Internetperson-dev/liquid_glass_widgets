@@ -7,8 +7,7 @@
 // Used under MIT License.
 
 import 'dart:ui' as ui;
-
-import 'package:flutter/material.dart';
+import 'package:flutter/cupertino.dart';
 import '../../src/renderer/liquid_glass_renderer.dart';
 
 import '../../types/glass_quality.dart';
@@ -132,7 +131,7 @@ import 'shared/bar_layout_utils.dart';
 ///   unselectedIconColor: Colors.white.withOpacity(0.6),
 ///   iconSize: 28,
 ///   textStyle: TextStyle(fontSize: 12, fontWeight: FontWeight.w600),
-///   glassSettings: LiquidGlassSettings(
+///   settings: LiquidGlassSettings(
 ///     thickness: 40,
 ///     blur: 5,
 ///     refractiveIndex: 1.7,
@@ -200,12 +199,12 @@ class GlassBottomBar extends StatefulWidget {
     this.iconLabelSpacing = 4,
     this.enableBlend = true,
     this.blendAmount = 10,
-    this.glassSettings,
+    this.settings,
     this.showIndicator = true,
     this.indicatorColor,
     this.indicatorSettings,
-    this.selectedIconColor = Colors.white,
-    this.unselectedIconColor = Colors.white,
+    this.selectedIconColor,
+    this.unselectedIconColor,
     this.iconSize = 24,
     this.labelFontSize = 11,
     this.textStyle,
@@ -438,7 +437,7 @@ class GlassBottomBar extends StatefulWidget {
   /// - ambientStrength: 1
   /// - lightAngle: 0.75 * π (135°, Apple standard — upper-left)
   /// - glassColor: Colors.white24
-  final LiquidGlassSettings? glassSettings;
+  final LiquidGlassSettings? settings;
 
   /// Rendering quality for the glass effect.
   ///
@@ -482,15 +481,13 @@ class GlassBottomBar extends StatefulWidget {
   // Tab Style Properties
   // ===========================================================================
 
-  /// Color of the icon when a tab is selected.
-  ///
-  /// Defaults to [Colors.white].
-  final Color selectedIconColor;
+  /// Icon color when a tab is selected. Defaults to dynamic label color.
+  final Color? selectedIconColor;
 
   /// Color of the icon when a tab is not selected.
   ///
   /// Defaults to [Colors.white].
-  final Color unselectedIconColor;
+  final Color? unselectedIconColor;
 
   /// Size of the tab icons.
   ///
@@ -563,6 +560,14 @@ class _GlassBottomBarState extends State<GlassBottomBar> {
     final effectiveInteractionGlowColor =
         widget.interactionGlowColor ?? resolvedGlowColors.primary;
 
+    final dynamicLabelColor =
+        CupertinoTheme.of(context).textTheme.textStyle.color ??
+            CupertinoColors.label;
+    final resolvedSelectedIconColor =
+        widget.selectedIconColor ?? dynamicLabelColor;
+    final resolvedUnselectedIconColor =
+        widget.unselectedIconColor ?? dynamicLabelColor;
+
     // Glow appearance fields come from the theme; they cannot be set per-widget
     // because they are part of the theme palette. Widgets that need custom
     // values should supply a custom GlassGlowColors via GlassTheme.
@@ -571,10 +576,10 @@ class _GlassBottomBarState extends State<GlassBottomBar> {
     final effectiveGlowOpacity = resolvedGlowColors.glowOpacity;
 
     // Use custom glass settings or cached defaults for bottom bars
-    final glassSettings = widget.glassSettings ?? _defaultGlassSettings;
+    final effectiveSettings = widget.settings ?? _defaultGlassSettings;
 
     return AdaptiveLiquidGlassLayer(
-      settings: glassSettings,
+      settings: effectiveSettings,
       quality: effectiveQuality,
       blendAmount: widget.enableBlend
           ? widget.blendAmount
@@ -621,7 +626,7 @@ class _GlassBottomBarState extends State<GlassBottomBar> {
                           config: widget.extraButton!,
                           quality: effectiveQuality,
                           iconColor: widget.extraButton!.iconColor ??
-                              widget.unselectedIconColor,
+                              resolvedUnselectedIconColor,
                           borderRadius: widget.barBorderRadius ==
                                   GlassBottomBar._defaultBarBorderRadius
                               ? null
@@ -654,7 +659,7 @@ class _GlassBottomBarState extends State<GlassBottomBar> {
                       indicatorExpansion: widget.indicatorExpansion,
                       interactionGlowColor: widget.interactionBehavior.hasGlow
                           ? effectiveInteractionGlowColor
-                          : Colors.transparent,
+                          : const Color(0x00000000),
                       interactionGlowRadius: widget.interactionGlowRadius,
                       interactionGlowBlurRadius: effectiveGlowBlurRadius,
                       interactionGlowSpreadRadius: effectiveGlowSpreadRadius,
@@ -669,8 +674,9 @@ class _GlassBottomBarState extends State<GlassBottomBar> {
                               child: BottomBarTabItem(
                                 tab: widget.tabs[i],
                                 selected: false,
-                                selectedIconColor: widget.selectedIconColor,
-                                unselectedIconColor: widget.unselectedIconColor,
+                                selectedIconColor: resolvedSelectedIconColor,
+                                unselectedIconColor:
+                                    resolvedUnselectedIconColor,
                                 iconSize: widget.iconSize,
                                 labelFontSize: widget.labelFontSize,
                                 textStyle: widget.textStyle,
@@ -688,7 +694,11 @@ class _GlassBottomBarState extends State<GlassBottomBar> {
                       ),
                       // Pass selected tabs (foreground/masked layer)
                       selectedTabBuilder: (context, intensity, alignment) =>
-                          _buildSelectedTabs(intensity, alignment),
+                          _buildSelectedTabs(
+                              intensity,
+                              alignment,
+                              resolvedSelectedIconColor,
+                              resolvedUnselectedIconColor),
                       magnification: widget.magnification,
                       innerBlur: widget.innerBlur,
                     ),
@@ -702,7 +712,8 @@ class _GlassBottomBarState extends State<GlassBottomBar> {
     );
   }
 
-  Widget _buildSelectedTabs(double intensity, Alignment alignment) {
+  Widget _buildSelectedTabs(double intensity, Alignment alignment,
+      Color resolvedSelectedIconColor, Color resolvedUnselectedIconColor) {
     // Lerp magnification: 1.0 -> widget.magnification
     final scale = ui.lerpDouble(1.0, widget.magnification, intensity) ?? 1.0;
 
@@ -723,8 +734,8 @@ class _GlassBottomBarState extends State<GlassBottomBar> {
                     child: BottomBarTabItem(
                       tab: widget.tabs[i],
                       selected: true,
-                      selectedIconColor: widget.selectedIconColor,
-                      unselectedIconColor: widget.unselectedIconColor,
+                      selectedIconColor: resolvedSelectedIconColor,
+                      unselectedIconColor: resolvedUnselectedIconColor,
                       iconSize: widget.iconSize,
                       labelFontSize: widget.labelFontSize,
                       textStyle: widget.textStyle,

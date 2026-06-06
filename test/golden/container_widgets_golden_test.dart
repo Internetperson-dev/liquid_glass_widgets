@@ -1,7 +1,6 @@
 import 'package:alchemist/alchemist.dart';
 import 'package:liquid_glass_widgets/widgets/containers/glass_card.dart';
 import 'package:liquid_glass_widgets/widgets/containers/glass_container.dart';
-import 'package:liquid_glass_widgets/widgets/containers/glass_panel.dart';
 import 'package:flutter/material.dart';
 import 'package:liquid_glass_widgets/widgets/shared/adaptive_liquid_glass_layer.dart';
 
@@ -104,46 +103,6 @@ void main() {
                     'No Padding',
                     style: TextStyle(color: Colors.white),
                   ),
-                ),
-              ),
-            ),
-          ),
-        ),
-      ],
-    ),
-  );
-
-  goldenTest(
-    'GlassPanel renders correctly',
-    fileName: 'glass_panel',
-    pumpBeforeTest: pumpOnce,
-    builder: () => GoldenTestGroup(
-      scenarioConstraints: testScenarioConstraints,
-      children: [
-        GoldenTestScenario(
-          name: 'default',
-          child: buildWithGradientBackground(
-            AdaptiveLiquidGlassLayer(
-              settings: defaultTestGlassSettings,
-              child: const GlassPanel(
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Text(
-                      'Panel Title',
-                      style: TextStyle(
-                        fontSize: 24,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.white,
-                      ),
-                    ),
-                    SizedBox(height: 16),
-                    Text(
-                      'Panel content with more generous padding',
-                      style: TextStyle(color: Colors.white),
-                      textAlign: TextAlign.center,
-                    ),
-                  ],
                 ),
               ),
             ),

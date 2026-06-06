@@ -66,7 +66,7 @@ class _PlatformViewDemoState extends State<PlatformViewDemo> {
           ],
         ),
         bottomNavigationBar: GlassBottomBar(
-          glassSettings: const LiquidGlassSettings(glassColor: Colors.black54),
+          settings: const LiquidGlassSettings(glassColor: Colors.black54),
           // ┌─────────────────────────────────────────────────────────────┐
           // │  THE FIX: Use GlassQuality.standard on iOS.               │
           // │                                                           │

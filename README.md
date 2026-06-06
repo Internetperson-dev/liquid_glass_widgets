@@ -95,32 +95,68 @@ Eight focused, self-contained demos — one widget, one file, runnable standalon
 | `nav_bar_patterns_demo.dart` — GlassScaffold layout patterns | `cd example && flutter run -t lib/demos/nav_bar_patterns_demo.dart` |
 
 
+## Glass vs Content — Design Philosophy
+
+In iOS 26, **glass is reserved for the navigation and control layer** — the
+floating UI that sits above your app's content. Content areas (lists, cards,
+article tiles) stay opaque.
+
+| ✅ Use glass for | ❌ Keep opaque |
+|---|---|
+| Navigation bars, tab bars, toolbars | List cells, table rows |
+| Floating action buttons | Full-screen backgrounds |
+| Sheets, popovers, menus | Scrollable content cards |
+| Toggles, sliders, segmented controls | Article tiles, media players |
+
+**Typical screen composition:**
+
+```
+┌──────────────────────────┐
+│   GlassAppBar (glass)    │  ← Navigation chrome
+├──────────────────────────┤
+│                          │
+│   Opaque content area    │  ← Standard Flutter widgets
+│   (ListView, Cards, etc) │
+│                          │
+├──────────────────────────┤
+│  GlassBottomBar (glass)  │  ← Navigation chrome
+└──────────────────────────┘
+```
+
+Building a Settings screen? Use `GlassScaffold` + `GlassAppBar` for navigation
+chrome, and `CupertinoListTile` or standard Flutter containers for the rows.
+Use `GlassGroupedSection` when you want glass-styled grouped rows.
+
+
 ## Widget Categories
 
 ### Containers
-`GlassCard` · `GlassPanel` · `GlassContainer` · `GlassDivider` · `GlassListTile` · `GlassStepper` · `GlassWizard`
+`GlassCard` · `GlassContainer`\* · `GlassDivider` · `GlassGroupedSection` · `GlassListTile` · `GlassStepper`
+
+\* `GlassContainer` is a low-level building block for custom glass surfaces.
+Most apps should use `GlassCard` or `GlassGroupedSection` instead.
 
 ### Interactive
-`GlassButton` · `GlassIconButton` · `GlassChip` · `GlassSwitch` · `GlassSlider` · `GlassSegmentedControl` · `GlassPullDownButton` · `GlassButtonGroup` · `GlassBadge`
+`GlassButton` · `GlassIconButton` · `GlassChip` · `GlassSwitch` · `GlassSlider` · `GlassSegmentedControl` · `GlassPullDownButton` · `GlassButtonGroup` · `GlassBadge` · `GlassPageControl`
 
 ### Input
 `GlassTextField` · `GlassTextArea` · `GlassPasswordField` · `GlassSearchBar` · `GlassPicker` · `GlassFormField`
 
 ### Feedback
-`GlassProgressIndicator` · `GlassToast` · `GlassSnackBar`
+`GlassProgressIndicator` · `GlassToast`
 
 ### Overlays
 `GlassDialog` · `GlassSheet` · `GlassModalSheet` · `showGlassActionSheet` · `GlassMenu` · `GlassMenuItem`
 
 ### Surfaces
-`GlassScaffold` · `GlassAppBar` · `GlassBottomBar` · `GlassSearchableBottomBar` · `GlassTabBar` · `GlassSideBar` · `GlassToolbar`
+`GlassScaffold` · `GlassAppBar` · `GlassBottomBar` · `GlassSearchableBottomBar` · `GlassTabBar` · `GlassToolbar`
 
 
 ## Installation
 
 ```yaml
 dependencies:
-  liquid_glass_widgets: ^0.14.2
+  liquid_glass_widgets: ^0.15.0
 ```
 
 ```bash

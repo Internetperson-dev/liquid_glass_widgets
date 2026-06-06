@@ -22,7 +22,7 @@ class GlassPicker extends StatelessWidget {
     this.padding = const EdgeInsets.symmetric(horizontal: 16),
     this.textStyle,
     this.placeholderStyle,
-    this.glassSettings,
+    this.settings,
     this.useOwnLayer = false,
     this.quality,
     this.shape = const LiquidRoundedSuperellipse(borderRadius: 10),
@@ -60,7 +60,7 @@ class GlassPicker extends StatelessWidget {
   final TextStyle? placeholderStyle;
 
   /// Glass settings.
-  final LiquidGlassSettings? glassSettings;
+  final LiquidGlassSettings? settings;
 
   /// Whether to use its own layer (true) or grouped (false).
   final bool useOwnLayer;
@@ -112,7 +112,7 @@ class GlassPicker extends StatelessWidget {
 
     final glassWidget = AdaptiveGlass(
       shape: shape,
-      settings: glassSettings ?? const LiquidGlassSettings(blur: 8),
+      settings: settings ?? const LiquidGlassSettings(blur: 8),
       quality: effectiveQuality,
       useOwnLayer: useOwnLayer,
       child: child,

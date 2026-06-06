@@ -99,7 +99,7 @@ class GlassPopover extends StatefulWidget {
     this.alignment,
     this.autoAdjustToScreen = true,
     this.screenPadding = const EdgeInsets.all(12),
-    this.glassSettings,
+    this.settings,
     this.quality,
     this.stretch = 0.3,
     this.interactionScale = 1.02,
@@ -197,7 +197,7 @@ class GlassPopover extends StatefulWidget {
   ///
   /// If null, inherits from parent [InheritedLiquidGlass] or uses subtle
   /// overlay defaults.
-  final LiquidGlassSettings? glassSettings;
+  final LiquidGlassSettings? settings;
 
   /// Rendering quality for the glass effect.
   ///

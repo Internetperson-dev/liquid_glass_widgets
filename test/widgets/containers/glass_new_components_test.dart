@@ -322,123 +322,6 @@ void main() {
   });
 
   // ===========================================================================
-  // GlassWizard  (multi-step flow — not an iOS 26 native equivalent)
-  // ===========================================================================
-
-  group('GlassWizard', () {
-    List<GlassWizardStep> makeSteps() => const [
-          GlassWizardStep(title: Text('Step 1')),
-          GlassWizardStep(title: Text('Step 2')),
-          GlassWizardStep(
-            title: Text('Step 3'),
-            subtitle: Text('Final'),
-            isCompleted: true,
-          ),
-        ];
-
-    testWidgets('renders all step titles', (tester) async {
-      await tester.pumpWidget(
-        MaterialApp(
-          home: Scaffold(body: GlassWizard(steps: makeSteps())),
-        ),
-      );
-      await tester.pump();
-      expect(find.text('Step 1'), findsOneWidget);
-      expect(find.text('Step 2'), findsOneWidget);
-      expect(find.text('Step 3'), findsOneWidget);
-      expect(find.text('Final'), findsOneWidget);
-    });
-
-    testWidgets('renders step numbers', (tester) async {
-      await tester.pumpWidget(
-        MaterialApp(
-          home: Scaffold(body: GlassWizard(steps: makeSteps())),
-        ),
-      );
-      await tester.pump();
-      expect(find.text('1'), findsOneWidget);
-      expect(find.text('2'), findsOneWidget);
-    });
-
-    testWidgets('shows checkmark for completed steps', (tester) async {
-      await tester.pumpWidget(
-        MaterialApp(
-          home: Scaffold(
-            body: GlassWizard(steps: makeSteps(), currentStep: 2),
-          ),
-        ),
-      );
-      await tester.pump();
-      expect(find.byIcon(Icons.check), findsWidgets);
-    });
-
-    testWidgets('fires onStepTapped', (tester) async {
-      int? tappedStep;
-      await tester.pumpWidget(
-        MaterialApp(
-          home: Scaffold(
-            body: GlassWizard(
-              steps: makeSteps(),
-              onStepTapped: (i) => tappedStep = i,
-            ),
-          ),
-        ),
-      );
-      await tester.pump();
-      await tester.tap(find.text('Step 2'));
-      expect(tappedStep, 1);
-    });
-
-    testWidgets('shows active step content', (tester) async {
-      final steps = [
-        const GlassWizardStep(
-          title: Text('Step 1'),
-          content: Text('Content Here'),
-        ),
-        const GlassWizardStep(title: Text('Step 2')),
-      ];
-      await tester.pumpWidget(
-        MaterialApp(
-          home: Scaffold(body: GlassWizard(steps: steps, currentStep: 0)),
-        ),
-      );
-      await tester.pump();
-      expect(find.text('Content Here'), findsOneWidget);
-    });
-
-    testWidgets('hides non-active step content', (tester) async {
-      final steps = [
-        const GlassWizardStep(
-          title: Text('Step 1'),
-          content: Text('Content A'),
-        ),
-        const GlassWizardStep(
-          title: Text('Step 2'),
-          content: Text('Content B'),
-        ),
-      ];
-      await tester.pumpWidget(
-        MaterialApp(
-          home: Scaffold(body: GlassWizard(steps: steps, currentStep: 1)),
-        ),
-      );
-      await tester.pump();
-      expect(find.text('Content A'), findsNothing);
-      expect(find.text('Content B'), findsOneWidget);
-    });
-
-    testWidgets('can be instantiated with zero steps', (tester) async {
-      await tester.pumpWidget(
-        const MaterialApp(
-          home: Scaffold(body: GlassWizard(steps: [])),
-        ),
-      );
-      await tester.pump();
-      expect(find.byType(GlassWizard), findsOneWidget);
-    });
-  });
-
-  // ===========================================================================
   // Additional GlassStepper coverage: autoRepeat timer path (lines 196, 208)
   // and tap-cancel → _cancelRepeat (lines 273-275, 304-306)
   // ===========================================================================
@@ -573,6 +456,111 @@ void main() {
       );
       await tester.pumpAndSettle();
       expect(find.byIcon(Icons.arrow_forward_ios), findsOneWidget);
+    });
+  });
+
+  // ===========================================================================
+  // GlassGroupedSection
+  // ===========================================================================
+
+  group('GlassGroupedSection', () {
+    testWidgets('renders all children', (tester) async {
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: GlassGroupedSection(
+              children: [
+                GlassListTile(title: Text('Item 1')),
+                GlassListTile(title: Text('Item 2')),
+                GlassListTile(title: Text('Item 3')),
+              ],
+            ),
+          ),
+        ),
+      );
+      expect(find.text('Item 1'), findsOneWidget);
+      expect(find.text('Item 2'), findsOneWidget);
+      expect(find.text('Item 3'), findsOneWidget);
+    });
+
+    testWidgets('renders header when provided', (tester) async {
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: GlassGroupedSection(
+              header: Text('Section Header'),
+              children: [
+                GlassListTile(title: Text('Item')),
+              ],
+            ),
+          ),
+        ),
+      );
+      expect(find.text('Section Header'), findsOneWidget);
+    });
+
+    testWidgets('renders footer when provided', (tester) async {
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: GlassGroupedSection(
+              footer: Text('Section Footer'),
+              children: [
+                GlassListTile(title: Text('Item')),
+              ],
+            ),
+          ),
+        ),
+      );
+      expect(find.text('Section Footer'), findsOneWidget);
+    });
+
+    testWidgets('wraps children in a GlassCard', (tester) async {
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: GlassGroupedSection(
+              children: [
+                GlassListTile(title: Text('Item')),
+              ],
+            ),
+          ),
+        ),
+      );
+      expect(find.byType(GlassCard), findsOneWidget);
+    });
+
+    testWidgets('handles non-GlassListTile children gracefully',
+        (tester) async {
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: GlassGroupedSection(
+              children: [
+                GlassListTile(title: Text('Tile')),
+                const SizedBox(height: 10), // Non-GlassListTile child
+              ],
+            ),
+          ),
+        ),
+      );
+      expect(find.text('Tile'), findsOneWidget);
+      expect(find.byType(SizedBox), findsWidgets);
+    });
+
+    testWidgets('handles single child', (tester) async {
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: GlassGroupedSection(
+              children: [
+                GlassListTile(title: Text('Only Item')),
+              ],
+            ),
+          ),
+        ),
+      );
+      expect(find.text('Only Item'), findsOneWidget);
     });
   });
 }

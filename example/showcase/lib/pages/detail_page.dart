@@ -358,7 +358,7 @@ class _DetailPageState extends State<DetailPage>
           _selectedSegment = index;
         });
       },
-      glassSettings: ShowcaseGlassTheme.segmentedControl,
+      settings: ShowcaseGlassTheme.segmentedControl,
     );
   }
 

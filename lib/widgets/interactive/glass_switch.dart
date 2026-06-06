@@ -72,7 +72,7 @@ class GlassSwitch extends StatefulWidget {
     super.key,
     this.activeColor,
     this.inactiveColor,
-    this.thumbColor = Colors.white,
+    this.thumbColor = CupertinoColors.white,
     this.width = 58.0,
     this.height = 26.0,
     this.settings,
@@ -496,7 +496,7 @@ class _GlassSwitchState extends State<GlassSwitch>
             final blendedColor =
                 Color.lerp(inactiveTrackColor, activeTrackColor, position)!;
             final specularTop =
-                Color.lerp(activeTrackColor, Colors.white, 0.25)!;
+                Color.lerp(activeTrackColor, CupertinoColors.white, 0.25)!;
 
             final track = Container(
               width: trackWidth,

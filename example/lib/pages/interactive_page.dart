@@ -27,6 +27,9 @@ class _InteractivePageState extends State<InteractivePage> {
   // Chip state
   final Set<String> _selectedFilters = {'Flutter', 'iOS'};
 
+  // Page control state
+  int _currentPage = 0;
+
   @override
   Widget build(BuildContext context) {
     return GlassPage(
@@ -165,6 +168,69 @@ class _InteractivePageState extends State<InteractivePage> {
                             shape: const LiquidRoundedSuperellipse(
                                 borderRadius: 16),
                             glowColor: Colors.red.withValues(alpha: 0.3),
+                          ),
+                        ],
+                      ),
+
+                      const SizedBox(height: 24),
+
+                      // Prominent style
+                      Text(
+                        'GlassButtonStyle.prominent — primary CTA',
+                        style: TextStyle(
+                          fontSize: 13,
+                          color: Colors.white.withValues(alpha: 0.5),
+                        ),
+                      ),
+                      const SizedBox(height: 12),
+                      Row(
+                        children: [
+                          Expanded(
+                            child: GlassButton.custom(
+                              style: GlassButtonStyle.prominent,
+                              onTap: () {},
+                              height: 52,
+                              child: Row(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  Icon(CupertinoIcons.plus_circle_fill,
+                                      color: Colors.white, size: 20),
+                                  const SizedBox(width: 8),
+                                  const Text(
+                                    'Add to Library',
+                                    style: TextStyle(
+                                      fontSize: 16,
+                                      fontWeight: FontWeight.w600,
+                                      color: Colors.white,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 12),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                        children: [
+                          GlassButton(
+                            style: GlassButtonStyle.prominent,
+                            icon: Icon(CupertinoIcons.cart_fill),
+                            onTap: () {},
+                            label: 'Buy',
+                          ),
+                          GlassButton(
+                            style: GlassButtonStyle.filled,
+                            icon: Icon(CupertinoIcons.cart),
+                            onTap: () {},
+                            label: 'Browse',
+                          ),
+                          GlassButton(
+                            style: GlassButtonStyle.transparent,
+                            icon: Icon(CupertinoIcons.info),
+                            onTap: () {},
+                            label: 'Info',
                           ),
                         ],
                       ),
@@ -481,6 +547,78 @@ class _InteractivePageState extends State<InteractivePage> {
                             },
                           );
                         }).toList(),
+                      ),
+
+                      const SizedBox(height: 40),
+
+                      // ── GlassPageControl ──────────────────────────────
+                      const _SectionTitle(title: 'GlassPageControl'),
+                      const SizedBox(height: 8),
+                      Text(
+                        'Glass capsule with dot indicators — iOS 26 style',
+                        style: TextStyle(
+                          fontSize: 13,
+                          color: Colors.white.withValues(alpha: 0.5),
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+                      Center(
+                        child: GlassPageControl(
+                          count: 7,
+                          currentPage: _currentPage,
+                          onPageChanged: (page) =>
+                              setState(() => _currentPage = page),
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+                      Center(
+                        child: Text(
+                          'Page ${_currentPage + 1} of 7',
+                          style: TextStyle(
+                            fontSize: 14,
+                            color: Colors.white.withValues(alpha: 0.6),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 20),
+                      // Weather-style bottom bar layout
+                      Text(
+                        'Weather-style bottom bar',
+                        style: TextStyle(
+                          fontSize: 13,
+                          color: Colors.white.withValues(alpha: 0.5),
+                        ),
+                      ),
+                      const SizedBox(height: 12),
+                      Row(
+                        children: [
+                          // Map button (left)
+                          GlassButton(
+                            icon: Icon(CupertinoIcons.map),
+                            onTap: () {},
+                          ),
+                          const SizedBox(width: 8),
+                          // Page control (center, fills remaining space)
+                          Expanded(
+                            child: GlassPageControl(
+                              count: 7,
+                              currentPage: _currentPage,
+                              leadingIcon: Icon(
+                                CupertinoIcons.location_fill,
+                                color: Colors.white,
+                                size: 10,
+                              ),
+                              onPageChanged: (page) =>
+                                  setState(() => _currentPage = page),
+                            ),
+                          ),
+                          const SizedBox(width: 8),
+                          // List button (right)
+                          GlassButton(
+                            icon: Icon(CupertinoIcons.list_bullet),
+                            onTap: () {},
+                          ),
+                        ],
                       ),
 
                       const SizedBox(height: 100),

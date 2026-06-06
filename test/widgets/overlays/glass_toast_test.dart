@@ -323,51 +323,6 @@ void main() {
     });
   });
 
-  group('GlassSnackBar', () {
-    testWidgets('is a subclass of GlassToast', (tester) async {
-      await tester.pumpWidget(
-        createTestApp(
-          child: Builder(
-            builder: (context) => const GlassSnackBar(
-              message: 'Snackbar message',
-            ),
-          ),
-        ),
-      );
-
-      expect(find.text('Snackbar message'), findsOneWidget);
-      expect(find.byType(GlassSnackBar), findsOneWidget);
-    });
-
-    testWidgets('GlassSnackBar.show works like GlassToast.show',
-        (tester) async {
-      await tester.pumpWidget(
-        createTestApp(
-          child: Builder(
-            builder: (context) {
-              return ElevatedButton(
-                onPressed: () {
-                  GlassSnackBar.show(
-                    context,
-                    message: 'Snackbar shown',
-                    duration: const Duration(seconds: 1),
-                  );
-                },
-                child: const Text('Show Snackbar'),
-              );
-            },
-          ),
-        ),
-      );
-
-      await tester.tap(find.text('Show Snackbar'));
-      await tester.pump();
-      await tester.pump(const Duration(milliseconds: 100));
-
-      expect(find.text('Snackbar shown'), findsOneWidget);
-    });
-  });
-
   group('GlassToastAction', () {
     test('can be instantiated with required parameters', () {
       final action = GlassToastAction(

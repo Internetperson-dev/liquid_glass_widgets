@@ -1,6 +1,6 @@
 # Roadmap: 0.15.0 → 1.0.0
 
-> Last updated: 2025-06-03
+> Last updated: 2025-06-04
 
 This document tracks the planned work to get `liquid_glass_widgets` from the
 current 0.14.x series to a stable 1.0.0 release. The guiding principle is:
@@ -9,14 +9,15 @@ half-baked, nothing Material-flavoured.
 
 ---
 
-## 0.14.x — Stabilisation (current)
+## 0.14.x — Stabilisation ✅
 
-Let 0.14.0 settle. Collect bug reports and community feedback. Ship patch
-releases as needed. **No breaking changes.**
+0.14.0–0.14.2 shipped, settled, and patch-released. 0.14.2 completed the
+initial Material artifact purge (InkWell → GestureDetector, Material icons →
+Cupertino). **Done.**
 
 ---
 
-## 0.15.0 — API Cleanup (Breaking)
+## 0.15.0 — API Cleanup (Breaking) ✅
 
 A focused breaking release that removes Material-leaning and thin-wrapper
 widgets before the API surface gets cemented at 1.0.
@@ -30,11 +31,11 @@ widgets before the API surface gets cemented at 1.0.
 | `GlassSnackBar` | Literally documented as "Alias for GlassToast to match Material Design naming." Remove the alias, keep `GlassToast`. |
 | `GlassPanel` | Thin convenience wrapper — identical to `GlassContainer` except `padding: 24` instead of `16` and `borderRadius: 20` instead of `12`. Not worth the API surface. Users can pass those two values to `GlassCard` or `GlassContainer`. |
 
-### Deprecations to Remove
+### Deprecations
 
 | Symbol | Notes |
 |---|---|
-| `GlassBackdropScope` | Deprecated in 0.14.0 (now a no-op). Delete the widget entirely in 0.15.0. |
+| `GlassBackdropScope` | Deprecated in 0.14.0 (now a no-op). Kept as deprecated until 1.0.0 per the published deprecation timeline. Will be deleted in 1.0.0. |
 
 ### Exports & Tests
 
@@ -73,6 +74,7 @@ Every remaining widget should map to a recognisable iOS 26 component:
 | `GlassBadge` | Notification badge | ✅ Direct mapping (`UITabBarItem.badgeValue`) |
 | `GlassButtonGroup` | Grouped button bar | ✅ iOS toolbar button groups |
 | `GlassPullDownButton` | `UIMenu` pull-down | ✅ Direct iOS 16+ mapping |
+| `GlassPageControl` | `UIPageControl` | ✅ Direct mapping — dot indicators for paged content |
 | **Input** | | |
 | `GlassTextField` | `UITextField` | ✅ Solid, community-tested |
 | `GlassTextArea` | Multi-line `UITextView` | ✅ Solid |
@@ -107,24 +109,12 @@ Every remaining widget should map to a recognisable iOS 26 component:
 Focus areas to address before 1.0. These are not all confirmed — they will be
 refined based on 0.14.x feedback and community requests.
 
-### Material Artifact Purge
+### Material Artifact Purge (continued from 0.14.2)
 
-The library claims iOS 26 fidelity but has Material Design primitives baked
-into several widgets. These should be systematically replaced before 1.0.
+0.14.2 replaced `InkWell` → iOS-style opacity highlight and swapped Material
+icons to Cupertino equivalents in `GlassListTile`, `GlassActionSheet`, and
+`GlassStepper`. Remaining items:
 
-- [ ] **`InkWell` → iOS-style highlight** — `GlassListTile` uses Material
-  `InkWell` with `splashColor` for tap feedback. iOS uses opacity/background
-  colour changes, not ripples. Replace with `GestureDetector` +
-  `AnimatedContainer` or a custom highlight effect.
-- [ ] **`Icons.*` → `CupertinoIcons.*`** — Several widgets use Material icons
-  internally (not just in doc examples):
-  - `GlassListTile.chevron` uses `Icons.chevron_right` (should be
-    `CupertinoIcons.chevron_forward`)
-  - `GlassListTile.infoButton` uses `Icons.info_outline` (should be
-    `CupertinoIcons.info`)
-  - `GlassStepper` uses `Icons.remove` / `Icons.add` (should be
-    `CupertinoIcons.minus` / `CupertinoIcons.plus`)
-  - Doc examples throughout use `Icons.home`, `Icons.settings`, etc.
 - [ ] **Hardcoded colour audit** — Multiple widgets hardcode colours instead of
   resolving from theme:
   - `GlassSwitch` defaults `activeColor` to `Colors.green` (iOS uses system
@@ -136,16 +126,31 @@ into several widgets. These should be systematically replaced before 1.0.
   - All should resolve from `GlassThemeData.glowColors` or
     `CupertinoColors.systemRed` / `.systemGreen`
 
-### Light Mode / Theming Gap
+### Light Mode / Theming Gap ⛔ v1 Blocker
 
 Almost every widget hardcodes `Colors.white` for text and icons, assuming a
-dark background. Only `GlassDivider` checks `Theme.of(context).brightness`.
-iOS 26 liquid glass works on both light and dark backgrounds.
+dark background. This means the library is **broken in light mode** — text
+becomes invisible. iOS 26 liquid glass works on both light and dark backgrounds.
 
-- [ ] **Brightness-aware text colours** — widgets like `GlassListTile`,
-  `GlassStepper`, `GlassBadge`, `GlassToolbar`, `GlassSideBar` (until
-  deleted) should resolve text/icon colour from brightness or theme, not
-  hardcode white.
+**0.15.0 fixed:** `GlassMenuItem`, `GlassMenuDivider`, `GlassMenuLabel` now
+resolve colours from `CupertinoTheme.of(context)`. Internal `TextField` →
+`CupertinoTextField` to eliminate `MaterialLocalizations` dependency (library
+now works under `CupertinoApp`, `MaterialApp`, or `WidgetsApp`).
+
+**Still needed:**
+
+- [ ] **Content colour audit** — every widget with default text/icon colours
+  must resolve from `CupertinoTheme.of(context)` instead of hardcoding white:
+  - `GlassTextField` — `_defaultTextStyle` uses `Color.fromRGBO(255, 255, 255, 0.9)`
+  - `GlassListTile` — title, subtitle, detail text
+  - `GlassToolbar` — title and icon colours
+  - `GlassAppBar` — title text
+  - `GlassStepper` — labels and value text
+  - `GlassBadge` — badge text
+  - `GlassToast` — message text
+  - `GlassDialog` — title, message, button text
+  - `GlassActionSheet` — title, message, action text
+  - `GlassProgressIndicator` — track/fill colours
 - [ ] **Theme integration** — ensure `GlassThemeData` exposes foreground
   colour tokens that widgets resolve at build time, with sensible defaults for
   both light and dark.

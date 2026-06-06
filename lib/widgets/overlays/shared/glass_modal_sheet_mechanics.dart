@@ -157,7 +157,10 @@ class SheetGeometry {
     if (enablePeek) {
       states.add(SheetState.peek);
     }
-    states.add(SheetState.half);
+    // Skip half state when halfSize is 0 — allows direct full→hidden.
+    if (halfSize > 0) {
+      states.add(SheetState.half);
+    }
     states.add(SheetState.full);
 
     final positions = states

@@ -1,5 +1,4 @@
 import 'package:flutter/cupertino.dart';
-import 'package:flutter/material.dart';
 import '../../src/renderer/liquid_glass_renderer.dart';
 
 import '../../theme/glass_theme_data.dart';
@@ -69,7 +68,7 @@ enum BadgePosition {
 /// GlassBadge(
 ///   count: 3,
 ///   backgroundColor: Colors.blue,
-///   textColor: Colors.white,
+///   textColor: CupertinoColors.white,
 ///   child: Icon(Icons.message),
 /// )
 /// ```
@@ -223,7 +222,7 @@ class GlassBadge extends StatelessWidget {
 
     final bgColor =
         backgroundColor ?? glowColors.danger ?? const Color(0xFFFF3B30);
-    final fgColor = textColor ?? Colors.white;
+    final fgColor = textColor ?? CupertinoColors.white;
 
     // Format count display
     final String displayText =
@@ -256,7 +255,7 @@ class GlassBadge extends StatelessWidget {
           color: bgColor,
           borderRadius: BorderRadius.circular(9),
           border: Border.all(
-            color: Colors.white.withValues(alpha: 0.3),
+            color: CupertinoColors.white.withValues(alpha: 0.3),
             width: 1.5,
           ),
           boxShadow: [
@@ -301,7 +300,7 @@ class GlassBadge extends StatelessWidget {
           color: color,
           shape: BoxShape.circle,
           border: Border.all(
-            color: Colors.white,
+            color: CupertinoColors.white,
             width: 2,
           ),
           boxShadow: [

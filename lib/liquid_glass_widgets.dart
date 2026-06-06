@@ -62,10 +62,9 @@ export 'utils/glass_performance_monitor.dart'
 export 'widgets/containers/glass_card.dart';
 export 'widgets/containers/glass_container.dart';
 export 'widgets/containers/glass_divider.dart';
+export 'widgets/containers/glass_grouped_section.dart';
 export 'widgets/containers/glass_list_tile.dart';
-export 'widgets/containers/glass_panel.dart';
 export 'widgets/containers/glass_stepper.dart';
-export 'widgets/containers/glass_wizard.dart';
 // Widgets - Input
 export 'widgets/input/glass_form_field.dart';
 export 'widgets/input/glass_password_field.dart';
@@ -78,6 +77,7 @@ export 'widgets/interactive/glass_badge.dart';
 export 'widgets/interactive/glass_button.dart';
 export 'widgets/interactive/glass_chip.dart';
 export 'widgets/interactive/glass_icon_button.dart';
+export 'widgets/interactive/glass_page_control.dart';
 export 'widgets/interactive/glass_segmented_control.dart';
 export 'widgets/interactive/liquid_glass_scope.dart'
     show LiquidGlassScope, GlassBackgroundSource, GlassRefractionSource;
@@ -105,6 +105,6 @@ export 'widgets/surfaces/glass_bottom_bar.dart';
 export 'widgets/surfaces/glass_searchable_bottom_bar.dart';
 export 'widgets/surfaces/shared/glass_search_bar_config.dart';
 export 'widgets/surfaces/shared/searchable_bottom_bar_controller.dart';
-export 'widgets/surfaces/glass_side_bar.dart';
+
 export 'widgets/surfaces/glass_tab_bar.dart';
 export 'widgets/surfaces/glass_toolbar.dart';

@@ -22,9 +22,13 @@ void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await LiquidGlassWidgets.initialize();
   runApp(LiquidGlassWidgets.wrap(
-    child: MaterialApp(
+    child: CupertinoApp(
       debugShowCheckedModeBanner: false,
-      theme: ThemeData.dark(useMaterial3: true),
+      theme: const CupertinoThemeData(brightness: Brightness.dark),
+      builder: (context, child) => Theme(
+        data: ThemeData.dark(useMaterial3: true),
+        child: child!,
+      ),
       home: const NavBarPatternsDemo(),
     ),
   ));
@@ -591,7 +595,7 @@ class _TabBarBottomFadeDemoState extends State<_TabBarBottomFadeDemo> {
       bottomBar: GlassBottomBar(
         selectedIndex: _selectedTab,
         onTabSelected: (index) => setState(() => _selectedTab = index),
-        glassSettings:
+        settings:
             RecommendedGlassSettings.standard.copyWith(thickness: 20, blur: 3),
         tabs: const [
           GlassBottomBarTab(
@@ -718,7 +722,7 @@ class _FadeHeaderDemoState extends State<_FadeHeaderDemo> {
       bottomBar: GlassBottomBar(
         selectedIndex: 0,
         onTabSelected: (_) {},
-        glassSettings:
+        settings:
             RecommendedGlassSettings.standard.copyWith(thickness: 20, blur: 3),
         tabs: const [
           GlassBottomBarTab(

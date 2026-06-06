@@ -1,7 +1,6 @@
 import 'package:liquid_glass_widgets/widgets/input/glass_search_bar.dart';
 import 'package:liquid_glass_widgets/widgets/input/glass_text_field.dart';
 import 'package:flutter/cupertino.dart';
-import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:liquid_glass_widgets/widgets/shared/adaptive_liquid_glass_layer.dart';
 
@@ -67,7 +66,7 @@ void main() {
       );
 
       await tester.enterText(
-        find.byType(TextField).first,
+        find.byType(CupertinoTextField).first,
         'flutter',
       );
 
@@ -85,7 +84,7 @@ void main() {
       );
 
       // Initially, clear button should not be visible (opacity 0)
-      await tester.enterText(find.byType(TextField).first, 'test');
+      await tester.enterText(find.byType(CupertinoTextField).first, 'test');
       await tester.pumpAndSettle();
 
       // Clear button should now be visible

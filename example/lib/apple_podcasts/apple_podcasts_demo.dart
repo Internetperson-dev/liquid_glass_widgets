@@ -213,14 +213,18 @@ class ApplePodcastsDemoApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
+    return CupertinoApp(
       title: 'Apple Podcasts',
-      theme: ThemeData.dark().copyWith(
-        scaffoldBackgroundColor: _kBackground,
-        colorScheme: const ColorScheme.dark(
-          primary: _kPodcastsPurple,
-          surface: _kBackground,
+      theme: const CupertinoThemeData(brightness: Brightness.dark),
+      builder: (context, child) => Theme(
+        data: ThemeData.dark(useMaterial3: true).copyWith(
+          scaffoldBackgroundColor: _kBackground,
+          colorScheme: const ColorScheme.dark(
+            primary: _kPodcastsPurple,
+            surface: _kBackground,
+          ),
         ),
+        child: child!,
       ),
       home: const ApplePodcastsHomeScreen(),
       debugShowCheckedModeBanner: false,
@@ -270,12 +274,10 @@ class _ApplePodcastsHomeScreenState extends State<ApplePodcastsHomeScreen> {
   }
 
   void _showNowPlayingSheet(BuildContext context) {
-    GlassSheet.show(
+    GlassModalSheet.show(
       context: context,
-      isScrollControlled: true,
-      // initialChildSize: 0.9,
-      // minChildSize: 0.5,
-      // maxChildSize: 0.95,
+      initialState: SheetState.full,
+      halfSize: 0,
       settings: const LiquidGlassSettings(
         glassColor: Color(0xAA1C1C1E),
         thickness: 40,
@@ -409,7 +411,7 @@ class _ApplePodcastsHomeScreenState extends State<ApplePodcastsHomeScreen> {
           iconLabelSpacing: 0,
           quality: GlassQuality.premium,
           interactionBehavior: GlassInteractionBehavior.full,
-          glassSettings: const LiquidGlassSettings(
+          settings: const LiquidGlassSettings(
             glassColor: Color.fromRGBO(28, 28, 30, 0.8),
             thickness: 30,
             blur: 4,
@@ -1059,7 +1061,7 @@ class _NowPlayingViewState extends State<NowPlayingView> {
 
   @override
   Widget build(BuildContext context) {
-    return Padding(
+    return SingleChildScrollView(
       padding: const EdgeInsets.symmetric(horizontal: 24),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.center,

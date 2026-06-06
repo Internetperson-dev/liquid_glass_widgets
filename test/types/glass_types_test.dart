@@ -106,15 +106,16 @@ void main() {
   // ──────────────────────────────────────────────────────────────────────────
 
   group('GlassButtonStyle', () {
-    test('has exactly 2 values', () {
-      expect(GlassButtonStyle.values, hasLength(2));
+    test('has exactly 3 values', () {
+      expect(GlassButtonStyle.values, hasLength(3));
     });
 
-    test('values are filled and transparent', () {
+    test('values are filled, prominent, and transparent', () {
       expect(
           GlassButtonStyle.values,
           containsAll([
             GlassButtonStyle.filled,
+            GlassButtonStyle.prominent,
             GlassButtonStyle.transparent,
           ]));
     });
@@ -122,6 +123,13 @@ void main() {
     test('filled is distinct from transparent', () {
       expect(
           GlassButtonStyle.filled, isNot(equals(GlassButtonStyle.transparent)));
+    });
+
+    test('prominent is distinct from filled and transparent', () {
+      expect(
+          GlassButtonStyle.prominent, isNot(equals(GlassButtonStyle.filled)));
+      expect(GlassButtonStyle.prominent,
+          isNot(equals(GlassButtonStyle.transparent)));
     });
 
     test('can be compared with ==', () {
@@ -132,6 +140,7 @@ void main() {
 
     test('enum name matches declaration', () {
       expect(GlassButtonStyle.filled.name, 'filled');
+      expect(GlassButtonStyle.prominent.name, 'prominent');
       expect(GlassButtonStyle.transparent.name, 'transparent');
     });
   });
