@@ -13,11 +13,13 @@ class InputsPage extends StatelessWidget {
       settings: RecommendedGlassSettings.input,
       child: Scaffold(
         backgroundColor: Colors.transparent,
-        appBar: const GlassAppBar(
+        appBar: GlassAppBar(
           title: Text(
             'Inputs',
             style: TextStyle(
-                fontSize: 20, fontWeight: FontWeight.bold, color: Colors.white),
+                fontSize: 20,
+                fontWeight: FontWeight.bold,
+                color: CupertinoColors.label.resolveFrom(context)),
           ),
         ),
         body: SingleChildScrollView(
@@ -25,83 +27,103 @@ class InputsPage extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const Text(
+              Text(
                 'Forms & Inputs',
                 style: TextStyle(
                   fontSize: 28,
                   fontWeight: FontWeight.bold,
-                  color: Colors.white,
+                  color: CupertinoColors.label.resolveFrom(context),
                 ),
               ),
-              const SizedBox(height: 8),
+              SizedBox(height: 8),
               Text(
                 'New iOS 26 style input primitives.',
                 style: TextStyle(
                   fontSize: 16,
-                  color: Colors.white.withValues(alpha: 0.7),
+                  color: CupertinoColors.label
+                      .resolveFrom(context)
+                      .withValues(alpha: 0.7),
                 ),
               ),
-              const SizedBox(height: 32),
+              SizedBox(height: 32),
 
               // Form Example
-              const _SectionHeader('Input Form'),
-              GlassCard(
-                child: Column(
-                  children: [
-                    const GlassFormField(
-                      label: 'Account Email',
-                      child: GlassTextField(
-                        placeholder: 'example@email.com',
-                        keyboardType: TextInputType.emailAddress,
-                        prefixIcon: Icon(CupertinoIcons.mail,
-                            color: Colors.white70, size: 20),
-                      ),
-                    ),
-                    const SizedBox(height: 16),
-                    const GlassFormField(
-                      label: 'Password',
-                      helperText: 'Must be at least 8 characters',
-                      child: GlassPasswordField(),
-                    ),
-                    const SizedBox(height: 16),
-                    GlassFormField(
-                      label: 'Role',
-                      child: GlassPicker(
-                        value: 'Administrator',
-                        icon: Icon(CupertinoIcons.briefcase),
-                        useOwnLayer: true, // Demo specific layer usage
-                        quality: GlassQuality.premium,
-                        onTap: () {},
-                      ),
-                    ),
-                  ],
+              _SectionHeader('Input Form'),
+              DecoratedBox(
+                decoration: BoxDecoration(
+                  color: CupertinoColors.systemFill.resolveFrom(context),
+                  borderRadius: BorderRadius.circular(16),
                 ),
-              ),
-
-              const SizedBox(height: 32),
-
-              // Text Area Example
-              const _SectionHeader('Multi-line Text'),
-              GlassCard(
-                child: GlassFormField(
-                  label: 'Bio / Description',
-                  child: GlassTextArea(
-                    placeholder: 'Write a short description...',
-                    minLines: 4,
+                child: Padding(
+                  padding: const EdgeInsets.all(20),
+                  child: Column(
+                    children: [
+                      GlassFormField(
+                        label: 'Account Email',
+                        child: GlassTextField(
+                          placeholder: 'example@email.com',
+                          keyboardType: TextInputType.emailAddress,
+                          useOwnLayer: true,
+                          prefixIcon: Icon(CupertinoIcons.mail,
+                              color: CupertinoColors.secondaryLabel
+                                  .resolveFrom(context),
+                              size: 20),
+                        ),
+                      ),
+                      SizedBox(height: 16),
+                      const GlassFormField(
+                        label: 'Password',
+                        helperText: 'Must be at least 8 characters',
+                        child: GlassPasswordField(),
+                      ),
+                      SizedBox(height: 16),
+                      GlassFormField(
+                        label: 'Role',
+                        child: GlassPicker(
+                          value: 'Administrator',
+                          icon: Icon(CupertinoIcons.briefcase),
+                          useOwnLayer: true, // Demo specific layer usage
+                          quality: GlassQuality.premium,
+                          onTap: () {},
+                        ),
+                      ),
+                    ],
                   ),
                 ),
               ),
 
-              const SizedBox(height: 32),
+              SizedBox(height: 32),
+
+              // Text Area Example
+              _SectionHeader('Multi-line Text'),
+              DecoratedBox(
+                decoration: BoxDecoration(
+                  color: CupertinoColors.systemFill.resolveFrom(context),
+                  borderRadius: BorderRadius.circular(16),
+                ),
+                child: Padding(
+                  padding: const EdgeInsets.all(20),
+                  child: GlassFormField(
+                    label: 'Bio / Description',
+                    child: GlassTextArea(
+                      placeholder: 'Write a short description...',
+                      minLines: 4,
+                      useOwnLayer: true,
+                    ),
+                  ),
+                ),
+              ),
+
+              SizedBox(height: 32),
 
               // Search Bar Example
-              const _SectionHeader('Search'),
+              _SectionHeader('Search'),
               const GlassSearchBar(
                 placeholder: 'Search documentation...',
               ),
-              const SizedBox(height: 16),
+              SizedBox(height: 16),
 
-              const SizedBox(height: 50),
+              SizedBox(height: 50),
             ],
           ),
         ),
@@ -120,10 +142,10 @@ class _SectionHeader extends StatelessWidget {
       padding: const EdgeInsets.only(bottom: 16),
       child: Text(
         text,
-        style: const TextStyle(
+        style: TextStyle(
           fontSize: 18,
           fontWeight: FontWeight.bold,
-          color: Colors.white,
+          color: CupertinoColors.label.resolveFrom(context),
         ),
       ),
     );

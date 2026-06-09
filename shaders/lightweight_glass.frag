@@ -303,13 +303,17 @@ void main() {
   directionalInfluence *= directionalInfluence; // squared for tighter highlight
 
   // Constant base rim (structural edge) + small directional bonus.
-  // The base (kRimAlphaBase = 0.65) is independent of uLightIntensity so
-  // AdaptiveGlass normalization (×0.6) cannot weaken it. This matches
-  // Premium's 3D bevel which is always visible from geometry regardless
-  // of light settings. The directional bonus adds subtle lit-side variation.
-  float rimAlphaBase = kRimAlphaBase + 0.15 * directionalInfluence * uLightIntensity;
+  // iOS 26 uses near-invisible rims in light mode — the glass edge is
+  // defined by subtle refraction and shadow, not by an opaque border.
+  //
+  // smoothstep(0.3, 0.5, luma) creates a sharp binary-like transition:
+  //   dark  (luma=0.15) → smoothstep=0.0 → rimFade=1.0  (FULL rim, untouched)
+  //   light (luma=0.85) → smoothstep=1.0 → rimFade=0.08 (near-invisible rim)
+  // Dark mode is completely unaffected.
+  float rimFade = 1.0 - smoothstep(0.3, 0.5, uBackdropLuma) * 0.92;
+  float rimAlphaBase = kRimAlphaBase * rimFade + 0.15 * directionalInfluence * uLightIntensity;
   rimAlphaBase *= uRefractiveIndex;
-  rimAlphaBase += totalSpecular * kRimAlphaSpecular;
+  rimAlphaBase += totalSpecular * kRimAlphaSpecular * rimFade;
   rimAlphaBase *= (1.0 + thicknessOffset * kThicknessRimBoost) * (1.0 + densityFactor * 0.1);
   rimAlphaBase *= borderMask;
   rimAlphaBase = clamp(rimAlphaBase, 0.0, 1.0);
@@ -341,13 +345,17 @@ void main() {
 
     if (testLuma < 0.02) {
       // Treat as PATH B — premultiplied transparent output.
-      float frost2 = 0.08 + densityFactor * 0.05; // same as PATH B value
+      float isLightFallback = step(0.5, uBackdropLuma);
+      float frost2 = 0.08 + densityFactor * 0.05 + isLightFallback * 0.04;
       float pmA2 = max(glassAlpha, frost2);
-      vec3 pmRgb2 = uGlassColor.rgb * pmA2;
+      vec3 frostRgb2 = vec3(isLightFallback);
+      vec3 baseRgb2 = mix(frostRgb2, uGlassColor.rgb, min(glassAlpha / (frost2 + 0.01), 1.0));
+      vec3 pmRgb2 = baseRgb2 * pmA2;
       
       // Min 3% ambient darkening + bottom volumetric gradient shadow
       float bottomDarken = vertCoord * 0.04;
       float ambientDarken2 = clamp((uAmbientStrength * 0.25 + 0.03) * (1.0 + densityFactor * 0.5) + bottomDarken, 0.0, 0.8);
+      ambientDarken2 *= mix(1.0, 0.2, isLightFallback); // Reduce grey shadow in light mode
       pmA2 = pmA2 + ambientDarken2 * (1.0 - pmA2);
       
       float outA2 = rimAlphaBase + pmA2 * (1.0 - rimAlphaBase);
@@ -412,32 +420,33 @@ void main() {
   } else {
     // PATH B: All Standard widgets use this path.
     // Flutter SrcOver composites us over the BackdropFilter(blur+saturation) background.
-    // The saturation is now applied in the Dart blur filter, matching Premium's depth.
-    // simulatedFrost ensures minimum material alpha when glassColor.a=0 (Premium default).
-    // With glassColor=(0,0,0,0) and no frost, pmA=0 → completely invisible in SrcOver.
-    // For white glass: pmRgb=(1,1,1)*0.08 → 8% white lift over blurred bg = frosted material.
-    // PATH B: 8% frost floor ensures minimum glass presence without the "frosted plastic" look.
-    // User-specified glassColor.a (typically 0.12+) takes precedence via max().
-    // 8% is enough for material visibility while preserving Premium-matching transparency.
-    float simulatedFrost = 0.08 + densityFactor * 0.05;
+    float isLight = step(0.5, uBackdropLuma);
+    
+    // 8% frost floor ensures minimum material visibility
+    // In light mode, add more frost for a cleaner white look
+    float simulatedFrost = 0.08 + densityFactor * 0.05 + isLight * 0.04;
     float pmA = max(glassAlpha, simulatedFrost);
-    vec3 pmRgb = uGlassColor.rgb * pmA;
+    
+    // In light mode, transparent glass becomes white frost. In dark mode, it remains black (ambient darken).
+    vec3 frostRgb = vec3(isLight);
+    vec3 baseRgb = mix(frostRgb, uGlassColor.rgb, min(glassAlpha / (simulatedFrost + 0.01), 1.0));
+    vec3 pmRgb = baseRgb * pmA;
 
     // Min 3% ambient darkening + bottom volumetric gradient shadow:
-    // Glass should always be slightly darker/different than surrounding content.
     float bottomDarken = vertCoord * 0.04;
     float ambientDarken = clamp((uAmbientStrength * 0.25 + 0.03) * (1.0 + densityFactor * 0.5) + bottomDarken, 0.0, 0.8);
+    // Reduce ambient darken in light mode to prevent greyness
+    ambientDarken *= mix(1.0, 0.2, isLight);
+    
     pmA = pmA + ambientDarken * (1.0 - pmA);
 
-    // Contrast-adaptive rim: over bright backgrounds white-on-white has no contrast.
-    // Shift rim colour toward a mid-grey (0.55) proportional to backdrop brightness,
-    // so the border ring remains distinguishable regardless of background lightness.
-    float rimContrast = mix(1.0, 0.55, uBackdropLuma);
-    vec3 pathBRimColor = rimColorBase * rimContrast;
+    // Rim color: full white in dark mode, no dimming needed in light mode
+    // because rimAlphaBase is already near-zero via rimFade.
+    vec3 pathBRimColor = rimColorBase;
 
-    // Guarantee a minimum border presence: even if rimAlphaBase computed above is
-    // low (low light, low thickness), the border should always read as glass.
-    float minRimAlpha = borderMask * 0.10;
+    // Minimum border floor: only active in dark mode (rimFade=1.0).
+    // In light mode rimFade≈0.08, so this floor is effectively zero.
+    float minRimAlpha = borderMask * 0.06 * rimFade;
     float effectiveRimAlpha = max(rimAlphaBase, minRimAlpha);
 
     // Rim composited over body.

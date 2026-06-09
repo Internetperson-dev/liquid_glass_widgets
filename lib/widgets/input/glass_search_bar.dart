@@ -244,11 +244,6 @@ class GlassSearchBar extends StatefulWidget {
 }
 
 class _GlassSearchBarState extends State<GlassSearchBar> {
-  // Cache default colors to avoid allocations
-  static const _defaultSearchIconColor = Color(0x99FFFFFF); // white 60%
-  static const _defaultClearIconColor = Color(0x99FFFFFF); // white 60%
-  static const _defaultCancelButtonColor = Color(0xE6FFFFFF); // white 90%
-
   late TextEditingController _controller;
   late FocusNode _focusNode;
   bool _ownsController = false;
@@ -326,10 +321,14 @@ class _GlassSearchBarState extends State<GlassSearchBar> {
 
   @override
   Widget build(BuildContext context) {
-    final searchIconColor = widget.searchIconColor ?? _defaultSearchIconColor;
-    final clearIconColor = widget.clearIconColor ?? _defaultClearIconColor;
-    final cancelButtonColor =
-        widget.cancelButtonColor ?? _defaultCancelButtonColor;
+    final isDark = CupertinoTheme.brightnessOf(context) == Brightness.dark;
+
+    final searchIconColor = widget.searchIconColor ??
+        (isDark ? const Color(0x99FFFFFF) : const Color(0x99000000));
+    final clearIconColor = widget.clearIconColor ??
+        (isDark ? const Color(0x99FFFFFF) : const Color(0x99000000));
+    final cancelButtonColor = widget.cancelButtonColor ??
+        (isDark ? const Color(0xE6FFFFFF) : const Color(0xE6000000));
 
     return Row(
       children: [

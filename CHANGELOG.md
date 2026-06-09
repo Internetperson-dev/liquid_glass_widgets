@@ -1,3 +1,69 @@
+# 0.15.1
+
+## Full Light & Dark Mode — Complete Adaptive UI Kit
+
+`liquid_glass_widgets` is now a **fully adaptive** iOS 26 UI kit. Every widget
+— buttons, menus, search bars, sliders, switches, sheets, toasts, chips, form
+fields, and all surface bars — automatically resolves the correct glass color,
+rim lighting, shadow, text, and icon values for both **Light** and **Dark**
+mode. No manual configuration required.
+
+This release closes the last remaining light-mode rendering gaps and ships a
+reference implementation in the Apple Messages demo that matches the
+iOS 26 Messages app in both modes. Run the example app to toggle light and dark mode for all demo pages.
+
+### New features
+
+- **Configurable glass shadow** — `LiquidGlassSettings.shadowElevation` scales the light-mode drop shadow (`0.0` = off, `1.0` = default, `2.0` = double). `LiquidGlassSettings.shadow` accepts a custom `List<BoxShadow>` for full control. Both flow through `globalSettings` (theme-level) and per-widget `settings:`.
+- **`GlassShadow` constants** — centralised shadow values (`GlassShadow.elevation`, `.contact`, `.defaults`, `.scaled(double)`) exported for custom widget authors.
+- **`GlassButtonGroup.icons()`** — introduced a lightweight group constructor for iOS 26 style segmented icon toolbars. Uses a single `GlassButton` parent to drive cohesive group-level stretch/glow interaction, while children are rendered as zero-overhead stateless tap targets.
+- **`GlassMenuController`** — imperative controller for `GlassMenu` with `open()`, `close()`, and `isOpen`. Drives the menu programmatically instead of (or in addition to) tapping the trigger — useful for gesture-arena-driven menus. _(contributed by [@F1orian](https://github.com/F1orian))_
+- **`GlassMenu.showDismissBarrier`** — when `false`, suppresses the full-screen tap-to-dismiss barrier so an external gesture owner can keep receiving pointer events while the menu is open. Defaults to `true`. _(contributed by [@F1orian](https://github.com/F1orian))_
+- **`GlassMenu.morphFromZero`** — when `true`, the menu body lerps from a zero-size point at the trigger center instead of from the trigger's own dimensions, suppressing the spawn blob (Blob A). For invisible or zero-sized triggers. _(contributed by [@F1orian](https://github.com/F1orian))_
+- **`GlassMenuController.setFollowOffset(Offset)`** — nudges the open menu to track a moving anchor in real-time. The offset is added to the captured trigger position each frame and reset on the next `open()`. _(contributed by [@F1orian](https://github.com/F1orian))_
+
+### Light & dark mode improvements
+
+- **Complete adaptive rendering** — all widgets now resolve glass color, rim borders, shadows, text, and icon colors from `CupertinoTheme.brightnessOf(context)`. Switching between light and dark mode requires zero widget-level changes.
+- **Light-mode rim borders** — removed the heavy dark rim border on glass surfaces in light mode. Dark mode rim lighting remains fully intact and unchanged.
+- **Light-mode drop shadows** — added inverse-clipped drop shadows to glass surfaces in light mode (cards, standalone buttons, bottom bars). Shadows render outside the glass boundary so the backdrop filter doesn't blur them. Note: morphing elements like the search pill do not have shadows to prevent animation artifacts.
+- **Standard glass white frost** — standard quality glass in light mode now correctly renders as clean frosted white instead of muddy grey.
+- **Dynamic color resolution** — improved internal text and icon styling to accurately resolve `CupertinoColors` against the active theme brightness.
+- **`GlassSearchBar` and `GlassTextField` default colors now brightness-aware** — default text, icon, and glow colors now resolve dynamically against `CupertinoTheme.brightnessOf(context)` instead of being hardcoded to white. This ensures correct contrast in both light and dark mode.
+
+### Bug fixes
+
+- Fixed missing `} else {` in `lightweight_glass.frag` that caused PATH B (standard widgets) to run inside PATH A.
+- Fixed `GlassSheet` sharp corners on macOS by decoupling top and bottom border radius.
+- Fixed `GlassMenu` selection pill alignment and hit-test accuracy when system text scaler is active.
+- Fixed `GlassChip` resolving with invisible white text and icons in light mode.
+- Fixed Apple Podcasts demo incorrectly forcing dark-mode glass colors in light mode.
+- Fixed `GlassFormField` label (`Colors.white`) and helper text (`Color(0x99FFFFFF)`) being invisible in light mode — now resolves from `CupertinoColors.label` / `.secondaryLabel`
+- Fixed `GlassPicker` value text (`Colors.white`) and chevron icon (`Colors.white70`) being invisible in light mode — now resolves from `CupertinoColors.label` / `.secondaryLabel`.
+- Fixed `GlassPasswordField` lock and eye toggle icons (`Colors.white70`) being invisible in light mode — now resolves from `CupertinoColors.secondaryLabel`.
+- Fixed `GlassActionSheet` forcing dark card background (`Colors.black @ 0.65`), dividers, and pressed highlights regardless of brightness — now resolves to light frosted glass in light mode.
+- Fixed `GlassToast` forcing dark pill (`Colors.black @ 0.7`) and white text regardless of brightness — background and text now resolve from brightness for correct contrast in both modes.
+- Removed unnecessary `import 'package:flutter/material.dart'` from `GlassFormField`, `GlassPicker`, `GlassPasswordField`, and `GlassToast`.
+- Fixed `GlassMenu` morph size going negative during spring undershoot on small triggers — `currentWidth`/`currentHeight` now clamped to `>= 0` to prevent debug `BoxConstraints` assertion. _(contributed by [@F1orian](https://github.com/F1orian))_
+- Fixed `GlassMenu` sub-pixel Impeller crash — body container is replaced with `SizedBox.shrink()` when dimensions fall below 1.0 logical pixel, preventing 0-area matte rasterisation. _(contributed by [@F1orian](https://github.com/F1orian))_
+- Fixed `GlassIconButton` bypassing theme quality chain — `quality` now passes `null` through to `GlassButton.custom()` so `GlassThemeHelpers.resolveQuality` can resolve from ancestor layers, theme, then widget default. _(contributed by [@F1orian](https://github.com/F1orian))_
+
+### ⚠️ Breaking — Removed frosted well overlay from `GlassTextField`
+
+`GlassTextField` no longer applies a hidden internal darkening overlay ("frosted well") on top of the glass surface. Previously, a `DecoratedBox` with `Colors.black.withValues(alpha: 0.12)` plus a top-edge gradient was composited inside the glass shape to simulate an iOS 26 recessed input tray. This has been removed entirely.
+
+**Why:** The frosted well fought against user-specified `glassColor`, making text fields appear darker/muddier than buttons with identical settings. It also caused visible nested border artifacts when the overlay's `BorderRadius.circular()` didn't match the glass surface's `LiquidRoundedSuperellipse` shape — especially with `useOwnLayer: true` and `padding: EdgeInsets.zero`.
+
+**Design philosophy:** `GlassTextField` is a hero surface (search bars, compose bars, app bar inputs) — not a form field nested inside glass cards. `glassColor` is now the single source of truth for appearance, consistent with every other glass widget.
+
+**Migration:** If you relied on the frosted well for visual distinction inside a grouped layout, set a slightly darker `glassColor` on the text field explicitly. Most users will see cleaner, more predictable text fields with no action required.
+
+### Example app
+
+- **Input demos** — replaced `GlassCard` wrappers around form fields with flat `CupertinoColors.systemFill` containers. Glass text fields now render as standalone hero surfaces (`useOwnLayer: true`) inside flat-colored form sections, demonstrating the correct pattern. Glass-in-glass nesting is an anti-pattern.
+- **Apple Messages demo** — fully adaptive light and dark mode implementation. Light mode uses the iOS system grouped background (`#F2F2F7`), brightness-aware white glass tint, and dynamic layer separation to enable shadows. Dark mode retains liquid blending via the shared `AdaptiveLiquidGlassLayer`. Press interactions use `persistPressOnDrag: true` and an elevated `ambientBaseLight` in light mode so the pressed state remains visible while holding and dragging off the button edge.
+
+
 # 0.15.0
 
 ## ⚠️ Breaking — API Cleanup & Standardisation
@@ -712,7 +778,7 @@ GlassTextField(
 )
 ```
 
-The panel inherits the frosted-well tinting of the surrounding glass card.
+The panel renders inside the glass surface alongside the text area.
 Callers can add a `Divider` between the text area and the panel if a visual
 separator is desired. Not available on `GlassTextField.search` (that
 constructor is single-line only; `bottom` is always `null` there).

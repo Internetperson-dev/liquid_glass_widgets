@@ -22,6 +22,7 @@ export 'liquid_glass_setup.dart';
 
 // Constants
 export 'constants/glass_defaults.dart';
+export 'constants/glass_shadow.dart';
 
 // Theme
 export 'theme/glass_theme.dart';

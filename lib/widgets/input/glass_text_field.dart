@@ -433,15 +433,13 @@ class _GlassTextFieldState extends State<GlassTextField> {
 
   final GlobalKey _textFieldKey = GlobalKey();
 
-  // Soft default glow colour — visibly more ambient than GlassButton's white24.
-  static const _defaultGlowColor = Color(0x1FFFFFFF); // white ~12%
-
   /// Wraps [child] in a [GlassGlow] sensor only when [interactionBehavior]
   /// includes glow. Skips the widget entirely otherwise — zero allocation cost.
-  Widget _wrapWithGlow(Widget child) {
+  Widget _wrapWithGlow(Widget child, bool isDark) {
     if (!widget.interactionBehavior.hasGlow) return child;
     return GlassGlow(
-      glowColor: widget.glowColor ?? _defaultGlowColor,
+      glowColor: widget.glowColor ??
+          (isDark ? const Color(0x1FFFFFFF) : const Color(0x1F000000)),
       glowRadius: widget.glowRadius,
       child: child,
     );
@@ -579,7 +577,16 @@ class _GlassTextFieldState extends State<GlassTextField> {
 
     // Use MediaQuery textScaler for accurate line height calculation.
     final textScaler = MediaQuery.textScalerOf(context);
-    final effectiveStyle = widget.textStyle ?? _defaultTextStyle;
+    final isDark = CupertinoTheme.brightnessOf(context) == Brightness.dark;
+
+    final defaultTextStyle = TextStyle(
+      color: isDark
+          ? const Color.fromRGBO(255, 255, 255, 0.9)
+          : const Color.fromRGBO(0, 0, 0, 0.9),
+      fontSize: 16,
+      height: 1.2,
+    );
+    final effectiveStyle = widget.textStyle ?? defaultTextStyle;
     final fontSize = effectiveStyle.fontSize ?? 16.0;
     final effectiveLineHeight =
         textScaler.scale(fontSize) * (effectiveStyle.height ?? 1.2);
@@ -593,22 +600,24 @@ class _GlassTextFieldState extends State<GlassTextField> {
     }
   }
 
-  static const _defaultTextStyle = TextStyle(
-    color: Color.fromRGBO(255, 255, 255, 0.9), // Colors.white with 0.9 alpha
-    fontSize: 16,
-    height: 1.2,
-  );
-
-  static const _defaultPlaceholderStyle = TextStyle(
-    color: Color.fromRGBO(255, 255, 255, 0.5), // Colors.white with 0.5 alpha
-    fontSize: 16,
-  );
-
   @override
   Widget build(BuildContext context) {
-    // Use static constants for default styles
-    final defaultTextStyle = _defaultTextStyle;
-    final defaultPlaceholderStyle = _defaultPlaceholderStyle;
+    final isDark = CupertinoTheme.brightnessOf(context) == Brightness.dark;
+
+    final defaultTextStyle = TextStyle(
+      color: isDark
+          ? const Color.fromRGBO(255, 255, 255, 0.9)
+          : const Color.fromRGBO(0, 0, 0, 0.9),
+      fontSize: 16,
+      height: 1.2,
+    );
+
+    final defaultPlaceholderStyle = TextStyle(
+      color: isDark
+          ? const Color.fromRGBO(255, 255, 255, 0.5)
+          : const Color.fromRGBO(0, 0, 0, 0.5),
+      fontSize: 16,
+    );
 
     // In fixed-height mode, force CrossAxisAlignment.center so that icon
     // position is immune to system text scaling. With .center inside
@@ -711,30 +720,6 @@ class _GlassTextFieldState extends State<GlassTextField> {
       widgetQuality: widget.quality,
     );
 
-    // iOS 26 frosted well: the input sits as a darker recessed surface inside
-    // the surrounding glass card, matching the "input tray" seen in Messages
-    // and Settings search on iOS 26. We achieve this with a slightly darker,
-    // more opaque fill + a subtle top-edge inner shadow (depth cue).
-    final wellBorderRadius = _shapeRadius(widget.shape);
-    final frostedWell = DecoratedBox(
-      decoration: BoxDecoration(
-        // Slightly darker than pure glass — creates the "inset tray" feel.
-        color: Colors.black.withValues(alpha: 0.12),
-        borderRadius: wellBorderRadius,
-        // Inner shadow simulation: a thin gradient darkish at top fading out.
-        gradient: LinearGradient(
-          begin: Alignment.topCenter,
-          end: Alignment.center,
-          stops: const [0.0, 1.0],
-          colors: [
-            Colors.black.withValues(alpha: 0.08),
-            Colors.transparent,
-          ],
-        ),
-      ),
-      child: textFieldContent,
-    );
-
     // Apply glass effect
     // iOS 26: wrap in GlassGlow only when interactionBehavior includes glow.
     // _wrapWithGlow skips the widget entirely when glow is suppressed,
@@ -747,7 +732,7 @@ class _GlassTextFieldState extends State<GlassTextField> {
       ),
       quality: effectiveQuality,
       useOwnLayer: widget.useOwnLayer,
-      child: _wrapWithGlow(frostedWell),
+      child: _wrapWithGlow(textFieldContent, isDark),
     );
 
     // GlassGlowLayer is now automatically provided by GlassGlow internally.
@@ -794,15 +779,4 @@ class _GlassTextFieldState extends State<GlassTextField> {
     }
     return child;
   }
-}
-
-/// Resolves a [LiquidShape] to a [BorderRadius] for use in plain decorations.
-BorderRadius _shapeRadius(LiquidShape shape) {
-  if (shape is LiquidRoundedSuperellipse) {
-    return BorderRadius.circular(shape.borderRadius);
-  }
-  if (shape is LiquidRoundedRectangle) {
-    return BorderRadius.circular(shape.borderRadius);
-  }
-  return BorderRadius.circular(10);
 }

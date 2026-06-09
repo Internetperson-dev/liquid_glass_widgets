@@ -114,18 +114,6 @@ class GlassChip extends StatelessWidget {
     this.anchorStretchSettings = const AnchorStretchSettings(),
   }) : deleteIcon = deleteIcon ?? const Icon(CupertinoIcons.xmark_circle_fill);
 
-  // Cache default colors to avoid allocations
-  static const _defaultIconColor =
-      Color(0xE6FFFFFF); // white.withValues(alpha: 0.9)
-  static const _defaultLabelColor =
-      Color(0xE6FFFFFF); // white.withValues(alpha: 0.9)
-  static const _defaultSelectedColor =
-      Color(0x4DFFFFFF); // white.withValues(alpha: 0.3)
-  static const _defaultGlowColorSelected =
-      Color(0x4DFFFFFF); // white.withValues(alpha: 0.3)
-  static const _defaultGlowColorUnselected =
-      Color(0x33FFFFFF); // white.withValues(alpha: 0.2)
-
   // ===========================================================================
   // Chip Properties
   // ===========================================================================
@@ -255,11 +243,19 @@ class GlassChip extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final effectiveIconColor = iconColor ?? _defaultIconColor;
+    final isDark = CupertinoTheme.brightnessOf(context) == Brightness.dark;
+    final baseColor = isDark ? CupertinoColors.white : CupertinoColors.black;
+    final defaultContentColor = baseColor.withValues(alpha: 0.9);
+    final defaultSelectedColor =
+        baseColor.withValues(alpha: isDark ? 0.3 : 0.1);
+    final defaultGlowUnselected =
+        baseColor.withValues(alpha: isDark ? 0.2 : 0.05);
+
+    final effectiveIconColor = iconColor ?? defaultContentColor;
     final effectiveLabelStyle = labelStyle ??
-        const TextStyle(
+        TextStyle(
           fontSize: 14,
-          color: _defaultLabelColor,
+          color: defaultContentColor,
           fontWeight: FontWeight.w500,
         );
 
@@ -312,7 +308,7 @@ class GlassChip extends StatelessWidget {
     final contentWithSelection = selected
         ? Container(
             decoration: BoxDecoration(
-              color: selectedColor ?? _defaultSelectedColor,
+              color: selectedColor ?? defaultSelectedColor,
               borderRadius: BorderRadius.circular(100),
             ),
             child: chipContent,
@@ -347,8 +343,8 @@ class GlassChip extends StatelessWidget {
           stretch: effectiveStretch,
           glowRadius: glowRadius,
           glowColor: selected
-              ? (selectedColor ?? _defaultGlowColorSelected)
-              : _defaultGlowColorUnselected,
+              ? (selectedColor ?? defaultSelectedColor)
+              : defaultGlowUnselected,
           enabled: isInteractive,
           anchorStretch: effectiveAnchorStretch,
           anchorStretchSettings: effectiveAnchorStretchSettings,

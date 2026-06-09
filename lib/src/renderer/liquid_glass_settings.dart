@@ -3,6 +3,7 @@ import 'package:flutter/widgets.dart';
 // [LOCAL PATCH]: GlassSpecularSharpness is our own type (not vendored).
 // It lives in lib/types/ not lib/src/renderer/.
 import '../../constants/glass_defaults.dart';
+import '../../constants/glass_shadow.dart';
 import '../../types/glass_specular_sharpness.dart';
 import 'liquid_glass_renderer.dart';
 import 'liquid_glass_render_scope.dart';
@@ -24,6 +25,8 @@ class LiquidGlassSettings with EquatableMixin {
     this.glowIntensity = 0.75,
     this.specularSharpness = GlassSpecularSharpness.medium,
     this.standardOpacityMultiplier = 1.0,
+    this.shadowElevation = 1.0,
+    this.shadow,
   });
 
   /// Creates [LiquidGlassSettings] using Figma-inspired parameter names.
@@ -64,6 +67,7 @@ class LiquidGlassSettings with EquatableMixin {
           glassColor: glassColor,
           specularSharpness: specularSharpness,
           standardOpacityMultiplier: standardOpacityMultiplier,
+          // shadowElevation and shadow use their defaults (1.0 / null)
         );
 
   /// Retrieves the nearest [LiquidGlassSettings] from the widget tree.
@@ -176,6 +180,45 @@ class LiquidGlassSettings with EquatableMixin {
   /// Defaults to 1.0. A common "magic number" for light mode is ~0.4.
   final double standardOpacityMultiplier;
 
+  /// Scales the built-in light-mode drop shadow on glass surfaces.
+  ///
+  /// The shadow only appears in light mode and uses Apple's iOS 26 elevation
+  /// values as the baseline. This multiplier scales opacity and blur
+  /// proportionally:
+  ///
+  /// - `0.0` — no shadow (flat glass)
+  /// - `1.0` — default Apple-matching elevation (6% opacity, 8px blur)
+  /// - `2.0` — double intensity (12% opacity, 16px blur)
+  ///
+  /// Has no effect in dark mode.
+  ///
+  /// For full control over shadow appearance, use [shadow] instead.
+  /// If [shadow] is non-null, [shadowElevation] is ignored.
+  ///
+  /// Defaults to 1.0.
+  final double shadowElevation;
+
+  /// Custom light-mode drop shadow for glass surfaces.
+  ///
+  /// When non-null, this replaces the built-in elevation shadow entirely.
+  /// The shadows are inverse-clipped to only appear outside the glass
+  /// boundary, preventing the glass from blurring its own shadow.
+  ///
+  /// When null (the default), the built-in Apple-matching shadow is used,
+  /// scaled by [shadowElevation].
+  ///
+  /// Has no effect in dark mode.
+  final List<BoxShadow>? shadow;
+
+  /// Returns the effective shadow list for light-mode rendering.
+  ///
+  /// Resolves [shadow] (full override) vs [shadowElevation] (scalar).
+  /// Returns an empty list when the shadow is effectively disabled.
+  List<BoxShadow> get effectiveShadow {
+    if (shadow != null) return shadow!;
+    return GlassShadow.scaled(shadowElevation);
+  }
+
   /// The effective saturation taking visibility into account.
   double get effectiveSaturation => 1 + (saturation - 1) * visibility;
 
@@ -214,6 +257,8 @@ class LiquidGlassSettings with EquatableMixin {
       specularSharpness: t < 0.5 ? a.specularSharpness : b.specularSharpness,
       standardOpacityMultiplier: lerpDouble(
           a.standardOpacityMultiplier, b.standardOpacityMultiplier, t)!,
+      shadowElevation: lerpDouble(a.shadowElevation, b.shadowElevation, t)!,
+      shadow: t < 0.5 ? a.shadow : b.shadow,
     );
   }
 
@@ -241,6 +286,8 @@ class LiquidGlassSettings with EquatableMixin {
     double? glowIntensity,
     GlassSpecularSharpness? specularSharpness,
     double? standardOpacityMultiplier,
+    double? shadowElevation,
+    List<BoxShadow>? shadow,
   }) =>
       LiquidGlassSettings(
         visibility: visibility ?? this.visibility,
@@ -257,6 +304,8 @@ class LiquidGlassSettings with EquatableMixin {
         specularSharpness: specularSharpness ?? this.specularSharpness,
         standardOpacityMultiplier:
             standardOpacityMultiplier ?? this.standardOpacityMultiplier,
+        shadowElevation: shadowElevation ?? this.shadowElevation,
+        shadow: shadow ?? this.shadow,
       );
 
   @override
@@ -274,5 +323,7 @@ class LiquidGlassSettings with EquatableMixin {
         glowIntensity,
         specularSharpness,
         standardOpacityMultiplier,
+        shadowElevation,
+        shadow,
       ];
 }

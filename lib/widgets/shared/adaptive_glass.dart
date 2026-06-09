@@ -1,6 +1,7 @@
 import 'dart:math' as math;
 import 'dart:ui' as ui;
 
+import 'package:flutter/cupertino.dart' show CupertinoTheme;
 import 'package:flutter/material.dart';
 import '../../src/renderer/liquid_glass_renderer.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
@@ -137,14 +138,17 @@ class AdaptiveGlass extends StatelessWidget {
     // Zero fragment shader cost on any device.
     // --------------------------------------------------------------------------
     if (quality == GlassQuality.minimal || baseSettings.effectiveBlur == 0) {
-      return _FrostedFallback(
-        shape: shape,
-        settings: baseSettings,
-        clipBehavior: clipBehavior,
-        glowIntensity: glowIntensity,
-        isAccessibilityFallback: false,
-        isInteractive: isInteractive,
-        child: child,
+      return _wrapWithLightModeShadow(
+        context,
+        _FrostedFallback(
+          shape: shape,
+          settings: baseSettings,
+          clipBehavior: clipBehavior,
+          glowIntensity: glowIntensity,
+          isAccessibilityFallback: false,
+          isInteractive: isInteractive,
+          child: child,
+        ),
       );
     }
 
@@ -163,14 +167,17 @@ class AdaptiveGlass extends StatelessWidget {
     // --------------------------------------------------------------------------
     final accessibilityData = GlassAccessibilityData.of(context);
     if (accessibilityData.reduceTransparency) {
-      return _FrostedFallback(
-        shape: shape,
-        settings: baseSettings,
-        clipBehavior: clipBehavior,
-        glowIntensity: glowIntensity,
-        isAccessibilityFallback: true,
-        isInteractive: isInteractive,
-        child: child,
+      return _wrapWithLightModeShadow(
+        context,
+        _FrostedFallback(
+          shape: shape,
+          settings: baseSettings,
+          clipBehavior: clipBehavior,
+          glowIntensity: glowIntensity,
+          isAccessibilityFallback: true,
+          isInteractive: isInteractive,
+          child: child,
+        ),
       );
     }
 
@@ -254,16 +261,19 @@ class AdaptiveGlass extends StatelessWidget {
       // If this is a container (allowElevation=false), we are providing a blur
       // for all our children to use. We update the InheritedLiquidGlass tree.
       if (!allowElevation) {
-        return LightweightLiquidGlass(
-          shape: shape,
-          settings: effectiveSettings,
-          densityFactor: 0.0, // Containers are never elevated
-          glowIntensity: 0.0, // Containers don't glow
-          child: InheritedLiquidGlass(
+        return _wrapWithLightModeShadow(
+          context,
+          LightweightLiquidGlass(
+            shape: shape,
             settings: effectiveSettings,
-            quality: quality,
-            isBlurProvidedByAncestor: true,
-            child: child,
+            densityFactor: 0.0, // Containers are never elevated
+            glowIntensity: 0.0, // Containers don't glow
+            child: InheritedLiquidGlass(
+              settings: effectiveSettings,
+              quality: quality,
+              isBlurProvidedByAncestor: true,
+              child: child,
+            ),
           ),
         );
       }
@@ -279,7 +289,7 @@ class AdaptiveGlass extends StatelessWidget {
         child: child,
       );
 
-      return lightweightWidget;
+      return _wrapWithLightModeShadow(context, lightweightWidget);
     }
 
     // Impeller + Premium Path: Use the renderer's native path.
@@ -319,12 +329,19 @@ class AdaptiveGlass extends StatelessWidget {
         ),
       );
 
-      return PremiumGlassTracker(
-        child: premium,
+      return _wrapWithLightModeShadow(
+        context,
+        PremiumGlassTracker(
+          child: premium,
+        ),
       );
     } else {
       // Grouped elements (e.g. inside GlassBottomBar) rely on the ancestor's
       // LiquidGlassLayer to provide the RepaintBoundary and BackdropGroup.
+      // IMPORTANT: Do NOT wrap grouped elements with the shadow Stack — it
+      // inserts a widget between the grouped glass and its ancestor blend
+      // group, breaking metaball morphing (the blend SDF pass requires
+      // grouped render objects to be direct descendants of the shared layer).
       return PremiumGlassTracker(
         child: LiquidGlass.grouped(
           shape: shape,
@@ -334,6 +351,114 @@ class AdaptiveGlass extends StatelessWidget {
       );
     }
   }
+
+  // ---------------------------------------------------------------------------
+  // Light-mode drop shadow — iOS 26 glass elevation
+  //
+  // Apple's iOS 26 uses a soft, diffuse drop shadow to give glass surfaces
+  // depth and elevation in light mode, instead of relying on a visible border.
+  // In dark mode, the shadow is invisible (absorbed by the dark background),
+  // so we skip it entirely to avoid unnecessary compositing cost.
+  //
+  // Suppressed for flat-edge shapes (borderRadius: 0) like app bars and bottom
+  // bars, which span edge-to-edge and don't need individual elevation.
+  // ---------------------------------------------------------------------------
+  Widget _wrapWithLightModeShadow(BuildContext context, Widget glass) {
+    final isDark = CupertinoTheme.of(context).brightness == Brightness.dark;
+
+    // Skip shadow in dark mode or for flat-edge shapes (bars, full-width surfaces).
+    if (isDark || _FrostedFallback._isFlatEdge(shape)) {
+      return glass;
+    }
+
+    // Resolve the shadow from settings (per-widget or inherited).
+    final shadows = settings.effectiveShadow;
+    if (shadows.isEmpty) return glass;
+
+    // Extract border radius from the shape for the shadow decoration.
+    final borderRadius = _borderRadiusFromShape(shape);
+
+    return Stack(
+      fit: StackFit.passthrough,
+      clipBehavior: Clip.none,
+      children: [
+        // 1. The glass surface (BackdropFilter captures only the background)
+        glass,
+
+        // 2. The drop shadow (painted on top, but inverse-clipped so it only
+        // appears OUTSIDE the glass). This prevents the glass from blurring its
+        // own shadow, which would otherwise create a dirty dark rim.
+        Positioned.fill(
+          child: IgnorePointer(
+            child: ClipPath(
+              clipBehavior: Clip.antiAlias,
+              clipper: _InverseShapeClipper(shape),
+              child: DecoratedBox(
+                decoration: BoxDecoration(
+                  borderRadius: borderRadius,
+                  boxShadow: shadows,
+                ),
+              ),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  /// Extracts a [BorderRadius] from a [LiquidShape] for shadow decoration.
+  static BorderRadius? _borderRadiusFromShape(LiquidShape shape) {
+    if (shape is LiquidRoundedSuperellipse) {
+      return BorderRadius.circular(shape.borderRadius);
+    }
+    if (shape is LiquidRoundedRectangle) {
+      return BorderRadius.circular(shape.borderRadius);
+    }
+    if (shape is LiquidVerticalRoundedSuperellipse) {
+      return BorderRadius.vertical(
+        top: Radius.circular(shape.topRadius),
+        bottom: Radius.circular(shape.bottomRadius),
+      );
+    }
+    if (shape is LiquidVerticalRoundedRectangle) {
+      return BorderRadius.vertical(
+        top: Radius.circular(shape.topRadius),
+        bottom: Radius.circular(shape.bottomRadius),
+      );
+    }
+    if (shape is LiquidOval) {
+      // Large radius approximation for oval/circle shapes.
+      return BorderRadius.circular(9999);
+    }
+    return null;
+  }
+}
+
+/// Clips out the interior of a shape, leaving only the exterior.
+/// Used to prevent drop shadows from bleeding under translucent glass.
+class _InverseShapeClipper extends CustomClipper<Path> {
+  const _InverseShapeClipper(this.shape);
+
+  final LiquidShape shape;
+
+  @override
+  Path getClip(Size size) {
+    final rect = Offset.zero & size;
+    final shapePath = shape.getOuterPath(rect);
+
+    // Create an outer rect that encompasses the entire shadow blur radius
+    // 50px is plenty for our 12px max blur radius.
+    final outerRect = rect.inflate(50.0);
+    final outerPath = Path()..addRect(outerRect);
+
+    // Subtract the shape from the outer bounds, leaving a hole in the middle.
+    // Uses CPU path operations (supported in Impeller).
+    return Path.combine(PathOperation.difference, outerPath, shapePath);
+  }
+
+  @override
+  bool shouldReclip(_InverseShapeClipper oldClipper) =>
+      oldClipper.shape != shape;
 }
 
 // ---------------------------------------------------------------------------
@@ -500,7 +625,10 @@ class _FrostedFallback extends StatelessWidget {
             child: DecoratedBox(
               decoration: ShapeDecoration(
                 shape: shape,
-                color: Colors.white.withValues(alpha: 0.15 * glowIntensity),
+                color: (CupertinoTheme.brightnessOf(context) == Brightness.dark
+                        ? Colors.white
+                        : Colors.black)
+                    .withValues(alpha: 0.15 * glowIntensity),
               ),
             ),
           ),
