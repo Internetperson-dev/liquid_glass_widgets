@@ -1,3 +1,117 @@
+# 0.15.3
+
+## `platformViewBackdrop` — Premium Glass Over iOS PlatformViews
+
+New opt-in flag that lets glass bars render correctly over native iOS views
+(Google Maps, Apple Maps, WebView, MapLibre, video players) while keeping the
+premium indicator animations alive. Previously, developers had to downgrade to
+`GlassQuality.standard` on iOS — now they can stay on `premium`.
+
+*Contributed by [@jfhair](https://github.com/jfhair) in [PR #94](https://github.com/sdegenaar/liquid_glass_widgets/pull/94).*
+
+### New parameter: `platformViewBackdrop`
+
+- **`GlassBottomBar`** — new `platformViewBackdrop` parameter. When `true`,
+  the bar background renders via live `BackdropFilter` (the premium shader's
+  `toImageSync` cannot capture a `UIKitView`), while the premium indicator
+  refracts the bar's own icon layer instead of the un-capturable backdrop.
+- **`GlassSearchableBottomBar`** — same parameter, applied to both the tab
+  indicator and the search pill. The collapsed search button automatically
+  falls back to `GlassQuality.standard` over a PlatformView.
+- **`AdaptiveGlass` / `AdaptiveGlass.grouped()`** — new `platformViewBackdrop`
+  parameter that forces the `BackdropFilter` rendering path even at
+  `GlassQuality.premium`.
+- **`AdaptiveLiquidGlassLayer`** — new `platformViewBackdrop` parameter that
+  skips the `LiquidGlassBlendGroup` wrapper when rendering over a PlatformView.
+
+### Usage
+
+```dart
+GlassBottomBar(
+  quality: GlassQuality.premium,
+  platformViewBackdrop: Platform.isIOS, // ← one line fix
+  tabs: myTabs,
+  selectedIndex: _index,
+  onTabSelected: (i) => setState(() => _index = i),
+)
+```
+
+### Example app
+
+- **Google Maps demo** — updated to use `platformViewBackdrop: Platform.isIOS`
+  instead of the old `Platform.isIOS ? GlassQuality.standard : GlassQuality.premium`
+  workaround. The bar now stays at `GlassQuality.premium` on all platforms.
+
+---
+
+# 0.15.2
+
+## GPU SDF Shadows — Light Mode Performance & Metaball Support
+
+Replaced the previous inverse-clip shadow system with GPU SDF shadows that render
+directly from the merged geometry matte. This is both a performance improvement
+and a visual correctness fix — shadows now correctly follow the liquid metaball
+shape during morph animations, which was impossible with the old per-element
+`ClipPath` approach.
+
+### Light mode shadows
+
+- **GPU SDF shadow pass** — `RenderLiquidGlassLayer.paintGlass` now includes a
+  Pass 0 that draws each `BoxShadow` using the geometry matte image. The matte
+  is drawn with `ImageFilter.blur` for the shadow spread, tinted via
+  `ColorFilter.mode`, and then the interior is punched out with `BlendMode.dstOut`
+  so the glass backdrop filter never samples its own shadow. This replaces the
+  widget-level `_InversePillClipper` / `_InverseOvalClipper` `ClipPath` approach.
+- **Shadows plumbed through the full stack** — `LiquidGlassSettings.effectiveShadow`
+  is now resolved at the `AdaptiveGlass` and `AdaptiveLiquidGlassLayer` level and
+  passed through `LiquidGlass.withOwnLayer` → `LiquidGlassLayer` → `_RawShapes` →
+  `RenderLiquidGlassLayer`. Dark mode and flat-edge shapes (`borderRadius: 0`)
+  correctly receive an empty shadow list.
+- **Removed old clip-based shadow system** — deleted `_InversePillClipper`,
+  `_InverseOvalClipper` from `GlassBottomBar`, and the equivalent clippers from
+  `GlassSearchableBottomBar`. Removed `_wrapWithLightModeShadow` from
+  `AdaptiveGlass`. This eliminates ~140 lines of widget-level shadow plumbing and
+  the associated `ClipPath` compositing cost.
+- **Geometry image exposed to subclasses** — `LiquidGlassRenderObject` now
+  exposes `geometryImage` and `geometryLocalBounds` as `@protected` getters so
+  `RenderLiquidGlassLayer` can access the matte for shadow rendering.
+
+### `GlassMenu` overlay rendering
+
+- **`AdaptiveLiquidGlassLayer` in menu overlay** — the morph overlay now uses
+  `AdaptiveLiquidGlassLayer` instead of raw `LiquidGlassLayer`, ensuring correct
+  quality resolution and backdrop blur when the menu is rendered in premium mode.
+
+### Example app
+
+- **Buttons & Shadows demo** — locked to Light Mode (`Brightness.light`) to serve
+  as the definitive showcase for GPU SDF shadows. Moved from the Demos tab to the
+  Examples tab with updated card gradient and subtitle.
+- **Apple Messages demo** — menu trigger buttons now use `useOwnLayer: true` to
+  correctly enter the GPU SDF shadow pipeline. Menu glass settings are
+  brightness-aware (`Colors.white12` dark / `Color(0x99FFFFFF)` light).
+- **Surfaces demo** — `_buildDemoBackground()` now accepts `BuildContext` and
+  returns a light frosted gradient in Light Mode instead of the hardcoded dark
+  navy gradient that caused unreadable text.
+
+### Bug fixes
+
+- Fixed unused import `snap_rect_to_pixels.dart` in `liquid_glass_layer.dart`.
+- Fixed unused `isDark` variable in `glass_menu_internal.dart`.
+- Removed unnecessary `package:flutter/material.dart` import from
+  `adaptive_liquid_glass_layer.dart` (already provided by `cupertino.dart`).
+- Fixed duplicate doc comment in `glass_bottom_bar.dart`.
+- Fixed release-mode crash in `GlassScrollEdgeEffect._captureBackground` — 
+  `RenderRepaintBoundary.toImage()` throws synchronously on `layer!` when called
+  before the first paint completes (layer not yet composited). The
+  `debugNeedsPaint` guard only runs inside `assert()` and is stripped in release
+  builds. Fixed by deferring the initial capture to a post-frame callback and
+  wrapping `toImage()` in `try`/`catch` as a safety net. Falls back to the
+  solid-colour gradient overlay on failure. _(reported by [@RuslanTsitser](https://github.com/RuslanTsitser) via [#93](https://github.com/sdegenaar/liquid_glass_widgets/pull/93))_
+- Updated `GlassBottomBar` golden test reference image.
+
+
+
 # 0.15.1
 
 ## Full Light & Dark Mode — Complete Adaptive UI Kit

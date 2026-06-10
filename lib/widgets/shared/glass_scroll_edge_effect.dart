@@ -159,16 +159,13 @@ class _GlassScrollEdgeEffectState extends State<GlassScrollEdgeEffect> {
     super.didChangeDependencies();
     _backgroundKey = LiquidGlassScope.of(context);
 
-    // If we already have an image, this is likely a theme toggle or
-    // route dependency change. The new background won't paint until the
-    // end of this frame, so we must defer capture to the next frame.
-    if (_backgroundImage != null) {
-      SchedulerBinding.instance.addPostFrameCallback((_) {
-        if (mounted) _captureBackground();
-      });
-    } else {
-      _captureBackground();
-    }
+    // Defer capture to after paint. On first mount, toImage() requires a
+    // composited OffsetLayer which isn't assigned until paint completes.
+    // On subsequent calls (theme toggle, route change), the new background
+    // won't paint until end-of-frame either. Both cases need deferral.
+    SchedulerBinding.instance.addPostFrameCallback((_) {
+      if (mounted) _captureBackground();
+    });
   }
 
   void _captureBackground() {
@@ -210,16 +207,25 @@ class _GlassScrollEdgeEffectState extends State<GlassScrollEdgeEffect> {
 
     if (_capturePending) return; // Already in-flight — don't stack captures.
     _capturePending = true;
-    boundary.toImage(pixelRatio: 1.0).then((image) {
+    try {
+      boundary.toImage(pixelRatio: 1.0).then((image) {
+        _capturePending = false;
+        if (!mounted) {
+          image.dispose();
+          return;
+        }
+        _backgroundImage?.dispose();
+        _backgroundImage = image;
+        setState(() {});
+      }).catchError((_) {
+        _capturePending = false;
+      });
+    } on Object {
+      // toImage() can throw synchronously if `layer` is still null
+      // (paint has not completed). Reset the flag and fall back to
+      // the solid-colour gradient overlay.
       _capturePending = false;
-      if (!mounted) {
-        image.dispose();
-        return;
-      }
-      _backgroundImage?.dispose();
-      _backgroundImage = image;
-      setState(() {});
-    });
+    }
   }
 
   @override

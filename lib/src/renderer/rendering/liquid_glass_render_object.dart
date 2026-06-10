@@ -99,11 +99,15 @@ abstract class LiquidGlassRenderObject extends RenderProxyBox {
   /// Because the geometry is recorded without `matteTransform`, its screen-space
   /// position is always derived synchronously at paint time — zero async lag.
   ui.Image? _geometryImage;
+  @protected
+  ui.Image? get geometryImage => _geometryImage;
 
   /// Bounding box of [_geometryImage] in the render object's LOCAL logical-pixel
   /// coordinate space (snapped to physical pixels).
   /// Apply `matteTransform` at paint time to get the current screen-space bounds.
   Rect _geometryLocalBounds = Rect.zero;
+  @protected
+  Rect get geometryLocalBounds => _geometryLocalBounds;
 
   @override
   @mustCallSuper

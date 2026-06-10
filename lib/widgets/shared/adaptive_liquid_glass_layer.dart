@@ -1,6 +1,6 @@
 import 'dart:ui' as ui;
 
-import 'package:flutter/material.dart';
+import 'package:flutter/cupertino.dart';
 import '../../src/renderer/liquid_glass_renderer.dart';
 
 import '../../theme/glass_theme_data.dart';
@@ -50,6 +50,7 @@ class AdaptiveLiquidGlassLayer extends StatelessWidget {
     this.quality,
     this.clipBehavior = Clip.antiAlias,
     this.blendAmount = 10.0,
+    this.platformViewBackdrop = false,
     super.key,
   });
 
@@ -79,6 +80,10 @@ class AdaptiveLiquidGlassLayer extends StatelessWidget {
   ///
   /// Defaults to 10.0.
   final double blendAmount;
+
+  /// When true (typically for iOS PlatformViews), forces the fallback rendering
+  /// path (BackdropFilter) instead of the Impeller-native shader.
+  final bool platformViewBackdrop;
 
   /// Detects if Impeller rendering engine is active.
   static bool get _canUseImpeller => ui.ImageFilter.isShaderFilterSupported;
@@ -125,8 +130,15 @@ class AdaptiveLiquidGlassLayer extends StatelessWidget {
     }
 
     // Detect if we should use the full Impeller-native rendering pipeline
-    final bool useFullRenderer =
-        _canUseImpeller && effectiveQuality == GlassQuality.premium;
+    final bool useFullRenderer = _canUseImpeller &&
+        effectiveQuality == GlassQuality.premium &&
+        !platformViewBackdrop;
+
+    // Resolve shadow for SDF rendering. Shadows only apply in light mode.
+    final bool isDark =
+        CupertinoTheme.of(context).brightness == Brightness.dark;
+    final List<BoxShadow> resolvedShadows =
+        isDark ? const <BoxShadow>[] : effectiveSettings.effectiveShadow;
 
     // On Skia/Web, we want to provide a single BackdropFilter for the whole layer
     // to avoid each child doing its own expensive blur.
@@ -135,6 +147,7 @@ class AdaptiveLiquidGlassLayer extends StatelessWidget {
     return PremiumGlassTracker(
       child: LiquidGlassLayer(
         settings: effectiveSettings,
+        shadows: resolvedShadows,
         child: GlassIsolationScope(
           isolated: false,
           child: InheritedLiquidGlass(

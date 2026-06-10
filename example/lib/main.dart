@@ -13,6 +13,7 @@ import 'package:liquid_glass_widgets_example/demos/glass_modal_sheet_demo.dart';
 import 'package:liquid_glass_widgets_example/demos/video_player_demo.dart';
 import 'package:liquid_glass_widgets_example/demos/text_field_demo.dart';
 import 'package:liquid_glass_widgets_example/demos/bottom_bar_tab_width_demo.dart';
+import 'package:liquid_glass_widgets_example/demos/buttons_and_shadows_demo.dart';
 
 import 'package:liquid_glass_widgets_example/demos/google_maps_demo.dart'
     show PlatformViewDemo;
@@ -778,6 +779,18 @@ class _ExamplesTab extends StatelessWidget {
                         ),
                       ),
                     ],
+                  ),
+                  const SizedBox(height: 14),
+
+                  _LargeDemoCard(
+                    title: 'Buttons & Shadows',
+                    subtitle: 'Glass elevations and GPU SDF shadows',
+                    icon: CupertinoIcons.layers_fill,
+                    gradient: const [
+                      Color(0xFFFFB340), // Vibrant Amber
+                      Color(0xFFE58600), // Deep Orange
+                    ],
+                    destination: const ShadowClippingDemoPage(),
                   ),
                   const SizedBox(height: 14),
 

@@ -44,6 +44,7 @@ class AdaptiveGlass extends StatelessWidget {
     this.allowElevation = true,
     this.glowIntensity = 0.0,
     this.isInteractive = false,
+    this.platformViewBackdrop = false,
     super.key,
   });
 
@@ -91,6 +92,15 @@ class AdaptiveGlass extends StatelessWidget {
   /// Defaults to 0.0 (no glow).
   final double glowIntensity;
 
+  /// When true, this glass renders via the live `BackdropFilter` path (the
+  /// lightweight render) EVEN at [GlassQuality.premium] — because the premium
+  /// shader samples a `toImageSync` texture, which cannot capture an iOS
+  /// PlatformView (map, video). Set this on glass directly over a PlatformView
+  /// so the live view shows through instead of a solid slab. Refraction is lost
+  /// (no texture), but rim/lighting and the live blur remain. Premium children
+  /// that refract Flutter content (e.g. the indicator) should NOT set this.
+  final bool platformViewBackdrop;
+
   /// Detects if Impeller rendering engine is active.
   ///
   /// Returns true when shader filters are supported (Impeller),
@@ -108,6 +118,7 @@ class AdaptiveGlass extends StatelessWidget {
     Clip clipBehavior = Clip.antiAlias,
     double glowIntensity = 0.0,
     bool isInteractive = false,
+    bool platformViewBackdrop = false,
   }) {
     return AdaptiveGlass(
       shape: shape,
@@ -117,6 +128,7 @@ class AdaptiveGlass extends StatelessWidget {
       clipBehavior: clipBehavior,
       glowIntensity: glowIntensity,
       isInteractive: isInteractive,
+      platformViewBackdrop: platformViewBackdrop,
       child: child,
     );
   }
@@ -140,6 +152,7 @@ class AdaptiveGlass extends StatelessWidget {
     if (quality == GlassQuality.minimal || baseSettings.effectiveBlur == 0) {
       return _wrapWithLightModeShadow(
         context,
+        baseSettings,
         _FrostedFallback(
           shape: shape,
           settings: baseSettings,
@@ -169,6 +182,7 @@ class AdaptiveGlass extends StatelessWidget {
     if (accessibilityData.reduceTransparency) {
       return _wrapWithLightModeShadow(
         context,
+        baseSettings,
         _FrostedFallback(
           shape: shape,
           settings: baseSettings,
@@ -185,8 +199,14 @@ class AdaptiveGlass extends StatelessWidget {
     // because those will fall back to FakeGlass (solid color) inside the renderer.
     // We MUST use our LightweightLiquidGlass to get actual glass effects.
 
-    final bool canUsePremiumShader =
-        !kIsWeb && _canUseImpeller && quality == GlassQuality.premium;
+    // platformViewBackdrop forces the live BackdropFilter path even at premium:
+    // the premium shader's toImageSync backdrop can't capture a PlatformView, so
+    // over one it must use BackdropFilter (live) instead. The local/cheap checks
+    // are evaluated before the platform shader-support query (_canUseImpeller).
+    final bool canUsePremiumShader = !kIsWeb &&
+        !platformViewBackdrop &&
+        quality == GlassQuality.premium &&
+        _canUseImpeller;
 
     if (!canUsePremiumShader) {
       // 1. Detect Grouped Elevation
@@ -263,6 +283,7 @@ class AdaptiveGlass extends StatelessWidget {
       if (!allowElevation) {
         return _wrapWithLightModeShadow(
           context,
+          baseSettings,
           LightweightLiquidGlass(
             shape: shape,
             settings: effectiveSettings,
@@ -289,7 +310,7 @@ class AdaptiveGlass extends StatelessWidget {
         child: child,
       );
 
-      return _wrapWithLightModeShadow(context, lightweightWidget);
+      return _wrapWithLightModeShadow(context, baseSettings, lightweightWidget);
     }
 
     // Impeller + Premium Path: Use the renderer's native path.
@@ -314,9 +335,16 @@ class AdaptiveGlass extends StatelessWidget {
         useOwnLayer || GlassIsolationScope.isIsolated(context);
 
     if (effectiveUseOwnLayer) {
+      // Resolve shadows for the GPU cutout method
+      final isDark = CupertinoTheme.of(context).brightness == Brightness.dark;
+      final shadows = (isDark || _FrostedFallback._isFlatEdge(shape))
+          ? const <BoxShadow>[]
+          : baseSettings.effectiveShadow;
+
       Widget premium = LiquidGlass.withOwnLayer(
         shape: shape,
         settings: settings,
+        shadows: shadows,
         clipBehavior: clipBehavior,
         // De-isolate children so nested glass groups with this own-layer
         // rather than creating its own (which causes double-glass).
@@ -329,11 +357,8 @@ class AdaptiveGlass extends StatelessWidget {
         ),
       );
 
-      return _wrapWithLightModeShadow(
-        context,
-        PremiumGlassTracker(
-          child: premium,
-        ),
+      return PremiumGlassTracker(
+        child: premium,
       );
     } else {
       // Grouped elements (e.g. inside GlassBottomBar) rely on the ancestor's
@@ -363,7 +388,8 @@ class AdaptiveGlass extends StatelessWidget {
   // Suppressed for flat-edge shapes (borderRadius: 0) like app bars and bottom
   // bars, which span edge-to-edge and don't need individual elevation.
   // ---------------------------------------------------------------------------
-  Widget _wrapWithLightModeShadow(BuildContext context, Widget glass) {
+  Widget _wrapWithLightModeShadow(
+      BuildContext context, LiquidGlassSettings baseSettings, Widget glass) {
     final isDark = CupertinoTheme.of(context).brightness == Brightness.dark;
 
     // Skip shadow in dark mode or for flat-edge shapes (bars, full-width surfaces).
@@ -372,7 +398,7 @@ class AdaptiveGlass extends StatelessWidget {
     }
 
     // Resolve the shadow from settings (per-widget or inherited).
-    final shadows = settings.effectiveShadow;
+    final shadows = baseSettings.effectiveShadow;
     if (shadows.isEmpty) return glass;
 
     // Extract border radius from the shape for the shadow decoration.

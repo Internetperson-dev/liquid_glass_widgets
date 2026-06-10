@@ -169,6 +169,7 @@ class _GlassMenuState extends State<GlassMenu> with TickerProviderStateMixin {
             isHandoff ? (finalDy + _verticalOffset) * rawValue : 0.0;
 
         return Stack(
+          clipBehavior: Clip.none,
           children: [
             // Trigger — physically bounces when slammed by the closing menu!
             Transform.translate(
@@ -399,6 +400,26 @@ class _GlassMenuState extends State<GlassMenu> with TickerProviderStateMixin {
       widgetQuality: widget.quality,
     );
 
+    final maxRadius = math.min(currentWidth, currentHeight) / 2.0;
+    final double radiusT =
+        Curves.easeInExpo.transform(state.sizeT.clamp(0.0, 1.0));
+    final currentRadius =
+        lerpDouble(maxRadius, widget.menuBorderRadius, radiusT)!;
+
+    final blobBLeft = _triggerGlobalPosition.dx +
+        _followOffset.dx +
+        tw / 2.0 +
+        state.currentDx -
+        currentWidth / 2.0 +
+        (_horizontalOffset * clampedValue);
+
+    final blobBTop = _triggerGlobalPosition.dy +
+        _followOffset.dy +
+        th / 2.0 +
+        state.currentDy -
+        currentHeight / 2.0 +
+        (_verticalOffset * clampedValue);
+
     return Stack(
       children: [
         // Invisible full-screen tap-to-close barrier
@@ -422,72 +443,64 @@ class _GlassMenuState extends State<GlassMenu> with TickerProviderStateMixin {
                 (_morphController.isClosing && _morphController.hasHandedOff)
                     ? 0.0
                     : 1.0,
-            child: LiquidGlassLayer(
+            child: AdaptiveLiquidGlassLayer(
               settings: effectiveSettings,
-              child: InheritedLiquidGlass(
-                settings: effectiveSettings,
-                quality: effectiveQuality,
-                isBlurProvidedByAncestor: false,
-                child: LiquidGlassBlendGroup(
-                  blend: state.blend,
-                  child: Stack(
-                    clipBehavior: Clip.none,
-                    children: [
-                      // ─── Blob A: Trigger Ghost ───────────────────────────────
-                      // Stays perfectly centered on the trigger, BUT absorbs the
-                      // closing momentum (pushDx/pushDy) to bounce when slammed.
-                      // Shrinks to 0 scale over the first 40% of the animation to
-                      // smoothly break the liquid bridge.
-                      // Blob A is the spawn blob; under morphFromZero there is no trigger to ghost.
-                      if (!widget.morphFromZero)
-                        Positioned(
-                          left: _triggerGlobalPosition.dx +
-                              _followOffset.dx +
-                              state.pushDx,
-                          top: _triggerGlobalPosition.dy +
-                              _followOffset.dy +
-                              state.pushDy,
-                          child: Transform.scale(
-                            scale: state.anchorScale,
-                            child: GlassContainer(
-                              useOwnLayer: false,
-                              settings: effectiveSettings,
-                              quality: effectiveQuality,
-                              width: tw,
-                              height: th,
-                              shape: LiquidRoundedSuperellipse(
-                                borderRadius: _triggerBorderRadius ??
-                                    _triggerSize!.shortestSide / 2.0,
-                              ),
-                            ),
-                          ),
-                        ),
-
-                      // ── Blob B: Menu Body ───────────────────────────────────
-                      // Its center travels diagonally relative to the trigger.
-                      // By scaling the x/y offsets with the width/height curves,
-                      // its edges stay perfectly pinned while it grows!
+              quality: effectiveQuality,
+              blendAmount: state.blend,
+              child: LiquidGlassBlendGroup(
+                blend: state.blend,
+                child: Stack(
+                  clipBehavior: Clip.none,
+                  children: [
+                    // ─── Blob A: Trigger Ghost ───────────────────────────────
+                    // Stays perfectly centered on the trigger, BUT absorbs the
+                    // closing momentum (pushDx/pushDy) to bounce when slammed.
+                    // Shrinks to 0 scale over the first 40% of the animation to
+                    // smoothly break the liquid bridge.
+                    // Blob A is the spawn blob; under morphFromZero there is no trigger to ghost.
+                    if (!widget.morphFromZero)
                       Positioned(
                         left: _triggerGlobalPosition.dx +
                             _followOffset.dx +
-                            tw / 2.0 +
-                            state.currentDx -
-                            currentWidth / 2.0 +
-                            (_horizontalOffset * clampedValue),
+                            state.pushDx,
                         top: _triggerGlobalPosition.dy +
                             _followOffset.dy +
-                            th / 2.0 +
-                            state.currentDy -
-                            currentHeight / 2.0 +
-                            (_verticalOffset * clampedValue),
-                        child: IgnorePointer(
-                          ignoring: clampedValue < 0.8,
-                          child: _buildMorphingContainer(
-                              state, clampedValue, currentWidth, currentHeight),
+                            state.pushDy,
+                        child: Transform.scale(
+                          scale: state.anchorScale,
+                          child: GlassContainer(
+                            useOwnLayer: false,
+                            settings: effectiveSettings,
+                            quality: effectiveQuality,
+                            width: tw,
+                            height: th,
+                            shape: LiquidRoundedSuperellipse(
+                              borderRadius: _triggerBorderRadius ??
+                                  _triggerSize!.shortestSide / 2.0,
+                            ),
+                          ),
                         ),
                       ),
-                    ],
-                  ),
+
+                    // ── Blob B: Menu Body ───────────────────────────────────
+                    // Its center travels diagonally relative to the trigger.
+                    // By scaling the x/y offsets with the width/height curves,
+                    // its edges stay perfectly pinned while it grows!
+                    Positioned(
+                      left: blobBLeft,
+                      top: blobBTop,
+                      child: IgnorePointer(
+                        ignoring: clampedValue < 0.8,
+                        child: _buildMorphingContainer(
+                          state,
+                          clampedValue,
+                          currentWidth,
+                          currentHeight,
+                          currentRadius,
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
               ),
             ),
@@ -537,7 +550,7 @@ class _GlassMenuState extends State<GlassMenu> with TickerProviderStateMixin {
   }
 
   Widget _buildMorphingContainer(LiquidMorphState state, double clampedValue,
-      double currentWidth, double currentHeight) {
+      double currentWidth, double currentHeight, double currentRadius) {
     // Sub-pixel blob registers no blend-group shape: skip it so the premium
     // Impeller geometry never rasterizes a 0-area matte (Invalid image dimensions).
     // The 1.0 logical-px floor is provably safe at every devicePixelRatio: a
@@ -563,22 +576,6 @@ class _GlassMenuState extends State<GlassMenu> with TickerProviderStateMixin {
     // and the pinched neck connecting back to the trigger.
     //
     // No more faking the shape with tall, thin rectangles! Let the shader do the work.
-
-    // By keeping the border radius uniform, the container starts as a perfect circle
-    // or pill and naturally morphs into a rounded rectangle.
-    // To ensure it stays perfectly round as it grows (preventing it from becoming a box early),
-    // we interpolate from the MAX possible radius (perfect pill) to the final menu radius.
-    final maxRadius = math.min(currentWidth, currentHeight) / 2.0;
-
-    // Delay the radius transition so the shape stays highly rounded (teardrop-like)
-    // while it pulls away from the trigger. Only morph to the sharper menu border
-    // radius towards the end of the expansion.
-    // Clamp to [0,1] for the curve: a border-radius cannot meaningfully overshoot,
-    // but sizeT can exceed 1.0 during the spring overshoot phase.
-    final double radiusT =
-        Curves.easeInExpo.transform(state.sizeT.clamp(0.0, 1.0));
-    final currentRadius =
-        lerpDouble(maxRadius, widget.menuBorderRadius, radiusT)!;
 
     // Build the shape
     final teardropShape = LiquidRoundedSuperellipse(

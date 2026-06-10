@@ -272,7 +272,7 @@ class _BottomBarDemoPageState extends State<_BottomBarDemoPage> {
   @override
   Widget build(BuildContext context) {
     return GlassPage(
-      background: _buildDemoBackground(),
+      background: _buildDemoBackground(context),
       statusBarStyle: CupertinoTheme.of(context).brightness == Brightness.dark
           ? GlassStatusBarStyle.light
           : GlassStatusBarStyle.dark,
@@ -399,7 +399,7 @@ class _SearchableBarDemoPageState extends State<_SearchableBarDemoPage> {
   @override
   Widget build(BuildContext context) {
     return GlassPage(
-      background: _buildDemoBackground(),
+      background: _buildDemoBackground(context),
       statusBarStyle: CupertinoTheme.of(context).brightness == Brightness.dark
           ? GlassStatusBarStyle.light
           : GlassStatusBarStyle.dark,
@@ -553,18 +553,26 @@ class _SearchableBarDemoPageState extends State<_SearchableBarDemoPage> {
 // Shared demo content
 // =============================================================================
 
-Widget _buildDemoBackground() {
+Widget _buildDemoBackground(BuildContext context) {
+  final isDark = CupertinoTheme.of(context).brightness == Brightness.dark;
   return Container(
-    decoration: const BoxDecoration(
+    decoration: BoxDecoration(
       gradient: LinearGradient(
         begin: Alignment.topLeft,
         end: Alignment.bottomRight,
-        colors: [
-          Color(0xFF1A1A2E),
-          Color(0xFF16213E),
-          Color(0xFF0F3460),
-          Color(0xFF533483),
-        ],
+        colors: isDark
+            ? const [
+                Color(0xFF1A1A2E),
+                Color(0xFF16213E),
+                Color(0xFF0F3460),
+                Color(0xFF533483),
+              ]
+            : const [
+                Color(0xFFF0F4FF),
+                Color(0xFFE6F0FF),
+                Color(0xFFD9E6FF),
+                Color(0xFFC0D6FF),
+              ],
       ),
     ),
   );

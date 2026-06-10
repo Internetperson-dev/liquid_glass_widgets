@@ -38,6 +38,7 @@ class LiquidGlass extends StatelessWidget {
   })  : grouped = false,
         blendGroupLink = null,
         clipExpansion = EdgeInsets.zero,
+        shadows = const <BoxShadow>[],
         ownLayerConfig = null;
 
   /// Creates a new [LiquidGlass] that is part of a [LiquidGlassBlendGroup].
@@ -54,6 +55,7 @@ class LiquidGlass extends StatelessWidget {
     this.blendGroupLink,
   })  : ownLayerConfig = null,
         clipExpansion = EdgeInsets.zero,
+        shadows = const <BoxShadow>[],
         grouped = true;
 
   /// Creates a new [LiquidGlass] that creates its own [LiquidGlassLayer].
@@ -67,6 +69,7 @@ class LiquidGlass extends StatelessWidget {
     required this.child,
     required this.shape,
     LiquidGlassSettings settings = const LiquidGlassSettings(),
+    this.shadows = const <BoxShadow>[],
     super.key,
     this.glassContainsChild = false,
     this.clipBehavior = Clip.hardEdge,
@@ -110,6 +113,9 @@ class LiquidGlass extends StatelessWidget {
   /// The settings for this glass if it is supposed to create its own layer.
   final LiquidGlassSettings? ownLayerConfig;
 
+  /// The shadow to pass to the created layer (only applies for withOwnLayer).
+  final List<BoxShadow> shadows;
+
   /// Extra clip expansion forwarded to [LiquidGlassLayer.clipExpansion].
   ///
   /// Only meaningful when using [LiquidGlass.withOwnLayer]. Has no effect on
@@ -122,6 +128,7 @@ class LiquidGlass extends StatelessWidget {
     if (ownLayerConfig case final settings?) {
       return LiquidGlassLayer(
         settings: settings,
+        shadows: shadows,
         clipExpansion: clipExpansion,
         child: LiquidGlassBlendGroup(
           blend: 0,

@@ -67,23 +67,27 @@ LiquidGlassSettings _kSearchGlass(BuildContext context) {
     chromaticAberration: isDark ? 0.1 : 0.05,
     refractiveIndex: 1.2,
     saturation: 1.0,
-    shadowElevation: isDark ? 0.0 : 0.8,
+    shadowElevation: isDark ? 0.0 : 1.5,
   );
 }
 
 // Glass for the menus themselves
-LiquidGlassSettings _kMenuGlass(BuildContext context) => LiquidGlassSettings(
-      glassColor: CupertinoTheme.of(context).brightness == Brightness.dark
-          ? Colors.white
-          : Colors.black.withValues(alpha: 0.08),
-      thickness: 18,
-      blur: 12,
-      lightIntensity: 0.6,
-      ambientStrength: 0.1,
-      chromaticAberration: 0.01,
-      refractiveIndex: 1.2,
-      saturation: 1.5,
-    );
+LiquidGlassSettings _kMenuGlass(BuildContext context) {
+  final isDark = CupertinoTheme.of(context).brightness == Brightness.dark;
+  return LiquidGlassSettings(
+    glassColor: isDark
+        ? Colors.white12 // Beautiful translucent dark glass
+        : const Color(0x99FFFFFF), // Beautiful frosted white in light mode
+    thickness: 20,
+    blur: 12,
+    lightIntensity: 0.6,
+    ambientStrength: 0.1,
+    chromaticAberration: 0.01,
+    refractiveIndex: 1.2,
+    saturation: 1.5,
+    shadowElevation: isDark ? 0.0 : 1.0, // GPU SDF shadows in light mode!
+  );
+}
 
 // ─────────────────────────────────────────────────────────────────────────────
 // DATA
@@ -441,6 +445,7 @@ class _EditMenu extends StatelessWidget {
           height: 44,
           shape: const LiquidRoundedSuperellipse(borderRadius: 22),
           quality: GlassQuality.premium,
+          useOwnLayer: true, // Enables standalone GPU shadows
           persistPressOnDrag: true,
           ambientBaseLight: isDark ? 0.08 : 0.25,
           child: Center(
@@ -506,6 +511,7 @@ class _FilterMenu extends StatelessWidget {
           height: 44,
           shape: const LiquidOval(), // 44×44 = perfect circle
           quality: GlassQuality.premium,
+          useOwnLayer: true, // Enables standalone GPU shadows
           // Keep pressed state active while finger is held down and dragged off.
           persistPressOnDrag: true,
           // Light mode: higher ambient so pressed state stays visible when glow drags off.

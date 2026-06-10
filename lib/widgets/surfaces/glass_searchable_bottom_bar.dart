@@ -87,6 +87,7 @@ class GlassSearchableBottomBar extends StatefulWidget {
     this.quality,
     this.magnification = 1.0,
     this.innerBlur = 0.0,
+    this.platformViewBackdrop = false,
     this.maskingQuality = MaskingQuality.high,
     this.backgroundKey,
     this.springDescription,
@@ -309,6 +310,21 @@ class GlassSearchableBottomBar extends StatefulWidget {
   /// Blur amount inside the selected indicator. Defaults to 0.0.
   final double innerBlur;
 
+  /// Set true when the bar sits over an iOS PlatformView (e.g. a map). The bar
+  /// background renders via live `BackdropFilter` (the premium shader can't
+  /// capture a PlatformView), while the premium indicator refracts the bar's
+  /// own icons — so premium animations survive over the PlatformView with no
+  /// quality swap. Defaults to false.
+  ///
+  /// Known limitation: the premium indicator refracts the icon layer via
+  /// `toImageSync`, which asserts the captured boundary is clean. While the
+  /// indicator animates, that layer repaints every frame, so a mid-animation
+  /// capture can fail and the indicator briefly flashes dark. Negligible at
+  /// [magnification] ~1.0 (the default) but grows with magnification. Keep
+  /// magnification near 1.0 over a PlatformView. (The PlatformView itself
+  /// can't be captured, so it can't be refracted directly.)
+  final bool platformViewBackdrop;
+
   /// Rendering quality for the liquid masking effect. Defaults to [MaskingQuality.high].
   final MaskingQuality maskingQuality;
 
@@ -528,6 +544,7 @@ class _GlassSearchableBottomBarState extends State<GlassSearchableBottomBar>
         return AdaptiveLiquidGlassLayer(
           settings: effectiveSettings,
           quality: effectiveQuality,
+          platformViewBackdrop: widget.platformViewBackdrop,
           blendAmount: widget.enableBlend ? widget.blendAmount : 0,
           child: Padding(
             padding: EdgeInsets.symmetric(
@@ -727,6 +744,7 @@ class _GlassSearchableBottomBarState extends State<GlassSearchableBottomBar>
                           isActive: searching,
                           barBorderRadius: widget.barBorderRadius,
                           quality: effectiveQuality,
+                          platformViewBackdrop: widget.platformViewBackdrop,
                           enableBackgroundAnimation:
                               widget.interactionBehavior.hasScale,
                           backgroundPressScale: widget.pressScale,
@@ -790,6 +808,7 @@ class _GlassSearchableBottomBarState extends State<GlassSearchableBottomBar>
                                   quality: effectiveQuality,
                                   iconColor: widget.extraButton!.iconColor ??
                                       resolvedUnselectedIconColor,
+                                  enableBlend: widget.enableBlend,
                                   borderRadius: widget.barBorderRadius ==
                                           GlassSearchableBottomBar
                                               ._kDefaultBorderRadius
@@ -828,6 +847,7 @@ class _GlassSearchableBottomBarState extends State<GlassSearchableBottomBar>
                           indicatorExpansion: widget.indicatorExpansion,
                           indicatorSettings: widget.indicatorSettings,
                           backgroundKey: widget.backgroundKey,
+                          platformViewBackdrop: widget.platformViewBackdrop,
                           isSearchActive: searching,
                           interactionGlowColor:
                               widget.interactionBehavior.hasGlow

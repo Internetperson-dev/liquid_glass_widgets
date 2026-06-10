@@ -72,6 +72,7 @@ class LiquidGlassLayer extends StatefulWidget {
   const LiquidGlassLayer({
     required this.child,
     this.settings = const LiquidGlassSettings(),
+    this.shadows = const <BoxShadow>[],
     this.clipExpansion = EdgeInsets.zero,
     super.key,
   });
@@ -84,6 +85,9 @@ class LiquidGlassLayer extends StatefulWidget {
 
   /// The settings for the liquid glass effect for all shapes in this layer.
   final LiquidGlassSettings settings;
+
+  /// The shadows to render using the merged SDF geometry.
+  final List<BoxShadow> shadows;
 
   /// Extra space to add around the geometry bounding box before clipping the
   /// [BackdropFilterLayer] that runs the glass shader.
@@ -140,6 +144,7 @@ class _LiquidGlassLayerState extends State<LiquidGlassLayer>
                 renderShader: shader,
                 backdropKey: BackdropGroup.of(context)?.backdropKey,
                 settings: widget.settings,
+                shadows: widget.shadows,
                 link: _link,
                 clipExpansion: widget.clipExpansion,
                 child: child!,
@@ -158,6 +163,7 @@ class _RawShapes extends SingleChildRenderObjectWidget {
     required this.renderShader,
     required this.backdropKey,
     required this.settings,
+    required this.shadows,
     required Widget super.child,
     required this.link,
     this.clipExpansion = EdgeInsets.zero,
@@ -166,6 +172,7 @@ class _RawShapes extends SingleChildRenderObjectWidget {
   final FragmentShader renderShader;
   final BackdropKey? backdropKey;
   final LiquidGlassSettings settings;
+  final List<BoxShadow> shadows;
   final GeometryRenderLink link;
   final EdgeInsets clipExpansion;
 
@@ -176,6 +183,7 @@ class _RawShapes extends SingleChildRenderObjectWidget {
       renderShader: renderShader,
       backdropKey: backdropKey,
       settings: settings,
+      shadows: shadows,
       link: link,
       clipExpansion: clipExpansion,
     );
@@ -190,6 +198,7 @@ class _RawShapes extends SingleChildRenderObjectWidget {
       ..link = link
       ..devicePixelRatio = MediaQuery.devicePixelRatioOf(context)
       ..settings = settings
+      ..shadows = shadows
       ..backdropKey = backdropKey
       ..clipExpansion = clipExpansion;
   }
@@ -202,6 +211,7 @@ class RenderLiquidGlassLayer extends LiquidGlassRenderObject
     required super.renderShader,
     required super.devicePixelRatio,
     required super.settings,
+    required this.shadows,
     required super.link,
     super.backdropKey,
     EdgeInsets clipExpansion = EdgeInsets.zero,
@@ -218,6 +228,8 @@ class RenderLiquidGlassLayer extends LiquidGlassRenderObject
     _clipExpansion = value;
     markNeedsPaint();
   }
+
+  List<BoxShadow> shadows;
 
   @override
   Size get desiredMatteSize => switch (owner?.rootNode) {
@@ -246,6 +258,59 @@ class RenderLiquidGlassLayer extends LiquidGlassRenderObject
     Rect boundingBox,
   ) {
     if (!attached) return;
+
+    // ── Pass 0: SDF Shadows ──────────────────────────────────────────────────
+    if (shadows.isNotEmpty && geometryImage != null) {
+      final localBounds = geometryLocalBounds.shift(offset);
+
+      for (final shadow in shadows) {
+        if (shadow.color.a == 0) continue;
+
+        // Inflate clip rect to ensure large blurs aren't cut off
+        final shadowClip = localBounds.shift(shadow.offset).inflate(
+              shadow.spreadRadius + shadow.blurRadius * 3,
+            );
+
+        context.canvas.saveLayer(shadowClip, Paint());
+
+        // 1. Draw the geometry matte as a blurred, tinted shadow
+        final shadowPaint = Paint()
+          ..colorFilter = ColorFilter.mode(shadow.color, BlendMode.srcIn)
+          ..imageFilter = ImageFilter.blur(
+            sigmaX: shadow.blurSigma,
+            sigmaY: shadow.blurSigma,
+            tileMode: TileMode.decal,
+          );
+
+        context.canvas.drawImageRect(
+          geometryImage!,
+          Rect.fromLTWH(
+            0,
+            0,
+            geometryImage!.width.toDouble(),
+            geometryImage!.height.toDouble(),
+          ),
+          localBounds.shift(shadow.offset),
+          shadowPaint,
+        );
+
+        // 2. GPU Cutout (dstOut): punch out the interior using the same geometry
+        // matte to prevent the glass from blurring its own shadow (dirty rim).
+        context.canvas.drawImageRect(
+          geometryImage!,
+          Rect.fromLTWH(
+            0,
+            0,
+            geometryImage!.width.toDouble(),
+            geometryImage!.height.toDouble(),
+          ),
+          localBounds,
+          Paint()..blendMode = BlendMode.dstOut,
+        );
+
+        context.canvas.restore();
+      }
+    }
 
     // ── Pass 1: Blur ─────────────────────────────────────────────────────────
     // Use Flutter's native ImageFilter.blur for smooth, multi-pass Gaussian

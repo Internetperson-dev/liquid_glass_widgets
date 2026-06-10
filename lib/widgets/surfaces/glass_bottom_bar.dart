@@ -223,6 +223,7 @@ class GlassBottomBar extends StatefulWidget {
     this.interactionGlowRadius = 1.5,
     this.interactionBehavior = GlassInteractionBehavior.full,
     this.pressScale = 1.04,
+    this.platformViewBackdrop = false,
   })  : assert(tabs.length > 0, 'GlassBottomBar requires at least one tab'),
         assert(
           selectedIndex >= 0 && selectedIndex < tabs.length,
@@ -273,6 +274,13 @@ class GlassBottomBar extends StatefulWidget {
 
   /// Optional background key for Skia/Web refraction.
   final GlobalKey? backgroundKey;
+
+  /// Set true when the bar sits over an iOS PlatformView (e.g. a map). The bar
+  /// background renders via live `BackdropFilter` (the premium shader can't
+  /// capture a PlatformView), while the premium indicator refracts the bar's
+  /// own icons — so premium animations survive over the PlatformView with no
+  /// quality swap. Defaults to false.
+  final bool platformViewBackdrop;
 
   /// The color of the directional glow effect when interacting with the bar.
   ///
@@ -581,6 +589,7 @@ class _GlassBottomBarState extends State<GlassBottomBar> {
     return AdaptiveLiquidGlassLayer(
       settings: effectiveSettings,
       quality: effectiveQuality,
+      platformViewBackdrop: widget.platformViewBackdrop,
       blendAmount: widget.enableBlend
           ? widget.blendAmount
           : 0, // Impeller-only (gracefully ignored on Skia)
@@ -606,106 +615,115 @@ class _GlassBottomBarState extends State<GlassBottomBar> {
 
             return SizedBox(
               height: widget.barHeight,
-              child: Stack(
-                clipBehavior: Clip.none,
-                children: [
-                  // 1. Optional extra button — painted first (bottom of z-order).
-                  // Pinned to the trailing edge. Painted before the tab pill
-                  // so the jelly indicator's glass effect correctly overlaps and
-                  // refracts the extra button during horizontal stretch physics.
-                  // This matches the z-order pattern in GlassSearchableBottomBar.
-                  if (widget.extraButton != null)
-                    Positioned(
-                      right: 0,
-                      top: 0,
-                      bottom: 0,
-                      child: SizedBox(
-                        width: widget.extraButton!.size,
+              child: Builder(
+                builder: (context) {
+                  return Stack(
+                    clipBehavior: Clip.none,
+                    children: [
+                      // 1. Optional extra button — painted first (bottom of z-order).
+                      // Pinned to the trailing edge. Painted before the tab pill
+                      // so the jelly indicator's glass effect correctly overlaps and
+                      // refracts the extra button during horizontal stretch physics.
+                      // This matches the z-order pattern in GlassSearchableBottomBar.
+                      if (widget.extraButton != null)
+                        Positioned(
+                          right: 0,
+                          top: 0,
+                          bottom: 0,
+                          child: SizedBox(
+                            width: widget.extraButton!.size,
+                            height: widget.barHeight,
+                            child: BottomBarExtraBtn(
+                              config: widget.extraButton!,
+                              quality: effectiveQuality,
+                              iconColor: widget.extraButton!.iconColor ??
+                                  resolvedUnselectedIconColor,
+                              enableBlend: widget.enableBlend,
+                              borderRadius: widget.barBorderRadius ==
+                                      GlassBottomBar._defaultBarBorderRadius
+                                  ? null
+                                  : widget.barBorderRadius,
+                            ),
+                          ),
+                        ),
+
+                      // 2. Tab pill — painted last (top of z-order).
+                      // The jelly indicator uses Stack(clipBehavior: Clip.none)
+                      // internally, so it can overflow past the pill bounds.
+                      Positioned(
+                        left: 0,
+                        top: 0,
+                        width: tabPillW,
                         height: widget.barHeight,
-                        child: BottomBarExtraBtn(
-                          config: widget.extraButton!,
+                        child: TabIndicator(
                           quality: effectiveQuality,
-                          iconColor: widget.extraButton!.iconColor ??
-                              resolvedUnselectedIconColor,
-                          borderRadius: widget.barBorderRadius ==
-                                  GlassBottomBar._defaultBarBorderRadius
-                              ? null
-                              : widget.barBorderRadius,
+                          visible: widget.showIndicator,
+                          tabIndex: widget.selectedIndex,
+                          tabCount: widget.tabs.length,
+                          indicatorColor: widget.indicatorColor,
+                          indicatorSettings: widget.indicatorSettings,
+                          onTabChanged: widget.onTabSelected,
+                          barHeight: widget.barHeight,
+                          barBorderRadius: widget.barBorderRadius,
+                          tabPadding: widget.tabPadding,
+                          backgroundKey: widget.backgroundKey,
+                          maskingQuality: widget.maskingQuality,
+                          indicatorExpansion: widget.indicatorExpansion,
+                          platformViewBackdrop: widget.platformViewBackdrop,
+                          interactionGlowColor:
+                              widget.interactionBehavior.hasGlow
+                                  ? effectiveInteractionGlowColor
+                                  : const Color(0x00000000),
+                          interactionGlowRadius: widget.interactionGlowRadius,
+                          interactionGlowBlurRadius: effectiveGlowBlurRadius,
+                          interactionGlowSpreadRadius:
+                              effectiveGlowSpreadRadius,
+                          interactionGlowOpacity: effectiveGlowOpacity,
+                          interactionScale: widget.interactionBehavior.hasScale
+                              ? widget.pressScale
+                              : 1.0,
+                          childUnselected: Row(
+                            children: [
+                              for (var i = 0; i < widget.tabs.length; i++)
+                                Expanded(
+                                  child: BottomBarTabItem(
+                                    tab: widget.tabs[i],
+                                    selected: false,
+                                    selectedIconColor:
+                                        resolvedSelectedIconColor,
+                                    unselectedIconColor:
+                                        resolvedUnselectedIconColor,
+                                    iconSize: widget.iconSize,
+                                    labelFontSize: widget.labelFontSize,
+                                    textStyle: widget.textStyle,
+                                    iconLabelSpacing: widget.iconLabelSpacing,
+                                    glowDuration: widget.glowDuration,
+                                    glowBlurRadius: widget.glowBlurRadius,
+                                    glowSpreadRadius: widget.glowSpreadRadius,
+                                    glowOpacity: widget.glowOpacity,
+                                    // onTap is null: all tap selection goes through
+                                    // TabIndicator.onBarTapDown (prevents double-fire).
+                                    onTap: null,
+                                  ),
+                                ),
+                            ],
+                          ),
+                          // Pass selected tabs (foreground/masked layer)
+                          selectedTabBuilder: (context, intensity, alignment) =>
+                              _buildSelectedTabs(
+                                  intensity,
+                                  alignment,
+                                  resolvedSelectedIconColor,
+                                  resolvedUnselectedIconColor),
+                          magnification: widget.magnification,
+                          innerBlur: widget.innerBlur,
                         ),
                       ),
-                    ),
-
-                  // 2. Tab pill — painted last (top of z-order).
-                  // The jelly indicator uses Stack(clipBehavior: Clip.none)
-                  // internally, so it can overflow past the pill bounds.
-                  Positioned(
-                    left: 0,
-                    top: 0,
-                    width: tabPillW,
-                    height: widget.barHeight,
-                    child: TabIndicator(
-                      quality: effectiveQuality,
-                      visible: widget.showIndicator,
-                      tabIndex: widget.selectedIndex,
-                      tabCount: widget.tabs.length,
-                      indicatorColor: widget.indicatorColor,
-                      indicatorSettings: widget.indicatorSettings,
-                      onTabChanged: widget.onTabSelected,
-                      barHeight: widget.barHeight,
-                      barBorderRadius: widget.barBorderRadius,
-                      tabPadding: widget.tabPadding,
-                      backgroundKey: widget.backgroundKey,
-                      maskingQuality: widget.maskingQuality,
-                      indicatorExpansion: widget.indicatorExpansion,
-                      interactionGlowColor: widget.interactionBehavior.hasGlow
-                          ? effectiveInteractionGlowColor
-                          : const Color(0x00000000),
-                      interactionGlowRadius: widget.interactionGlowRadius,
-                      interactionGlowBlurRadius: effectiveGlowBlurRadius,
-                      interactionGlowSpreadRadius: effectiveGlowSpreadRadius,
-                      interactionGlowOpacity: effectiveGlowOpacity,
-                      interactionScale: widget.interactionBehavior.hasScale
-                          ? widget.pressScale
-                          : 1.0,
-                      childUnselected: Row(
-                        children: [
-                          for (var i = 0; i < widget.tabs.length; i++)
-                            Expanded(
-                              child: BottomBarTabItem(
-                                tab: widget.tabs[i],
-                                selected: false,
-                                selectedIconColor: resolvedSelectedIconColor,
-                                unselectedIconColor:
-                                    resolvedUnselectedIconColor,
-                                iconSize: widget.iconSize,
-                                labelFontSize: widget.labelFontSize,
-                                textStyle: widget.textStyle,
-                                iconLabelSpacing: widget.iconLabelSpacing,
-                                glowDuration: widget.glowDuration,
-                                glowBlurRadius: widget.glowBlurRadius,
-                                glowSpreadRadius: widget.glowSpreadRadius,
-                                glowOpacity: widget.glowOpacity,
-                                // onTap is null: all tap selection goes through
-                                // TabIndicator.onBarTapDown (prevents double-fire).
-                                onTap: null,
-                              ),
-                            ),
-                        ],
-                      ),
-                      // Pass selected tabs (foreground/masked layer)
-                      selectedTabBuilder: (context, intensity, alignment) =>
-                          _buildSelectedTabs(
-                              intensity,
-                              alignment,
-                              resolvedSelectedIconColor,
-                              resolvedUnselectedIconColor),
-                      magnification: widget.magnification,
-                      innerBlur: widget.innerBlur,
-                    ),
-                  ),
-                ],
-              ),
-            );
+                    ],
+                  ); // Stack
+                }, // Builder.builder
+              ), // Builder
+            ); // SizedBox
           },
         ),
       ),
