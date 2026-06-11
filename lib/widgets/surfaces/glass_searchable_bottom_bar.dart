@@ -412,6 +412,12 @@ class _GlassSearchableBottomBarState extends State<GlassSearchableBottomBar>
   /// each time and would never match, leaking the old subscription.
   void _onControllerChanged() => setState(() {});
 
+  /// Shared listener for all three spring controllers. Multiple controllers
+  /// may tick in the same frame but Flutter coalesces setState into one rebuild.
+  /// Using a named method (instead of three anonymous lambdas) also lets
+  /// removeListener work correctly during dispose.
+  void _onSpringTick() => setState(() {});
+
   // ── Spring-simulation animation controllers ─────────────────────────────
   // Each drives one layout axis of the pill morph. Wide bounds allow the
   // spring to overshoot the target and snap back (the jelly effect).
@@ -444,21 +450,23 @@ class _GlassSearchableBottomBarState extends State<GlassSearchableBottomBar>
     _controller.addListener(_onControllerChanged);
 
     // Wide bounds allow the spring value to pass beyond [0, 1] for overshoot.
+    // All three controllers share a single listener so that simultaneous
+    // spring ticks produce only one setState per frame, not three.
     _tabWCtrl = AnimationController(
       vsync: this,
       lowerBound: double.negativeInfinity,
       upperBound: double.infinity,
-    )..addListener(() => setState(() {}));
+    )..addListener(_onSpringTick);
     _searchLeftCtrl = AnimationController(
       vsync: this,
       lowerBound: double.negativeInfinity,
       upperBound: double.infinity,
-    )..addListener(() => setState(() {}));
+    )..addListener(_onSpringTick);
     _searchWCtrl = AnimationController(
       vsync: this,
       lowerBound: double.negativeInfinity,
       upperBound: double.infinity,
-    )..addListener(() => setState(() {}));
+    )..addListener(_onSpringTick);
   }
 
   @override

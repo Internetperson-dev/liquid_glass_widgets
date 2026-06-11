@@ -150,6 +150,10 @@ abstract class LiquidGlassRenderObject extends RenderProxyBox {
   @override
   ui.Rect get paintBounds => _paintBounds;
 
+  // Reusable list to avoid per-frame allocations during paint traversal.
+  final _shapesWithGeometry =
+      <(RenderLiquidGlassGeometry, GeometryCache, Matrix4)>[];
+
   // MARK: Painting
 
   @override
@@ -167,8 +171,7 @@ abstract class LiquidGlassRenderObject extends RenderProxyBox {
       );
     }
 
-    final shapesWithGeometry =
-        <(RenderLiquidGlassGeometry, GeometryCache, Matrix4)>[];
+    _shapesWithGeometry.clear();
 
     Rect? boundingBox;
 
@@ -178,7 +181,7 @@ abstract class LiquidGlassRenderObject extends RenderProxyBox {
       if (geometry == null) continue;
 
       final transform = geometryRo.getTransformTo(this);
-      shapesWithGeometry.add((geometryRo, geometry, transform));
+      _shapesWithGeometry.add((geometryRo, geometry, transform));
 
       final geoBounds = MatrixUtils.transformRect(
         transform,
@@ -207,13 +210,13 @@ abstract class LiquidGlassRenderObject extends RenderProxyBox {
       paintShapeContents(
         context,
         offset,
-        shapesWithGeometry,
+        _shapesWithGeometry,
         insideGlass: true,
       );
       paintShapeContents(
         context,
         offset,
-        shapesWithGeometry,
+        _shapesWithGeometry,
         insideGlass: false,
       );
       super.paint(context, offset);
@@ -227,7 +230,7 @@ abstract class LiquidGlassRenderObject extends RenderProxyBox {
 
       // Synchronous rasterization (toImageSync) eliminates 1-frame jitter
       // during size animations (like modal sheet expansion).
-      _updateGeometrySync(shapesWithGeometry, boundingBox);
+      _updateGeometrySync(_shapesWithGeometry, boundingBox);
 
       // The image is now current — no latency. On the very first frame there
       // is no previous image — fall through to the early-return below via the
@@ -239,13 +242,13 @@ abstract class LiquidGlassRenderObject extends RenderProxyBox {
       paintShapeContents(
         context,
         offset,
-        shapesWithGeometry,
+        _shapesWithGeometry,
         insideGlass: true,
       );
       paintShapeContents(
         context,
         offset,
-        shapesWithGeometry,
+        _shapesWithGeometry,
         insideGlass: false,
       );
     } else {
@@ -287,7 +290,7 @@ abstract class LiquidGlassRenderObject extends RenderProxyBox {
         paintLiquidGlass(
           context,
           offset,
-          shapesWithGeometry,
+          _shapesWithGeometry,
           _paintBounds,
         );
       }

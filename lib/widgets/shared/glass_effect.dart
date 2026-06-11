@@ -111,12 +111,15 @@ class GlassEffect extends StatefulWidget {
         debugPrint('[GlassEffect] ✓ Shader program loaded (web)');
       }
 
-      // Create a 1x1 transparent dummy image to satisfy sampler index 0
+      // Create a 1x1 transparent dummy image to satisfy sampler index 0.
+      // toImageSync (not toImage) — synchronous, consistent with
+      // LightweightLiquidGlass.preWarm(). For a 1×1 image the GPU cost
+      // is negligible and we avoid a 1-frame async initialization delay.
       final recorder = ui.PictureRecorder();
-      final canvas = Canvas(recorder);
-      canvas.drawColor(const Color(0x00000000), BlendMode.src);
+      Canvas(recorder);
       final picture = recorder.endRecording();
-      _dummyImage = await picture.toImage(1, 1);
+      _dummyImage = picture.toImageSync(1, 1);
+      picture.dispose();
     } catch (e) {
       debugPrint('[GlassEffect] Pre-warm failed: $e');
     } finally {
@@ -642,7 +645,9 @@ class _RenderInteractiveIndicator extends RenderProxyBox {
         _baseAlphaMultiplier = baseAlphaMultiplier,
         _edgeAlphaMultiplier = edgeAlphaMultiplier,
         _rimThickness = rimThickness,
-        _rimSmoothing = rimSmoothing;
+        _rimSmoothing = rimSmoothing,
+        _cachedLightCos = math.cos(settings.lightAngle),
+        _cachedLightSin = -math.sin(settings.lightAngle);
 
   ui.FragmentShader _shader;
   set shader(ui.FragmentShader value) {
@@ -654,6 +659,15 @@ class _RenderInteractiveIndicator extends RenderProxyBox {
   LiquidGlassSettings _settings;
   set settings(LiquidGlassSettings value) {
     if (_settings == value) return;
+    // Invalidate cached filter when blur changes.
+    if (value.effectiveBlur != _settings.effectiveBlur) {
+      _cachedInteractiveFilter = null;
+    }
+    // Recompute trig only when lightAngle actually changes.
+    if (value.lightAngle != _settings.lightAngle) {
+      _cachedLightCos = math.cos(value.lightAngle);
+      _cachedLightSin = -math.sin(value.lightAngle);
+    }
     _settings = value;
     markNeedsPaint();
   }
@@ -742,46 +756,69 @@ class _RenderInteractiveIndicator extends RenderProxyBox {
     markNeedsPaint();
   }
 
+  // ── Cached light direction ────────────────────────────────────────────────
+  // Avoids recomputing cos/sin on every _updateShaderUniforms call.
+  // Matches the caching pattern in _RenderLightweightGlass.
+  double _cachedLightCos;
+  double _cachedLightSin;
+
+  // Only force compositing when blur > 0 (the BackdropFilterLayer path).
+  // When blur is 0, _paintGlassContent draws directly — no compositing layer.
   @override
-  bool get alwaysNeedsCompositing => true;
+  bool get alwaysNeedsCompositing => _settings.effectiveBlur > 0;
+
+  // ── Cached brightness+blur filter ─────────────────────────────────────────
+  // The brightness ColorFilter matrix is constant (mult=1.15, add=0.05), so
+  // the composed filter only changes when blurSigma changes. Caching avoids
+  // a 20-element List<double> allocation per frame per interactive indicator.
+  ui.ImageFilter? _cachedInteractiveFilter;
+  double _cachedInteractiveBlur = -1;
+
+  ui.ImageFilter _getInteractiveFilter(double blurSigma) {
+    if (_cachedInteractiveFilter != null &&
+        _cachedInteractiveBlur == blurSigma) {
+      return _cachedInteractiveFilter!;
+    }
+
+    const double mult = 1.15;
+    const double add = 0.05;
+    final ui.ColorFilter brightnessFilter = ui.ColorFilter.matrix(<double>[
+      mult,
+      0.0,
+      0.0,
+      0.0,
+      add * 255.0,
+      0.0,
+      mult,
+      0.0,
+      0.0,
+      add * 255.0,
+      0.0,
+      0.0,
+      mult,
+      0.0,
+      add * 255.0,
+      0.0,
+      0.0,
+      0.0,
+      1.0,
+      0.0,
+    ]);
+
+    _cachedInteractiveFilter = ui.ImageFilter.compose(
+      outer: brightnessFilter,
+      inner: ui.ImageFilter.blur(sigmaX: blurSigma, sigmaY: blurSigma),
+    );
+    _cachedInteractiveBlur = blurSigma;
+    return _cachedInteractiveFilter!;
+  }
 
   @override
   void paint(PaintingContext context, Offset offset) {
     if (child != null) {
       final blurSigma = _settings.effectiveBlur;
       if (blurSigma > 0) {
-        ui.ImageFilter filter =
-            ui.ImageFilter.blur(sigmaX: blurSigma, sigmaY: blurSigma);
-
-        const double mult = 1.15;
-        const double add = 0.05;
-        final ui.ColorFilter brightnessFilter = ui.ColorFilter.matrix(<double>[
-          mult,
-          0.0,
-          0.0,
-          0.0,
-          add * 255.0,
-          0.0,
-          mult,
-          0.0,
-          0.0,
-          add * 255.0,
-          0.0,
-          0.0,
-          mult,
-          0.0,
-          add * 255.0,
-          0.0,
-          0.0,
-          0.0,
-          1.0,
-          0.0,
-        ]);
-
-        filter = ui.ImageFilter.compose(
-          outer: brightnessFilter,
-          inner: filter,
-        );
+        final filter = _getInteractiveFilter(blurSigma);
 
         context.pushLayer(
           BackdropFilterLayer(filter: filter),
@@ -872,10 +909,10 @@ class _RenderInteractiveIndicator extends RenderProxyBox {
     _shader.setFloat(index++, _settings.effectiveThickness);
 
     // Pass light direction as [cos(angle), -sin(angle)]
-    // lightAngle is in radians (per LiquidGlassSettings API docs and default = 0.5*pi).
-    // Pass directly to cos/sin — no conversion needed.
-    _shader.setFloat(index++, math.cos(_settings.lightAngle));
-    _shader.setFloat(index++, -math.sin(_settings.lightAngle));
+    // lightAngle is in radians (per LiquidGlassSettings API docs).
+    // Uses cached values — trig only recomputed when lightAngle changes.
+    _shader.setFloat(index++, _cachedLightCos);
+    _shader.setFloat(index++, _cachedLightSin);
 
     _shader.setFloat(index++, _settings.effectiveLightIntensity);
     _shader.setFloat(index++, _settings.effectiveAmbientStrength);

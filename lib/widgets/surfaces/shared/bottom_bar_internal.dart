@@ -425,123 +425,139 @@ class TabIndicatorState extends State<TabIndicator>
     final glassRadius =
         widget.barBorderRadius; // 32 → becomes 64 after internal *2
 
-    return LiquidStretch(
-        interactionScale: widget.interactionScale,
-        stretch: 0.0,
-        resistance: 0.08,
-        anchorStretch: false, // Tab bars use jelly-follow, not anchored
-        child: Listener(
-          // Raw pointer events fire BEFORE gesture recognizers and never compete
-          // in the gesture arena, so tabIsDown is always set on the very first event.
-          onPointerDown: (_) {
-            if (mounted) setState(() => tabIsDown = true);
-          },
-          // On finger/button lift, clear tabIsDown if not mid-drag.
-          // Listener fires regardless of which gesture recognizer won the arena.
-          onPointerUp: (_) {
-            if (!tabIsDragging && mounted) {
-              setState(() => tabIsDown = false);
-            }
-          },
-          onPointerCancel: (_) {
-            if (!tabIsDragging && mounted) {
-              setState(() => tabIsDown = false);
-            }
-          },
-          child: GestureDetector(
-            behavior: HitTestBehavior.opaque,
-            onHorizontalDragDown: onBarDragDown,
-            onHorizontalDragStart: onBarDragStart,
-            onHorizontalDragUpdate: onBarDragUpdate,
-            onHorizontalDragEnd: onBarDragEnd,
-            // On cancel (e.g. parent scroll steals the gesture or pointer goes
-            // off-screen), tabIsDown is cleared by the Listener when pointer lifts.
-            onHorizontalDragCancel: onBarDragCancel,
-            onTapDown: onBarTapDown, // DX1: makes jelly visible on desktop taps
-            child: VelocitySpringBuilder(
-              value: tabXAlign,
-              springWhenActive: GlassSpring.interactive(),
-              springWhenReleased: GlassSpring.snappy(
-                duration: const Duration(milliseconds: 350),
-              ),
-              active: tabIsDragging,
-              builder: (context, value, velocity, child) {
-                final alignment = Alignment(value, 0);
-
-                return SpringBuilder(
-                  spring: GlassSpring.snappy(
-                    duration: const Duration(milliseconds: 300),
+    // Lateral sway: the bar body subtly follows the interactive pill during
+    // horizontal drags, mimicking iOS 26 bottom bar physics. The SpringBuilder
+    // animates the offset back to 0.0 when the drag ends.
+    return SpringBuilder(
+      spring: GlassSpring.smooth(
+        duration: const Duration(milliseconds: 250),
+      ),
+      value: barSwayOffset,
+      builder: (context, swayValue, _) {
+        return Transform.translate(
+          offset: Offset(swayValue, 0),
+          child: LiquidStretch(
+            interactionScale: widget.interactionScale,
+            stretch: 0.0,
+            resistance: 0.08,
+            anchorStretch: false, // Tab bars use jelly-follow, not anchored
+            child: Listener(
+              // Raw pointer events fire BEFORE gesture recognizers and never compete
+              // in the gesture arena, so tabIsDown is always set on the very first event.
+              onPointerDown: (_) {
+                if (mounted) setState(() => tabIsDown = true);
+              },
+              // On finger/button lift, clear tabIsDown if not mid-drag.
+              // Listener fires regardless of which gesture recognizer won the arena.
+              onPointerUp: (_) {
+                if (!tabIsDragging && mounted) {
+                  setState(() => tabIsDown = false);
+                }
+              },
+              onPointerCancel: (_) {
+                if (!tabIsDragging && mounted) {
+                  setState(() => tabIsDown = false);
+                }
+              },
+              child: GestureDetector(
+                behavior: HitTestBehavior.opaque,
+                onHorizontalDragDown: onBarDragDown,
+                onHorizontalDragStart: onBarDragStart,
+                onHorizontalDragUpdate: onBarDragUpdate,
+                onHorizontalDragEnd: onBarDragEnd,
+                // On cancel (e.g. parent scroll steals the gesture or pointer goes
+                // off-screen), tabIsDown is cleared by the Listener when pointer lifts.
+                onHorizontalDragCancel: onBarDragCancel,
+                onTapDown:
+                    onBarTapDown, // DX1: makes jelly visible on desktop taps
+                child: VelocitySpringBuilder(
+                  value: tabXAlign,
+                  springWhenActive: GlassSpring.interactive(),
+                  springWhenReleased: GlassSpring.snappy(
+                    duration: const Duration(milliseconds: 350),
                   ),
-                  // Keep thickness active while:
-                  //  - tabIsDown (tap pressed, 420 ms window for spring travel), OR
-                  //  - the spring still has meaningful separation from target.
-                  // Threshold 0.05 (was 0.10) catches the full deceleration tail.
-                  value: widget.visible &&
-                          (tabIsDown ||
-                              (alignment.x - targetAlignment).abs() > 0.05)
-                      ? 1.0
-                      : 0.0,
-                  builder: (context, thickness, child) {
-                    // Lazy evaluation optimization: skip expensive calculations when hidden
-                    if (thickness < 0.01 &&
-                        !widget.visible &&
-                        widget.maskingQuality == MaskingQuality.high) {
-                      // Fast path: indicator is hidden, render simple layout
-                      return Container(
-                        height: widget.barHeight,
-                        decoration: ShapeDecoration(
-                          shape: _barShape,
-                        ),
-                        child: AdaptiveGlass.grouped(
-                          quality: widget.quality,
-                          platformViewBackdrop: widget.platformViewBackdrop,
-                          shape: _barShape,
-                          child: Container(
-                            padding: widget.tabPadding,
-                            child: widget.childUnselected,
-                          ),
-                        ),
-                      );
-                    }
+                  active: tabIsDragging,
+                  builder: (context, value, velocity, child) {
+                    final alignment = Alignment(value, 0);
 
-                    // Calculate jelly transform for the clipper (only when needed)
-                    final jellyTransform =
-                        DraggableIndicatorPhysics.buildJellyTransform(
-                      velocity: Offset(velocity, 0),
-                      maxDistortion: 0.8,
-                      velocityScale: 10,
-                    );
+                    return SpringBuilder(
+                      spring: GlassSpring.snappy(
+                        duration: const Duration(milliseconds: 300),
+                      ),
+                      // Keep thickness active while:
+                      //  - tabIsDown (tap pressed, 420 ms window for spring travel), OR
+                      //  - the spring still has meaningful separation from target.
+                      // Threshold 0.05 (was 0.10) catches the full deceleration tail.
+                      value: widget.visible &&
+                              (tabIsDown ||
+                                  (alignment.x - targetAlignment).abs() > 0.05)
+                          ? 1.0
+                          : 0.0,
+                      builder: (context, thickness, child) {
+                        // Lazy evaluation optimization: skip expensive calculations when hidden
+                        if (thickness < 0.01 &&
+                            !widget.visible &&
+                            widget.maskingQuality == MaskingQuality.high) {
+                          // Fast path: indicator is hidden, render simple layout
+                          return Container(
+                            height: widget.barHeight,
+                            decoration: ShapeDecoration(
+                              shape: _barShape,
+                            ),
+                            child: AdaptiveGlass.grouped(
+                              quality: widget.quality,
+                              platformViewBackdrop: widget.platformViewBackdrop,
+                              shape: _barShape,
+                              child: Container(
+                                padding: widget.tabPadding,
+                                child: widget.childUnselected,
+                              ),
+                            ),
+                          );
+                        }
 
-                    // Switch rendering mode based on masking quality
-                    switch (widget.maskingQuality) {
-                      case MaskingQuality.off:
-                        return _buildSimpleMode(
-                          alignment: alignment,
-                          targetAlignment: Alignment(targetAlignment, 0),
-                          thickness: thickness,
-                          velocity: velocity,
-                          backgroundRadius: backgroundRadius,
-                          glassRadius: glassRadius,
-                          indicatorColor: indicatorColor,
+                        // Calculate jelly transform for the clipper (only when needed)
+                        final jellyTransform =
+                            DraggableIndicatorPhysics.buildJellyTransform(
+                          velocity: Offset(velocity, 0),
+                          maxDistortion: 0.8,
+                          velocityScale: 10,
                         );
 
-                      case MaskingQuality.high:
-                        return _buildHighQualityMode(
-                          alignment: alignment,
-                          thickness: thickness,
-                          velocity: velocity,
-                          jellyTransform: jellyTransform,
-                          backgroundRadius: backgroundRadius,
-                          glassRadius: glassRadius,
-                          indicatorColor: indicatorColor,
-                        );
-                    }
-                  },
-                ); // SpringBuilder
-              }, // VelocitySpringBuilder builder
-            ), // VelocitySpringBuilder
-          ), // GestureDetector
-        )); // Listener
+                        // Switch rendering mode based on masking quality
+                        switch (widget.maskingQuality) {
+                          case MaskingQuality.off:
+                            return _buildSimpleMode(
+                              alignment: alignment,
+                              targetAlignment: Alignment(targetAlignment, 0),
+                              thickness: thickness,
+                              velocity: velocity,
+                              backgroundRadius: backgroundRadius,
+                              glassRadius: glassRadius,
+                              indicatorColor: indicatorColor,
+                            );
+
+                          case MaskingQuality.high:
+                            return _buildHighQualityMode(
+                              alignment: alignment,
+                              thickness: thickness,
+                              velocity: velocity,
+                              jellyTransform: jellyTransform,
+                              backgroundRadius: backgroundRadius,
+                              glassRadius: glassRadius,
+                              indicatorColor: indicatorColor,
+                            );
+                        }
+                      },
+                    ); // SpringBuilder (thickness)
+                  }, // VelocitySpringBuilder builder
+                ), // VelocitySpringBuilder
+              ), // GestureDetector
+            ), // Listener
+          ), // LiquidStretch
+        ); // Transform.translate
+      }, // SpringBuilder builder (sway)
+    ); // SpringBuilder (sway)
   }
 
   /// Wraps the bar pill with a light-mode drop shadow using inverse clipping.

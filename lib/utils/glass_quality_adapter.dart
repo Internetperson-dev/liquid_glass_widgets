@@ -266,6 +266,11 @@ class GlassQualityAdapter {
   // We use a fixed-capacity queue for O(1) append/evict.
   final Queue<int> _window = Queue<int>();
 
+  // Pre-allocated sort buffer — avoids heap allocation on every window
+  // evaluation (every windowSize frames ≈ every 2 s). Filled from _window
+  // before sorting in-place. Cleared in reset().
+  List<int> _sortBuffer = [];
+
   int _overBudgetWindowCount = 0;
   int _underBudgetWindowCount = 0;
   int _windowFrameCount = 0; // frames into the current evaluation window
@@ -406,6 +411,7 @@ class GlassQualityAdapter {
   void reset() {
     _warmupDurations.clear();
     _window.clear();
+    _sortBuffer = [];
     _overBudgetWindowCount = 0;
     _underBudgetWindowCount = 0;
     _windowFrameCount = 0;
@@ -556,7 +562,18 @@ class GlassQualityAdapter {
     if (_window.length < windowSize) return;
     if (_windowFrameCount % windowSize != 0) return;
 
-    final p95 = _percentile(_window.toList(), 95);
+    // Reuse pre-allocated sort buffer to avoid heap allocation on the
+    // frame timing callback path (GC pressure → frame drops).
+    // We rebuild from scratch only when the window size changes (rare —
+    // typically only on the first evaluation). Otherwise we overwrite in-place.
+    if (_sortBuffer.length != _window.length) {
+      _sortBuffer = List<int>.filled(_window.length, 0, growable: true);
+    }
+    var i = 0;
+    for (final v in _window) {
+      _sortBuffer[i++] = v;
+    }
+    final p95 = _percentileInPlace(_sortBuffer, 95);
     final p95Ms = p95 / 1000.0;
     final budgetMs = targetFrameMs.toDouble();
 
@@ -711,6 +728,8 @@ class GlassQualityAdapter {
   ///
   /// Uses the "nearest rank" definition — appropriate for frame timing data
   /// where we care about real observed samples, not interpolated values.
+  ///
+  /// Used by Phase 2 (warmup) where the list is discarded afterward.
   static int _percentile(List<int> data, int percentile) {
     assert(data.isNotEmpty);
     assert(percentile >= 0 && percentile <= 100);
@@ -720,5 +739,18 @@ class GlassQualityAdapter {
     final rank = ((percentile / 100.0) * sorted.length).ceil();
     final index = (rank - 1).clamp(0, sorted.length - 1);
     return sorted[index];
+  }
+
+  /// In-place variant of [_percentile] — sorts [data] directly, avoiding a
+  /// heap allocation. Used by Phase 3 runtime with a pre-allocated sort buffer
+  /// to eliminate GC pressure on the frame timing callback path.
+  static int _percentileInPlace(List<int> data, int percentile) {
+    assert(data.isNotEmpty);
+    assert(percentile >= 0 && percentile <= 100);
+    if (data.length == 1) return data.first;
+    data.sort();
+    final rank = ((percentile / 100.0) * data.length).ceil();
+    final index = (rank - 1).clamp(0, data.length - 1);
+    return data[index];
   }
 }

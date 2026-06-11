@@ -288,4 +288,137 @@ void main() {
       expect(find.text('A'), findsWidgets);
     });
   });
+
+  group('TabDragGestureMixin — barSwayOffset (lateral sway)', () {
+    testWidgets('barSwayOffset accumulates during horizontal drag',
+        (tester) async {
+      int selectedTab = 1;
+      await tester.pumpWidget(_wrap(
+        StatefulBuilder(builder: (ctx, setState) {
+          return SizedBox(
+            height: 100,
+            child: GlassBottomBar(
+              tabs: [_tab('A'), _tab('B'), _tab('C')],
+              selectedIndex: selectedTab,
+              onTabSelected: (i) => setState(() => selectedTab = i),
+              maskingQuality: MaskingQuality.off,
+            ),
+          );
+        }),
+      ));
+      await tester.pump();
+
+      // Perform a horizontal drag — the bar should accept it without error
+      // and the Transform.translate should appear in the tree.
+      final barFinder = find.byType(GlassBottomBar);
+      final barCenter = tester.getCenter(barFinder);
+      final gesture = await tester.startGesture(barCenter);
+      await gesture.moveBy(const Offset(60, 0));
+      await tester.pump(const Duration(milliseconds: 16));
+
+      // Verify Transform.translate is present (sway wrapper)
+      expect(find.byType(Transform), findsWidgets);
+
+      await gesture.up();
+      await tester.pumpAndSettle();
+      expect(tester.takeException(), isNull);
+    });
+
+    testWidgets('barSwayOffset resets on drag end (springs back to center)',
+        (tester) async {
+      int selectedTab = 1;
+      await tester.pumpWidget(_wrap(
+        StatefulBuilder(builder: (ctx, setState) {
+          return SizedBox(
+            height: 100,
+            child: GlassBottomBar(
+              tabs: [_tab('A'), _tab('B'), _tab('C')],
+              selectedIndex: selectedTab,
+              onTabSelected: (i) => setState(() => selectedTab = i),
+              maskingQuality: MaskingQuality.off,
+            ),
+          );
+        }),
+      ));
+      await tester.pump();
+
+      // Drag and release
+      final barFinder = find.byType(GlassBottomBar);
+      final barCenter = tester.getCenter(barFinder);
+      final gesture = await tester.startGesture(barCenter);
+      await gesture.moveBy(const Offset(100, 0));
+      await tester.pump(const Duration(milliseconds: 16));
+      await gesture.up();
+      await tester.pumpAndSettle();
+
+      // After settle, the state's TabIndicatorState.barSwayOffset should be 0.
+      final indicatorState =
+          tester.state<TabIndicatorState>(find.byType(TabIndicator));
+      expect(indicatorState.barSwayOffset, 0.0);
+    });
+
+    testWidgets('barSwayOffset resets on drag cancel', (tester) async {
+      await tester.pumpWidget(_wrap(
+        SizedBox(
+          height: 100,
+          child: GlassBottomBar(
+            tabs: [_tab('A'), _tab('B'), _tab('C')],
+            selectedIndex: 1,
+            onTabSelected: (_) {},
+            maskingQuality: MaskingQuality.off,
+          ),
+        ),
+      ));
+      await tester.pump();
+
+      // Start drag, move, then cancel
+      final barFinder = find.byType(GlassBottomBar);
+      final barCenter = tester.getCenter(barFinder);
+      final gesture = await tester.startGesture(barCenter);
+      await gesture.moveBy(const Offset(80, 0));
+      await tester.pump(const Duration(milliseconds: 16));
+      await gesture.cancel();
+      await tester.pumpAndSettle();
+
+      final indicatorState =
+          tester.state<TabIndicatorState>(find.byType(TabIndicator));
+      expect(indicatorState.barSwayOffset, 0.0);
+    });
+
+    testWidgets('barSwayOffset is clamped to max magnitude', (tester) async {
+      int selectedTab = 1;
+      await tester.pumpWidget(_wrap(
+        StatefulBuilder(builder: (ctx, setState) {
+          return SizedBox(
+            height: 100,
+            child: GlassBottomBar(
+              tabs: [_tab('A'), _tab('B'), _tab('C')],
+              selectedIndex: selectedTab,
+              onTabSelected: (i) => setState(() => selectedTab = i),
+              maskingQuality: MaskingQuality.off,
+            ),
+          );
+        }),
+      ));
+      await tester.pump();
+
+      // Drag very far to exceed the clamp
+      final barFinder = find.byType(GlassBottomBar);
+      final barCenter = tester.getCenter(barFinder);
+      final gesture = await tester.startGesture(barCenter);
+      // Move in multiple large increments to try to exceed the 3px clamp
+      for (int i = 0; i < 10; i++) {
+        await gesture.moveBy(const Offset(50, 0));
+        await tester.pump(const Duration(milliseconds: 16));
+      }
+
+      final indicatorState =
+          tester.state<TabIndicatorState>(find.byType(TabIndicator));
+      // barSwayOffset should never exceed _maxSwayPx (0.75)
+      expect(indicatorState.barSwayOffset.abs(), lessThanOrEqualTo(0.75));
+
+      await gesture.up();
+      await tester.pumpAndSettle();
+    });
+  });
 }

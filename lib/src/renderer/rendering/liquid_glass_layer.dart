@@ -217,6 +217,12 @@ class RenderLiquidGlassLayer extends LiquidGlassRenderObject
     EdgeInsets clipExpansion = EdgeInsets.zero,
   }) : _clipExpansion = clipExpansion;
 
+  // ── Cached blur filter ──────────────────────────────────────────────────
+  // The BackdropFilterLayer's blur filter is rebuilt only when blurSigma
+  // changes — not on every paint frame during jelly/morph animations.
+  ImageFilter? _cachedBlur;
+  double _cachedBlurSigma = -1;
+
   final _shaderHandle = LayerHandle<BackdropFilterLayer>();
   final _blurLayerHandle = LayerHandle<BackdropFilterLayer>();
   final _clipRectLayerHandle = LayerHandle<ClipRectLayer>();
@@ -317,14 +323,21 @@ class RenderLiquidGlassLayer extends LiquidGlassRenderObject
     // quality (the inline 9-tap shader approximation was pixelated with text).
     // Clip tightly to the actual pill shape path — no expansion needed here.
     if (settings.effectiveBlur > 0) {
+      final blurSigma = settings.effectiveBlur;
+      // Reuse cached blur filter when sigma hasn't changed.
+      if (_cachedBlur == null || _cachedBlurSigma != blurSigma) {
+        _cachedBlur = ImageFilter.blur(
+          tileMode: TileMode.mirror,
+          sigmaX: blurSigma,
+          sigmaY: blurSigma,
+        );
+        _cachedBlurSigma = blurSigma;
+      }
+
       final blurLayer = (_blurLayerHandle.layer ??= BackdropFilterLayer())
         ..backdropKey =
             backdropKey // Scoped to this LiquidGlassLayer's BackdropGroup
-        ..filter = ImageFilter.blur(
-          tileMode: TileMode.mirror,
-          sigmaX: settings.effectiveBlur,
-          sigmaY: settings.effectiveBlur,
-        );
+        ..filter = _cachedBlur!;
 
       final clipPath = Path();
       for (final geometry in shapes) {

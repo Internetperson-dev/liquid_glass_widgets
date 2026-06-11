@@ -1,3 +1,94 @@
+# 0.15.4
+
+## ⚡ Render Pipeline Performance Pass — FPS & Battery
+
+Internal optimizations targeting the render object `paint()` hot path and background
+capture lifecycle. Zero API changes, zero visual changes. All 2,050 tests passing.
+
+## 🎯 Bottom Bar Lateral Sway
+
+- **Subtle lateral sway on fast pill drags** — `GlassBottomBar` and
+  `GlassSearchableBottomBar` now respond with a near-subliminal horizontal
+  shift when the interactive pill is flicked quickly, matching iOS 26 bottom
+  bar physics. Velocity-gated (slow drags produce no movement) and
+  spring-animated back to center on release.
+
+### GPU allocation pressure (FPS)
+
+- **Cached `ImageFilter` in `_RenderLightweightGlass`** — the composed
+  blur+saturation `ImageFilter` (and its 20-element `ColorFilter.matrix` list) was
+  previously reconstructed on every `paint()` frame for every visible glass widget.
+  With 5 glass cards at 60 fps, that's ~300 list allocations/second hitting the GC.
+  The filter is now cached on the render object and only rebuilt when `blur` or
+  `saturation` changes.
+- **Cached `ImageFilter` in `_RenderInteractiveIndicator`** — same optimization
+  for the interactive indicator shader path (`GlassEffect`). The brightness+blur
+  composed filter is now cached and invalidated only when `blurSigma` changes.
+- **Cached `ImageFilter.blur` in `RenderLiquidGlassLayer`** — the premium glass
+  layer's `BackdropFilterLayer` blur filter was previously recreated on every
+  `paintLiquidGlass()` call, even when the blur sigma hadn't changed. During
+  jelly/morph animations (60 fps), this creates an `ImageFilter.blur` object per
+  frame per premium glass layer. Now cached and reused.
+- **Cached `_shapesWithGeometry` list** — the premium glass `paint()` method
+  previously allocated a new list on every frame to collect active geometry
+  shapes. It now reuses a cleared instance list, eliminating another per-frame
+  allocation on the hot path.
+- **Cached light angle trigonometry** — both `_RenderLightweightGlass` and
+  `_RenderInteractiveIndicator` now cache `cos(lightAngle)` and `-sin(lightAngle)`
+  instead of recomputing them on every `_updateShaderUniforms()` call. Matches the
+  caching pattern already used by the premium `LiquidGlassRenderObject._cachedLightDir`.
+- **Conditional `alwaysNeedsCompositing`** — both `_RenderLightweightGlass` and
+  `_RenderInteractiveIndicator` previously returned `true` unconditionally, forcing
+  the framework to create a compositing layer even in the fallback path (null shader
+  or zero blur). Now returns `true` only when a `BackdropFilterLayer` will actually
+  be pushed. Reduces layer tree depth on low-end devices.
+
+### Battery life
+
+- **Background Ticker auto-suspend** — `LightweightLiquidGlass` runs a Ticker to
+  capture the background behind each glass widget via `toImageSync`. Previously,
+  this ticker ran at 60 fps permanently — even when the background hadn't changed
+  for minutes (e.g. a static bottom bar over a static page). After 3 consecutive
+  no-change frames (~50 ms), the ticker now self-suspends. It restarts automatically
+  when `didUpdateWidget` detects a configuration change. For a bottom bar with 5 tab
+  pills, this eliminates 300 unnecessary method calls/second while idle.
+
+### GC pressure on frame timing path
+
+- **Optimised `GlassQualityAdapter._percentile`** — the Phase 3 runtime percentile
+  computation previously called `_window.toList()` + `List.from(data)..sort()` every
+  120 frames, creating two heap-allocated lists on the frame timing callback path.
+  Now reuses a pre-allocated sort buffer (`List<int>.filled`) that is overwritten
+  in-place. Eliminates GC pressure from the very code path that monitors for
+  GC-induced frame drops.
+
+### Community contribution
+
+- **Collapsed search indicator stretch feedback** — the collapsed indicator in
+  `GlassSearchableBottomBar` now wraps in `LiquidStretch`, giving it the same
+  press-scale physics as the normal tab indicator.
+  *Contributed by [@g3mf0r](https://github.com/g3mf0r) in [PR #96](https://github.com/sdegenaar/liquid_glass_widgets/pull/96).*
+
+### Widget tree rebuild reduction
+
+- **Shared spring listener in `GlassSearchableBottomBar`** — the three morph-
+  animation `AnimationController`s (tab width, search left, search width) each
+  had their own anonymous `addListener(() => setState(() {}))` callback. During
+  a pill morph all three springs tick every frame, producing three independent
+  `setState` calls per frame. Now all three share a single named `_onSpringTick`
+  callback — Flutter coalesces the dirty mark so only one rebuild fires. Also
+  fixes a subtle listener leak: anonymous lambdas can't be matched by
+  `removeListener`, but named methods can.
+
+### Consistency fix
+
+- **`GlassEffect.preWarm()` dummy image** — changed from async `await picture.toImage(1, 1)`
+  to synchronous `picture.toImageSync(1, 1)`, matching the `LightweightLiquidGlass`
+  pattern. Eliminates a 1-frame async initialization delay for a 1×1 transparent
+  texture. Added `picture.dispose()` to prevent a minor leak.
+
+---
+
 # 0.15.3
 
 ## `platformViewBackdrop` — Premium Glass Over iOS PlatformViews

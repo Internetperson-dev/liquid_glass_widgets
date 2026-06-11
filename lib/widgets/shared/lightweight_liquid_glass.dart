@@ -214,9 +214,11 @@ class _LightweightLiquidGlassState extends State<LightweightLiquidGlass>
     final bool hasBoundary = _safeGetBoundary(widget.backgroundKey) != null;
 
     if (hasBoundary && !_ticker.isActive) {
+      _stableFrameCount = 0; // Reset so auto-suspend counts from scratch.
       _ticker.start();
     } else if (!hasBoundary && _ticker.isActive) {
       _ticker.stop();
+      _stableFrameCount = 0;
       _backgroundImage?.dispose();
       _backgroundImage = null;
       // Propagate null to the render object immediately so it doesn't paint
@@ -231,6 +233,16 @@ class _LightweightLiquidGlassState extends State<LightweightLiquidGlass>
   /// Self-corrects if the boundary disappears at runtime (e.g. adaptive
   /// quality drops to minimal mid-session): stops the ticker immediately
   /// rather than spinning empty for the rest of the widget's lifetime.
+  ///
+  /// **Battery optimization (Task 2.2):** After [_kStableFrameThreshold]
+  /// consecutive ticks detect no geometry change, the ticker self-suspends.
+  /// This eliminates the permanent 60 fps cost for static surfaces (bottom
+  /// bars, app bars) where the background never changes after initial capture.
+  /// The ticker restarts automatically via [didUpdateWidget] or
+  /// [_updateTicker] when the background key changes or is re-enabled.
+  static const int _kStableFrameThreshold = 3;
+  int _stableFrameCount = 0;
+
   void _handleTick(Duration _) {
     final key = widget.backgroundKey;
     if (key == null) return;
@@ -243,6 +255,7 @@ class _LightweightLiquidGlassState extends State<LightweightLiquidGlass>
         _ticker.stop();
         _backgroundImage?.dispose();
         _backgroundImage = null;
+        _stableFrameCount = 0;
         // Propagate null to the render object immediately — prevents the
         // "Image has been disposed" crash if a repaint fires before the next
         // frame (e.g. button press animation triggering a paint pass).
@@ -271,7 +284,17 @@ class _LightweightLiquidGlassState extends State<LightweightLiquidGlass>
         _lastCapturePosition != currentPos;
 
     if (needsCapture) {
+      _stableFrameCount = 0;
       _captureBackground(boundary, currentSize, currentPos);
+    } else {
+      // Background hasn't changed — count consecutive stable frames.
+      // After _kStableFrameThreshold (~50 ms at 60 fps), self-suspend the
+      // ticker. This saves battery on static surfaces (bottom bars, app bars)
+      // where the background never changes after initial capture.
+      _stableFrameCount++;
+      if (_stableFrameCount >= _kStableFrameThreshold && _ticker.isActive) {
+        _ticker.stop();
+      }
     }
   }
 
@@ -558,7 +581,9 @@ class _RenderLightweightGlass extends RenderProxyBox {
         _indicatorWeight = indicatorWeight,
         _backdropLuma = backdropLuma,
         _backgroundImage = backgroundImage,
-        _backgroundKey = backgroundKey;
+        _backgroundKey = backgroundKey,
+        _cachedLightCos = math.cos(settings.lightAngle),
+        _cachedLightSin = -math.sin(settings.lightAngle);
 
   ui.FragmentShader? _shader;
   ui.FragmentShader? get shader => _shader;
@@ -572,6 +597,16 @@ class _RenderLightweightGlass extends RenderProxyBox {
   LiquidGlassSettings get settings => _settings;
   set settings(LiquidGlassSettings value) {
     if (_settings == value) return;
+    // Invalidate cached filter when blur or saturation changes.
+    if (value.effectiveBlur != _settings.effectiveBlur ||
+        value.effectiveSaturation != _settings.effectiveSaturation) {
+      _cachedBlurFilter = null;
+    }
+    // Recompute trig only when lightAngle actually changes.
+    if (value.lightAngle != _settings.lightAngle) {
+      _cachedLightCos = math.cos(value.lightAngle);
+      _cachedLightSin = -math.sin(value.lightAngle);
+    }
     _settings = value;
     markNeedsPaint();
   }
@@ -638,8 +673,71 @@ class _RenderLightweightGlass extends RenderProxyBox {
     markNeedsPaint();
   }
 
+  // ── Cached light direction (Task 1.3) ─────────────────────────────────────
+  // Matches the caching pattern in LiquidGlassRenderObject._cachedLightDir.
+  // Avoids recomputing cos/sin on every _updateShaderUniforms call.
+  double _cachedLightCos;
+  double _cachedLightSin;
+
+  // ── Cached backdrop filter (Task 1.2) ─────────────────────────────────────
+  // The composed blur+saturation ImageFilter is rebuilt only when blur sigma
+  // or saturation changes — not on every frame. Eliminates a 20-element
+  // List<double> allocation + 2 object allocations per frame per glass widget.
+  ui.ImageFilter? _cachedBlurFilter;
+  double _cachedFilterBlur = -1;
+  double _cachedFilterSat = -1;
+
+  /// Returns the cached blur+saturation filter, rebuilding only when the
+  /// blur sigma or saturation has changed since the last call.
+  ui.ImageFilter _getBlurFilter(double blurSigma, double sat) {
+    if (_cachedBlurFilter != null &&
+        _cachedFilterBlur == blurSigma &&
+        _cachedFilterSat == sat) {
+      return _cachedBlurFilter!;
+    }
+
+    // Standard saturation ColorFilter matrix (ITU-R BT.601 luminance weights).
+    const double rw = 0.2126, gw = 0.7152, bw = 0.0722;
+    final ui.ColorFilter satFilter = ui.ColorFilter.matrix(<double>[
+      rw + (1 - rw) * sat,
+      gw - gw * sat,
+      bw - bw * sat,
+      0,
+      0,
+      rw - rw * sat,
+      gw + (1 - gw) * sat,
+      bw - bw * sat,
+      0,
+      0,
+      rw - rw * sat,
+      gw - gw * sat,
+      bw + (1 - bw) * sat,
+      0,
+      0,
+      0,
+      0,
+      0,
+      1,
+      0,
+    ]);
+
+    _cachedBlurFilter = ui.ImageFilter.compose(
+      outer: satFilter,
+      inner: ui.ImageFilter.blur(sigmaX: blurSigma, sigmaY: blurSigma),
+    );
+    _cachedFilterBlur = blurSigma;
+    _cachedFilterSat = sat;
+    return _cachedBlurFilter!;
+  }
+
+  // Only force compositing when we actually push a BackdropFilterLayer
+  // (shader available AND blur > 0 AND not skipped by ancestor blur).
+  // In the fallback path (null shader or zero blur), we just draw a tinted
+  // rect — no compositing layer needed. Reduces layer tree depth on
+  // low-end devices where the framework overhead is the bottleneck.
   @override
-  bool get alwaysNeedsCompositing => true;
+  bool get alwaysNeedsCompositing =>
+      _shader != null && !_skipBlur && _settings.effectiveBlur > 0;
 
   @override
   void paint(PaintingContext context, Offset offset) {
@@ -661,36 +759,12 @@ class _RenderLightweightGlass extends RenderProxyBox {
       // We replicate this by composing: outer=saturationFilter, inner=blurFilter.
       // Result: the blurred background seen through Standard glass is saturated
       // identically to Premium — no background texture capture required.
-      final double sat = _settings.effectiveSaturation; // default 1.2
-
-      // Standard saturation ColorFilter matrix (ITU-R BT.601 luminance weights).
-      const double rw = 0.2126, gw = 0.7152, bw = 0.0722;
-      final ui.ColorFilter satFilter = ui.ColorFilter.matrix(<double>[
-        rw + (1 - rw) * sat,
-        gw - gw * sat,
-        bw - bw * sat,
-        0,
-        0,
-        rw - rw * sat,
-        gw + (1 - gw) * sat,
-        bw - bw * sat,
-        0,
-        0,
-        rw - rw * sat,
-        gw - gw * sat,
-        bw + (1 - bw) * sat,
-        0,
-        0,
-        0,
-        0,
-        0,
-        1,
-        0,
-      ]);
-
-      final ui.ImageFilter filter = ui.ImageFilter.compose(
-        outer: satFilter,
-        inner: ui.ImageFilter.blur(sigmaX: blurSigma, sigmaY: blurSigma),
+      //
+      // The filter is cached on the render object and only rebuilt when blur
+      // sigma or saturation changes — see _getBlurFilter().
+      final filter = _getBlurFilter(
+        blurSigma,
+        _settings.effectiveSaturation,
       );
 
       context.pushLayer(
@@ -783,9 +857,10 @@ class _RenderLightweightGlass extends RenderProxyBox {
     shader.setFloat(index++, _settings.effectiveThickness);
 
     // 9, 10: uLightDirection (vec2) - [cos(angle), -sin(angle)]
-    // lightAngle is in radians (per LiquidGlassSettings API). Pass directly.
-    shader.setFloat(index++, math.cos(_settings.lightAngle));
-    shader.setFloat(index++, -math.sin(_settings.lightAngle));
+    // lightAngle is in radians (per LiquidGlassSettings API).
+    // Uses cached values — trig only recomputed when lightAngle changes.
+    shader.setFloat(index++, _cachedLightCos);
+    shader.setFloat(index++, _cachedLightSin);
 
     // 11: uLightIntensity (float)
     shader.setFloat(index++, _settings.effectiveLightIntensity);

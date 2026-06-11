@@ -52,6 +52,26 @@ mixin TabDragGestureMixin<T extends StatefulWidget> on State<T> {
   /// Current horizontal alignment of the indicator in the range [-1, 1].
   double tabXAlign = 0.0;
 
+  /// Lateral sway offset in logical pixels.
+  ///
+  /// Driven by horizontal drag velocity — gives the bar body a subtle
+  /// physical response when the interactive pill is dragged left/right,
+  /// mimicking iOS 26 bottom bar behaviour. Animated back to `0.0` via
+  /// a spring when the drag ends or is cancelled.
+  ///
+  /// Maximum magnitude is clamped to [_maxSwayPx].
+  double barSwayOffset = 0.0;
+
+  /// Maximum lateral sway in logical pixels — keeps the effect subtle.
+  static const double _maxSwayPx = 0.75;
+
+  /// Scale factor mapping instantaneous drag delta to sway offset.
+  static const double _swayScale = 0.08;
+
+  /// Minimum drag delta magnitude (px/frame) required to trigger sway.
+  /// Below this threshold the bar stays still — only fast flicks cause sway.
+  static const double _swayVelocityThreshold = 4.0;
+
   // ── Lifecycle ─────────────────────────────────────────────────────────────
 
   @override
@@ -100,11 +120,25 @@ mixin TabDragGestureMixin<T extends StatefulWidget> on State<T> {
   }
 
   /// `onHorizontalDragUpdate` — track pointer during drag.
+  ///
+  /// Also updates [barSwayOffset] based on instantaneous drag velocity,
+  /// giving the bar a subtle lateral sway when the interactive pill is
+  /// flicked quickly — mimicking iOS 26 bottom bar physics.
+  ///
+  /// Slow drags (below [_swayVelocityThreshold]) produce zero sway;
+  /// only fast flicks cause the bar to shift.
   void onBarDragUpdate(DragUpdateDetails d) {
     if (!mounted) return;
     setState(() {
       tabIsDragging = true;
       tabXAlign = alignmentFromGlobal(d.globalPosition);
+      // Velocity-gated lateral sway: only fast flicks cause movement.
+      if (d.delta.dx.abs() > _swayVelocityThreshold) {
+        barSwayOffset =
+            (d.delta.dx * _swayScale).clamp(-_maxSwayPx, _maxSwayPx);
+      } else {
+        barSwayOffset = 0.0;
+      }
     });
   }
 
@@ -138,6 +172,7 @@ mixin TabDragGestureMixin<T extends StatefulWidget> on State<T> {
       tabIsDragging = false;
       tabIsDown = false;
       tabXAlign = computeTabAlignment(target);
+      barSwayOffset = 0.0; // spring back to center
     });
     notifyTabChanged(target);
   }
@@ -152,6 +187,7 @@ mixin TabDragGestureMixin<T extends StatefulWidget> on State<T> {
         tabIsDragging = false;
         tabIsDown = false;
         tabXAlign = computeTabAlignment(target);
+        barSwayOffset = 0.0; // spring back to center
       });
       notifyTabChanged(target);
     } else {
