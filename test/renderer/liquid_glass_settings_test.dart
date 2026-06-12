@@ -316,5 +316,79 @@ void main() {
         expect(original.copyWith(), equals(original));
       });
     });
+
+    // ─── whitenStrength / whitenGated ────────────────────────────────────────
+
+    group('whitenStrength / whitenGated', () {
+      test('whitenStrength defaults to 0.0 (no-op)', () {
+        const s = LiquidGlassSettings();
+        expect(s.whitenStrength, 0.0);
+      });
+
+      test('whitenGated defaults to true', () {
+        const s = LiquidGlassSettings();
+        expect(s.whitenGated, isTrue);
+      });
+
+      test('copyWith round-trips whitenStrength', () {
+        const base = LiquidGlassSettings();
+        final copy = base.copyWith(whitenStrength: 0.7);
+        expect(copy.whitenStrength, 0.7);
+        // Other fields untouched.
+        expect(copy.whitenGated, base.whitenGated);
+        expect(copy.blur, base.blur);
+        // Round-trip back.
+        expect(copy.copyWith(whitenStrength: 0.0), equals(base));
+      });
+
+      test('copyWith round-trips whitenGated', () {
+        const base = LiquidGlassSettings();
+        final copy = base.copyWith(whitenGated: false);
+        expect(copy.whitenGated, isFalse);
+        expect(copy.whitenStrength, base.whitenStrength);
+        expect(copy.copyWith(whitenGated: true), equals(base));
+      });
+
+      test('lerp interpolates whitenStrength linearly', () {
+        const a = LiquidGlassSettings(whitenStrength: 0.0);
+        const b = LiquidGlassSettings(whitenStrength: 1.0);
+        expect(
+          LiquidGlassSettings.lerp(a, b, 0.25).whitenStrength,
+          closeTo(0.25, 1e-10),
+        );
+        expect(
+          LiquidGlassSettings.lerp(a, b, 0.75).whitenStrength,
+          closeTo(0.75, 1e-10),
+        );
+      });
+
+      test('lerp switches whitenGated at t=0.5', () {
+        const a = LiquidGlassSettings(whitenGated: true);
+        const b = LiquidGlassSettings(whitenGated: false);
+        expect(LiquidGlassSettings.lerp(a, b, 0.49).whitenGated, isTrue);
+        expect(LiquidGlassSettings.lerp(a, b, 0.5).whitenGated, isFalse);
+        expect(LiquidGlassSettings.lerp(a, b, 1.0).whitenGated, isFalse);
+      });
+
+      test('equality includes whitenStrength', () {
+        const a = LiquidGlassSettings(whitenStrength: 0.3);
+        const b = LiquidGlassSettings(whitenStrength: 0.3);
+        const c = LiquidGlassSettings(whitenStrength: 0.6);
+        expect(a, equals(b));
+        expect(a, isNot(equals(c)));
+      });
+
+      test('equality includes whitenGated', () {
+        const a = LiquidGlassSettings();
+        const b = LiquidGlassSettings(whitenGated: false);
+        expect(a, isNot(equals(b)));
+      });
+
+      test('props contains both whiten fields', () {
+        const s = LiquidGlassSettings(whitenStrength: 0.4, whitenGated: false);
+        expect(s.props, contains(0.4));
+        expect(s.props, contains(false));
+      });
+    });
   });
 }

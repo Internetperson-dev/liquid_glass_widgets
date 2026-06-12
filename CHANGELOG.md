@@ -1,3 +1,66 @@
+# 0.15.6
+
+## 🌫️ Scroll Edge Fade — Perceptual Gradient Curve
+
+Replaced the 2-stop linear alpha gradient in `GlassScrollEdgeEffect` with a
+multi-stop eased curve that matches the perceptual dissolve of iOS 26.
+
+- **5-stop gradient profiles** for both `soft` and `hard` styles — eliminates
+  the "denser in the centre" banding and the visible seam at the fade boundary.
+- **`hard` style reworked**: steeper hold → sharper drop curve instead of just
+  compressing the soft profile. Height multiplier relaxed from 0.33× to 0.5×.
+- **Example app**: Nav Patterns demo now fully brightness-aware (adaptive text
+  colours, `GlassStatusBarStyle.auto`, adaptive solid-bar colour).
+
+No API changes. No breaking changes.
+
+---
+
+# 0.15.5
+
+## ✨ Whiten Strength — Light-Mode Legibility Veil
+
+Opt-in whitening ("legibility veil") lifts glass toward white for legibility over
+busy light backgrounds — modelling iOS 26's light-mode glass.
+
+- **`LiquidGlassSettings.whitenStrength`** (0.0–1.0, default 0.0): lifts the
+  finished glass toward white as the last step of the render. A single
+  control-wide value with no spatial seams or halo artifacts.
+- **`LiquidGlassSettings.whitenGated`** (default `true`): when gated, the lift
+  scales by per-pixel luminance so bright content lifts to white while dark
+  content (text, icons) stays crisp. Ungated applies the lift uniformly — useful
+  for dark-mode frost effects.
+- **Consistent across all three quality tiers** from one knob: Premium
+  (fragment shader), Standard (tint lerp), and Minimal (frosted fallback) all
+  render the same whitenStrength value consistently.
+- **`GlassSearchableBottomBar` whiten-at-bottom**: when a `scrollController`
+  is provided, the bar animates its whitening toward full white as the page
+  nears the scroll bottom — the iOS light-mode behaviour where content crowding
+  under a bar gets the strongest legibility lift.
+
+- **Example app**: Buttons & Shadows demo now includes a real-time whiten
+  slider with side-by-side comparison cards and scroll-to-bottom boost preview.
+
+*Contributed by [@jfhair](https://github.com/jfhair) in [PR #100](https://github.com/sdegenaar/liquid_glass_widgets/pull/100).*
+
+## 🎬 Scale-with-Morph — Cohesive Overlay Content Reveal
+
+Menu items and popover content now scale in alongside the liquid morph animation
+instead of popping in at the tail. The glass container and its content feel like
+a single continuous motion.
+
+- **Items enter the tree at 30% morph progress** (down from 94%) and scale from
+  0.5× to 1.0× via an `easeOut` curve alongside opacity. Text and icons visually
+  grow with the expanding glass container.
+- **Applied to both `GlassMenu` and `GlassPopover`** for consistent overlay
+  behaviour across the widget family. Content scales in on open and scales
+  back out on close — the morph animation is symmetrical in both directions.
+- No new API surface. No breaking changes. Purely visual polish.
+
+*`GlassMenu` scale-with-morph contributed by [@F1orian](https://github.com/F1orian) in [PR #97](https://github.com/sdegenaar/liquid_glass_widgets/pull/97).*
+
+---
+
 # 0.15.4
 
 ## ⚡ Render Pipeline Performance Pass — FPS & Battery

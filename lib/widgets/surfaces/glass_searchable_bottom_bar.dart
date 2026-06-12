@@ -98,6 +98,11 @@ class GlassSearchableBottomBar extends StatefulWidget {
     this.tabWidth,
     this.indicatorExpansion = 14,
     this.onBarTap,
+    // ── Whiten-at-bottom (light-mode legibility) ─────────────────────────────
+    this.whitenAtBottom = true,
+    this.whitenBottomThreshold = 45.0,
+    this.whitenAtBottomTarget = 1.0,
+    this.scrollController,
   })  : assert(tabs.length > 0,
             'GlassSearchableBottomBar requires at least one tab'),
         assert(
@@ -227,6 +232,29 @@ class GlassSearchableBottomBar extends StatefulWidget {
   // ── Glass ────────────────────────────────────────────────────────────────────
   /// Custom glass settings. Falls back to identical defaults as [GlassBottomBar].
   final LiquidGlassSettings? settings;
+
+  // ── Whiten-at-bottom (light-mode legibility) ───────────────────────────────
+  /// When true (default), the bar lifts its whitening toward
+  /// [whitenAtBottomTarget] as the scrolled content nears the bottom of the
+  /// page, so a light page stays readable through the bar. Light-mode only;
+  /// set false to opt out.
+  ///
+  /// Inert unless a [scrollController] is provided (the bar needs a scroll
+  /// position to watch), so the defaults change nothing for existing callers.
+  final bool whitenAtBottom;
+
+  /// Distance (logical px) from the scroll bottom within which the bar is
+  /// considered "at the bottom" and whitens. Defaults to 45.
+  final double whitenBottomThreshold;
+
+  /// Whiten value the bar lifts to at the bottom. Defaults to 1.0
+  /// (fully white).
+  final double whitenAtBottomTarget;
+
+  /// Scroll controller for the page beneath the bar. Null (the default)
+  /// disables the whiten-at-bottom effect — there is no scroll position to
+  /// watch.
+  final ScrollController? scrollController;
 
   /// Rendering quality. Inherits from parent or defaults to [GlassQuality.premium].
   final GlassQuality? quality;
@@ -431,6 +459,15 @@ class _GlassSearchableBottomBarState extends State<GlassSearchableBottomBar>
   /// Animated current width of the search pill.
   late AnimationController _searchWCtrl;
 
+  // ── Whiten-at-bottom ───────────────────────────────────────────────────────
+  /// Animates the whiten lift: 0 = recipe whiten, 1 = lifted to
+  /// [GlassSearchableBottomBar.whitenAtBottomTarget]. Smoothed so the bar
+  /// doesn't snap when the page reaches/leaves the bottom.
+  late AnimationController _whitenBoostCtrl;
+
+  /// The destination the whiten boost is currently animating toward.
+  double _whitenTarget = 0.0;
+
   @override
   void initState() {
     super.initState();
@@ -467,6 +504,15 @@ class _GlassSearchableBottomBarState extends State<GlassSearchableBottomBar>
       lowerBound: double.negativeInfinity,
       upperBound: double.infinity,
     )..addListener(_onSpringTick);
+    // Whiten-at-bottom boost: 0..1, rebuilds the bar as it animates.
+    _whitenBoostCtrl = AnimationController(vsync: this)
+      ..addListener(_onSpringTick);
+    widget.scrollController?.addListener(_onScrollMaybeWhiten);
+    // Evaluate once after the first frame so a page that starts at the
+    // bottom (e.g. short content) pins immediately.
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) _onScrollMaybeWhiten();
+    });
   }
 
   @override
@@ -487,6 +533,20 @@ class _GlassSearchableBottomBarState extends State<GlassSearchableBottomBar>
       }
       _controller.addListener(_onControllerChanged);
     }
+    // Re-subscribe the whiten watcher if the scroll source changed, and
+    // re-evaluate immediately so the boost re-pins to the new page's position.
+    if (widget.scrollController != old.scrollController) {
+      old.scrollController?.removeListener(_onScrollMaybeWhiten);
+      widget.scrollController?.addListener(_onScrollMaybeWhiten);
+      _onScrollMaybeWhiten();
+    }
+    // Re-evaluate when the feature itself is toggled while the page sits at
+    // the bottom — no scroll event fires in that case, so without this the
+    // boost stays stale (off after re-enable, or lingering after disable)
+    // until the next scroll.
+    if (widget.whitenAtBottom != old.whitenAtBottom) {
+      _onScrollMaybeWhiten();
+    }
     // Delegate focus-clear logic to the controller.
     _controller.onSearchActiveChanged(
       wasActive: old.isSearchActive,
@@ -499,6 +559,8 @@ class _GlassSearchableBottomBarState extends State<GlassSearchableBottomBar>
     _tabWCtrl.dispose();
     _searchLeftCtrl.dispose();
     _searchWCtrl.dispose();
+    widget.scrollController?.removeListener(_onScrollMaybeWhiten);
+    _whitenBoostCtrl.dispose();
     _controller.removeListener(_onControllerChanged);
     if (_ownsController) _controller.dispose();
     super.dispose();
@@ -507,6 +569,43 @@ class _GlassSearchableBottomBarState extends State<GlassSearchableBottomBar>
   void _onFocusLost() {
     // Delegates to controller → triggers setState via listener.
     _controller.onFocusChanged(false);
+  }
+
+  /// Re-evaluate bottom proximity whenever the watched scroll position moves.
+  void _onScrollMaybeWhiten() {
+    final c = widget.scrollController;
+    final atBottom = widget.whitenAtBottom &&
+        c != null &&
+        c.hasClients &&
+        c.position.maxScrollExtent > 0 &&
+        (c.position.maxScrollExtent - c.position.pixels) <=
+            widget.whitenBottomThreshold;
+    final target = atBottom ? 1.0 : 0.0;
+    if (_whitenTarget != target) {
+      _whitenTarget = target;
+      _whitenBoostCtrl.animateTo(target,
+          duration: const Duration(milliseconds: 200), curve: Curves.easeOut);
+    }
+  }
+
+  /// Applies the (possibly boosted) whiten to [s]. Every quality tier consumes
+  /// `whitenStrength` directly — the veil is rendered in the shared render
+  /// paths (premium: render object + shader; standard: lightweight glass;
+  /// minimal: the frosted fallback in adaptive_glass.dart), so the one knob
+  /// whitens the whole bar.
+  ///
+  /// The whiten-at-bottom lift is light-mode only: it keeps a light page
+  /// readable through the bar, but in dark mode it would just bloom a white
+  /// slab at the bottom — so [isLight] gates the boost off there. The
+  /// recipe's base whitenStrength still applies in both modes; only the
+  /// at-bottom lift is gated.
+  LiquidGlassSettings _applyWhiten(LiquidGlassSettings s, bool isLight) {
+    final base = s.whitenStrength;
+    final t = (widget.whitenAtBottom && isLight) ? _whitenBoostCtrl.value : 0.0;
+    final eff = (base + (widget.whitenAtBottomTarget - base) * t)
+        .clamp(0.0, 1.0)
+        .toDouble();
+    return s.copyWith(whitenStrength: eff);
   }
 
   @override
@@ -537,7 +636,12 @@ class _GlassSearchableBottomBarState extends State<GlassSearchableBottomBar>
     final effectiveGlowSpreadRadius = resolvedGlowColors.glowSpreadRadius;
     final effectiveGlowOpacity = resolvedGlowColors.glowOpacity;
 
-    final effectiveSettings = widget.settings ?? _defaultGlassSettings;
+    // CupertinoTheme.brightnessOf falls back to the platform brightness, so
+    // this resolves correctly in both Material and pure-Cupertino apps.
+    final bool isLight =
+        CupertinoTheme.brightnessOf(context) == Brightness.light;
+    final effectiveSettings =
+        _applyWhiten(widget.settings ?? _defaultGlassSettings, isLight);
     final searching = widget.isSearchActive;
 
     final barContent = TweenAnimationBuilder<double>(

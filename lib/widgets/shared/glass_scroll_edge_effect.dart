@@ -290,6 +290,7 @@ class _GlassScrollEdgeEffectState extends State<GlassScrollEdgeEffect> {
                   image: _backgroundImage!,
                   isTop: isTop,
                   screenHeight: screenSize.height,
+                  style: widget.style,
                 ),
               )
             : _buildColorOverlay(isTop: isTop),
@@ -301,25 +302,72 @@ class _GlassScrollEdgeEffectState extends State<GlassScrollEdgeEffect> {
   Widget _buildColorOverlay({required bool isTop}) {
     final color =
         widget.fadeColor ?? CupertinoTheme.of(context).scaffoldBackgroundColor;
+    final curve = _kFadeCurves[widget.style]!;
     return DecoratedBox(
       decoration: BoxDecoration(
         gradient: LinearGradient(
           begin: isTop ? Alignment.topCenter : Alignment.bottomCenter,
           end: isTop ? Alignment.bottomCenter : Alignment.topCenter,
-          colors: [color, color.withValues(alpha: 0)],
+          colors: curve.alphas
+              .map((a) => color.withValues(alpha: color.a * a))
+              .toList(),
+          stops: curve.stops,
         ),
       ),
     );
   }
 
   double _effectiveHeight(double height, double boundsHeight) {
-    // Hard style uses a tighter transition (1/3 of soft).
+    // Hard style uses a tighter transition zone (half of soft) combined with
+    // a steeper gradient curve — so it's a different *shape*, not just a
+    // compressed version of soft.
     final adjusted =
-        widget.style == GlassScrollEdgeStyle.hard ? height * 0.33 : height;
-    // Clamp to half the available height to avoid overlapping zones.
+        widget.style == GlassScrollEdgeStyle.hard ? height * 0.5 : height;
+    // Clamp to 40% of available height to avoid overlapping zones.
     return adjusted.clamp(0.0, boundsHeight * 0.4);
   }
 }
+
+/// Pre-computed gradient curves for each [GlassScrollEdgeStyle].
+///
+/// Each curve defines the alpha values and corresponding stops for a
+/// multi-stop gradient that produces a perceptually smooth fade. A simple
+/// 2-stop linear ramp (the previous implementation) appears non-uniform to
+/// the human eye — denser in the middle — and terminates with a visible seam.
+///
+/// These curves are modelled after iOS 26's scroll edge effect:
+/// - **Soft**: gentle ease-in dissolve with a long transparent tail, producing
+///   a diffused fade that dissolves content smoothly into the bar area.
+/// - **Hard**: holds opacity longer then drops sharply, but still includes a
+///   feathered tail to avoid the hard cutoff seam.
+class _FadeCurve {
+  const _FadeCurve(this.alphas, this.stops);
+
+  /// Alpha multipliers from edge (1.0 = fully opaque) to content (0.0).
+  final List<double> alphas;
+
+  /// Corresponding gradient stop positions in [0, 1].
+  final List<double> stops;
+}
+
+const Map<GlassScrollEdgeStyle, _FadeCurve> _kFadeCurves = {
+  // Soft: gentle ease-in dissolve. Holds opacity briefly at the edge, then
+  // accelerates through the mid-range, and includes a long low-alpha tail
+  // that reaches fully transparent well before the overlay boundary —
+  // eliminating the visible seam.
+  GlassScrollEdgeStyle.soft: _FadeCurve(
+    [1.0, 0.70, 0.30, 0.04, 0.0],
+    [0.0, 0.15, 0.45, 0.75, 0.92],
+  ),
+  // Hard: crisp but feathered. Stays opaque for longer (the "hard" feel),
+  // then drops more steeply, but still includes a tail to prevent seaming.
+  // Combined with the 0.5× height multiplier in _effectiveHeight, this
+  // produces a noticeably crisper boundary than soft without a sharp line.
+  GlassScrollEdgeStyle.hard: _FadeCurve(
+    [1.0, 0.90, 0.50, 0.04, 0.0],
+    [0.0, 0.30, 0.60, 0.85, 0.95],
+  ),
+};
 
 /// Paints a slice of the background texture with a gradient alpha mask.
 ///
@@ -337,11 +385,13 @@ class _TextureFadePainter extends CustomPainter {
     required this.image,
     required this.isTop,
     required this.screenHeight,
+    required this.style,
   });
 
   final ui.Image image;
   final bool isTop;
   final double screenHeight;
+  final GlassScrollEdgeStyle style;
 
   @override
   void paint(Canvas canvas, Size size) {
@@ -371,13 +421,18 @@ class _TextureFadePainter extends CustomPainter {
     canvas.drawImageRect(image, srcRect, dstRect, Paint());
 
     // Apply gradient alpha mask: opaque at the edge, transparent towards
-    // the content.
+    // the content. Uses a multi-stop eased gradient to produce a
+    // perceptually smooth fade without a visible seam at the boundary.
+    final curve = _kFadeCurves[style]!;
     final gradientPaint = Paint()
       ..blendMode = BlendMode.dstIn
       ..shader = LinearGradient(
         begin: isTop ? Alignment.topCenter : Alignment.bottomCenter,
         end: isTop ? Alignment.bottomCenter : Alignment.topCenter,
-        colors: const [Color(0xFF000000), Color(0x00000000)],
+        colors: curve.alphas
+            .map((a) => Color.fromARGB((a * 255).round(), 0, 0, 0))
+            .toList(),
+        stops: curve.stops,
       ).createShader(dstRect);
 
     canvas.drawRect(dstRect, gradientPaint);
@@ -388,5 +443,6 @@ class _TextureFadePainter extends CustomPainter {
   bool shouldRepaint(_TextureFadePainter oldDelegate) =>
       image != oldDelegate.image ||
       isTop != oldDelegate.isTop ||
-      screenHeight != oldDelegate.screenHeight;
+      screenHeight != oldDelegate.screenHeight ||
+      style != oldDelegate.style;
 }

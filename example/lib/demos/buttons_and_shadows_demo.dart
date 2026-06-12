@@ -1,8 +1,10 @@
-/// Demo for testing GlassButtons, GlassButtonGroups, and their drop shadow behavior.
+/// Demo for testing GlassButtons, GlassButtonGroups, drop shadows,
+/// and the whitenStrength legibility veil.
 ///
 /// This example demonstrates buttons with different shadow elevations
-/// in premium quality, specifically to verify that the shadows are not
-/// clipped and dynamically match the shapes of buttons and menus.
+/// in premium quality, and provides a real-time slider to preview
+/// the whitenStrength veil on the bottom bar. Scroll to the bottom
+/// to see the whiten-at-bottom scroll-boost in action.
 ///
 /// To run: flutter run -t example/lib/main.dart
 library;
@@ -44,6 +46,14 @@ class ShadowClippingDemoPage extends StatefulWidget {
 class _ShadowClippingDemoPageState extends State<ShadowClippingDemoPage> {
   int _tabIndex = 0;
   bool _searchActive = false;
+  double _whitenStrength = 0.30;
+  final ScrollController _scrollController = ScrollController();
+
+  @override
+  void dispose() {
+    _scrollController.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -73,11 +83,16 @@ class _ShadowClippingDemoPageState extends State<ShadowClippingDemoPage> {
           searchConfig: GlassSearchBarConfig(
             onSearchToggle: (active) => setState(() => _searchActive = active),
           ),
-          settings: const LiquidGlassSettings(
+          // ── Whiten veil — driven by the slider in the body ──
+          settings: LiquidGlassSettings(
             shadowElevation: 2.0,
             blur: 15,
             thickness: 20,
+            whitenStrength: _whitenStrength,
           ),
+          // ── Whiten-at-bottom — scroll to the end to see the boost ──
+          scrollController: _scrollController,
+          whitenAtBottom: true,
           tabs: [
             GlassBottomBarTab(
               icon: const Icon(CupertinoIcons.house),
@@ -97,6 +112,7 @@ class _ShadowClippingDemoPageState extends State<ShadowClippingDemoPage> {
           quality: GlassQuality.premium,
           child: SafeArea(
             child: SingleChildScrollView(
+              controller: _scrollController,
               padding: const EdgeInsets.all(32),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.center,
@@ -247,6 +263,87 @@ class _ShadowClippingDemoPageState extends State<ShadowClippingDemoPage> {
                     ),
                   ),
                   const SizedBox(height: 64),
+                  // ── Whiten Strength slider ──────────────────────────
+                  const Text(
+                    'Whiten Strength (Legibility Veil)',
+                    style: TextStyle(
+                      fontSize: 20,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.black87,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  const Text(
+                    'Drag the slider to lift the bottom bar toward white. '
+                    'Scroll to the bottom to see the whiten-at-bottom boost.',
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                      fontSize: 14,
+                      color: Colors.black54,
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  Row(
+                    children: [
+                      const Text(
+                        '0.0',
+                        style: TextStyle(fontSize: 13, color: Colors.black54),
+                      ),
+                      Expanded(
+                        child: CupertinoSlider(
+                          min: 0.0,
+                          max: 1.0,
+                          value: _whitenStrength,
+                          onChanged: (v) => setState(() => _whitenStrength = v),
+                        ),
+                      ),
+                      const Text(
+                        '1.0',
+                        style: TextStyle(fontSize: 13, color: Colors.black54),
+                      ),
+                    ],
+                  ),
+                  Text(
+                    'whitenStrength: ${_whitenStrength.toStringAsFixed(2)}',
+                    style: const TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w600,
+                      color: Colors.black87,
+                    ),
+                  ),
+                  const SizedBox(height: 24),
+                  // Side-by-side comparison cards
+                  Row(
+                    children: [
+                      Expanded(
+                        child: _WhitenCard(
+                          label: 'With Whiten',
+                          whitenStrength: _whitenStrength,
+                        ),
+                      ),
+                      const SizedBox(width: 16),
+                      Expanded(
+                        child: _WhitenCard(
+                          label: 'No Whiten',
+                          whitenStrength: 0.0,
+                        ),
+                      ),
+                    ],
+                  ),
+                  // Extra height so the page is scrollable to trigger
+                  // the whiten-at-bottom boost on the bar.
+                  const SizedBox(height: 200),
+                  const Center(
+                    child: Text(
+                      '↓ Scroll here to trigger whiten-at-bottom ↓',
+                      style: TextStyle(
+                        fontSize: 13,
+                        color: Colors.black38,
+                        fontStyle: FontStyle.italic,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 120),
                 ],
               ),
             ),
@@ -290,6 +387,89 @@ class _ElevatedButton extends StatelessWidget {
             color: Colors.black54,
             fontWeight: FontWeight.w600,
             fontSize: 14,
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+/// Side-by-side comparison card: a small glass surface over a colorful
+/// background, with the specified whitenStrength applied.
+class _WhitenCard extends StatelessWidget {
+  const _WhitenCard({
+    required this.label,
+    required this.whitenStrength,
+  });
+
+  final String label;
+  final double whitenStrength;
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      children: [
+        SizedBox(
+          height: 100,
+          child: Stack(
+            children: [
+              // Colorful content behind the glass
+              Positioned.fill(
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(16),
+                  child: Container(
+                    decoration: const BoxDecoration(
+                      gradient: LinearGradient(
+                        colors: [
+                          Color(0xFFFF6B6B),
+                          Color(0xFF4ECDC4),
+                          Color(0xFF45B7D1),
+                        ],
+                      ),
+                    ),
+                    child: const Center(
+                      child: Text(
+                        'Content Behind Glass',
+                        style: TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.white,
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+              // Glass overlay with whiten
+              Positioned.fill(
+                child: AdaptiveGlass(
+                  shape: const LiquidRoundedSuperellipse(borderRadius: 16),
+                  quality: GlassQuality.premium,
+                  settings: LiquidGlassSettings(
+                    blur: 12,
+                    thickness: 20,
+                    whitenStrength: whitenStrength,
+                  ),
+                  child: const SizedBox.expand(),
+                ),
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(height: 8),
+        Text(
+          label,
+          style: const TextStyle(
+            fontSize: 13,
+            fontWeight: FontWeight.w600,
+            color: Colors.black54,
+          ),
+        ),
+        Text(
+          whitenStrength.toStringAsFixed(2),
+          style: const TextStyle(
+            fontSize: 12,
+            color: Colors.black38,
           ),
         ),
       ],

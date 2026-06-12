@@ -46,7 +46,7 @@ class NavBarPatternsDemo extends StatelessWidget {
     return GlassScaffold(
       background: const ShowcaseBackground(),
       settings: RecommendedGlassSettings.standard,
-      statusBarStyle: GlassStatusBarStyle.light,
+      statusBarStyle: GlassStatusBarStyle.auto,
       appBar: GlassAppBar(
         leading: GlassButton(
           icon: const Icon(CupertinoIcons.back),
@@ -68,13 +68,13 @@ class NavBarPatternsDemo extends StatelessWidget {
             padding: const EdgeInsets.symmetric(horizontal: 24),
             sliver: SliverList.list(
               children: [
-                const Text(
+                Text(
                   'Navigation\nPatterns',
                   style: TextStyle(
                     fontSize: 34,
                     fontWeight: FontWeight.w700,
                     letterSpacing: -0.5,
-                    color: Colors.white,
+                    color: CupertinoColors.label.resolveFrom(context),
                     height: 1.1,
                   ),
                 ),
@@ -83,7 +83,7 @@ class NavBarPatternsDemo extends StatelessWidget {
                   'All iOS 26 GlassAppBar modes — tap to preview.',
                   style: TextStyle(
                     fontSize: 16,
-                    color: Colors.white.withValues(alpha: 0.6),
+                    color: CupertinoColors.secondaryLabel.resolveFrom(context),
                   ),
                 ),
                 const SizedBox(height: 32),
@@ -175,7 +175,9 @@ class _PatternTile extends StatelessWidget {
         padding: const EdgeInsets.symmetric(horizontal: 16),
         child: Row(
           children: [
-            Icon(icon, color: Colors.white70, size: 28),
+            Icon(icon,
+                color: CupertinoColors.secondaryLabel.resolveFrom(context),
+                size: 28),
             const SizedBox(width: 16),
             Expanded(
               child: Column(
@@ -184,10 +186,10 @@ class _PatternTile extends StatelessWidget {
                 children: [
                   Text(
                     title,
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontSize: 17,
                       fontWeight: FontWeight.w600,
-                      color: Colors.white,
+                      color: CupertinoColors.label.resolveFrom(context),
                     ),
                   ),
                   const SizedBox(height: 2),
@@ -195,7 +197,8 @@ class _PatternTile extends StatelessWidget {
                     subtitle,
                     style: TextStyle(
                       fontSize: 13,
-                      color: Colors.white.withValues(alpha: 0.55),
+                      color:
+                          CupertinoColors.secondaryLabel.resolveFrom(context),
                     ),
                     maxLines: 2,
                     overflow: TextOverflow.ellipsis,
@@ -204,7 +207,8 @@ class _PatternTile extends StatelessWidget {
               ),
             ),
             Icon(CupertinoIcons.chevron_right,
-                color: Colors.white.withValues(alpha: 0.3), size: 16),
+                color: CupertinoColors.tertiaryLabel.resolveFrom(context),
+                size: 16),
           ],
         ),
       ),
@@ -242,10 +246,10 @@ Widget _buildDummyContent({int count = 25, double topPadding = 0}) {
               child: Center(
                 child: Text(
                   '${index + 1}',
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 16,
                     fontWeight: FontWeight.bold,
-                    color: Colors.white,
+                    color: CupertinoColors.label.resolveFrom(context),
                   ),
                 ),
               ),
@@ -257,10 +261,10 @@ Widget _buildDummyContent({int count = 25, double topPadding = 0}) {
                 children: [
                   Text(
                     'Item ${index + 1}',
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontSize: 16,
                       fontWeight: FontWeight.w600,
-                      color: Colors.white,
+                      color: CupertinoColors.label.resolveFrom(context),
                     ),
                   ),
                   const SizedBox(height: 4),
@@ -268,7 +272,8 @@ Widget _buildDummyContent({int count = 25, double topPadding = 0}) {
                     'Scrollable content to test navigation bar behaviour',
                     style: TextStyle(
                       fontSize: 13,
-                      color: Colors.white.withValues(alpha: 0.5),
+                      color:
+                          CupertinoColors.secondaryLabel.resolveFrom(context),
                     ),
                   ),
                 ],
@@ -295,14 +300,14 @@ class _InlineTitleDemo extends StatelessWidget {
     return GlassScaffold(
       background: const ShowcaseBackground(),
       settings: RecommendedGlassSettings.standard,
-      statusBarStyle: GlassStatusBarStyle.light,
+      statusBarStyle: GlassStatusBarStyle.auto,
       appBar: GlassAppBar(
-        title: const Text(
+        title: Text(
           'Inline Title',
           style: TextStyle(
             fontSize: 20,
             fontWeight: FontWeight.bold,
-            color: Colors.white,
+            color: CupertinoColors.label.resolveFrom(context),
           ),
         ),
         leading: GlassButton(
@@ -381,16 +386,16 @@ class _LargeTitleCollapseDemoState extends State<_LargeTitleCollapseDemo> {
     return GlassScaffold(
       background: const ShowcaseBackground(),
       settings: RecommendedGlassSettings.standard,
-      statusBarStyle: GlassStatusBarStyle.light,
+      statusBarStyle: GlassStatusBarStyle.auto,
       appBar: GlassAppBar(
         title: Opacity(
           opacity: _collapseProgress,
-          child: const Text(
+          child: Text(
             'Chats',
             style: TextStyle(
               fontSize: 20,
               fontWeight: FontWeight.bold,
-              color: Colors.white,
+              color: CupertinoColors.label.resolveFrom(context),
             ),
           ),
         ),
@@ -435,9 +440,9 @@ class _LargeTitleCollapseDemoState extends State<_LargeTitleCollapseDemo> {
                   fontSize: 34,
                   fontWeight: FontWeight.w700,
                   letterSpacing: -0.5,
-                  color: Colors.white.withValues(
-                    alpha: 1.0 - _collapseProgress,
-                  ),
+                  color: CupertinoColors.label.resolveFrom(context).withValues(
+                        alpha: 1.0 - _collapseProgress,
+                      ),
                 ),
               ),
             ),
@@ -457,25 +462,25 @@ class _LargeTitleCollapseDemoState extends State<_LargeTitleCollapseDemo> {
 class _SolidBackgroundDemo extends StatelessWidget {
   const _SolidBackgroundDemo();
 
-  static const _barColor = Color(0xFF1F2C34); // WhatsApp dark green-grey
-
   @override
   Widget build(BuildContext context) {
     final topPad = MediaQuery.paddingOf(context).top;
+    final isDark = CupertinoTheme.of(context).brightness == Brightness.dark;
 
     return GlassScaffold(
       background: const ShowcaseBackground(),
       settings: RecommendedGlassSettings.standard,
-      statusBarStyle: GlassStatusBarStyle.light,
+      statusBarStyle: GlassStatusBarStyle.auto,
       edgeFade: false,
       appBar: GlassAppBar(
-        backgroundColor: _barColor,
-        title: const Text(
+        backgroundColor:
+            isDark ? const Color(0xFF1F2C34) : const Color(0xFFE8EDF0),
+        title: Text(
           'Solid Background',
           style: TextStyle(
             fontSize: 18,
             fontWeight: FontWeight.w600,
-            color: Colors.white,
+            color: CupertinoColors.label.resolveFrom(context),
           ),
         ),
         centerTitle: false,
@@ -531,7 +536,7 @@ class _FadeOnlyDemo extends StatelessWidget {
     return GlassScaffold(
       background: const ShowcaseBackground(),
       settings: RecommendedGlassSettings.standard,
-      statusBarStyle: GlassStatusBarStyle.light,
+      statusBarStyle: GlassStatusBarStyle.auto,
       appBar: GlassAppBar(
         leading: GlassButton(
           quality: GlassQuality.premium,
@@ -548,16 +553,16 @@ class _FadeOnlyDemo extends StatelessWidget {
             child: SizedBox(height: topPad + 44),
           ),
           // Large title as part of content
-          const SliverToBoxAdapter(
+          SliverToBoxAdapter(
             child: Padding(
-              padding: EdgeInsets.fromLTRB(24, 0, 24, 16),
+              padding: const EdgeInsets.fromLTRB(24, 0, 24, 16),
               child: Text(
                 'Browse',
                 style: TextStyle(
                   fontSize: 34,
                   fontWeight: FontWeight.w700,
                   letterSpacing: -0.5,
-                  color: Colors.white,
+                  color: CupertinoColors.label.resolveFrom(context),
                 ),
               ),
             ),
@@ -591,7 +596,7 @@ class _TabBarBottomFadeDemoState extends State<_TabBarBottomFadeDemo> {
     return GlassScaffold(
       background: const ShowcaseBackground(),
       settings: RecommendedGlassSettings.standard,
-      statusBarStyle: GlassStatusBarStyle.dark,
+      statusBarStyle: GlassStatusBarStyle.auto,
       bottomBar: GlassBottomBar(
         selectedIndex: _selectedTab,
         onTabSelected: (index) => setState(() => _selectedTab = index),
@@ -617,12 +622,12 @@ class _TabBarBottomFadeDemoState extends State<_TabBarBottomFadeDemo> {
         ],
       ),
       appBar: GlassAppBar(
-        title: const Text(
+        title: Text(
           'Settings',
           style: TextStyle(
             fontSize: 20,
             fontWeight: FontWeight.bold,
-            color: Colors.white,
+            color: CupertinoColors.label.resolveFrom(context),
           ),
         ),
         leading: GlassButton(
@@ -678,7 +683,7 @@ class _FadeHeaderDemoState extends State<_FadeHeaderDemo> {
     return GlassScaffold(
       background: const ShowcaseBackground(),
       settings: RecommendedGlassSettings.standard,
-      statusBarStyle: GlassStatusBarStyle.light,
+      statusBarStyle: GlassStatusBarStyle.auto,
       topEdgeFade: true,
       bottomEdgeFade: true,
 
@@ -687,11 +692,11 @@ class _FadeHeaderDemoState extends State<_FadeHeaderDemo> {
         padding: const EdgeInsets.fromLTRB(20, 8, 16, 0),
         child: Row(
           children: [
-            const Expanded(
+            Expanded(
               child: Text(
                 'Listen Now',
                 style: TextStyle(
-                  color: Colors.white,
+                  color: CupertinoColors.label.resolveFrom(context),
                   fontSize: 34,
                   fontWeight: FontWeight.w700,
                   letterSpacing: -0.5,
@@ -701,15 +706,17 @@ class _FadeHeaderDemoState extends State<_FadeHeaderDemo> {
             Container(
               width: 36,
               height: 36,
-              decoration: const BoxDecoration(
-                color: Color(0xFF4C4556),
+              decoration: BoxDecoration(
+                color: CupertinoColors.systemGrey4.resolveFrom(context),
                 shape: BoxShape.circle,
               ),
               alignment: Alignment.center,
-              child: const Text(
+              child: Text(
                 'SD',
-                style:
-                    TextStyle(color: Colors.white, fontWeight: FontWeight.w600),
+                style: TextStyle(
+                  color: CupertinoColors.label.resolveFrom(context),
+                  fontWeight: FontWeight.w600,
+                ),
               ),
             ),
           ],
