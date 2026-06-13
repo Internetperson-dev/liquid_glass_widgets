@@ -1,3 +1,5 @@
+import 'dart:ui' show lerpDouble;
+
 import 'package:flutter/material.dart';
 import '../src/renderer/liquid_glass_renderer.dart';
 import 'glass_interaction_settings.dart';
@@ -96,6 +98,44 @@ class GlassGlowColors {
       glowSpreadRadius: glowSpreadRadius ?? this.glowSpreadRadius,
       glowOpacity: glowOpacity ?? this.glowOpacity,
     );
+  }
+
+  /// Linearly interpolates between two glow palettes.
+  ///
+  /// Color fields that are non-null on both sides interpolate smoothly via
+  /// [Color.lerp]; a field that is null on either side switches discretely at
+  /// the midpoint, because `null` means "resolve a brightness-aware default
+  /// at runtime" (see [GlassThemeData.glowColorsFor]) — fading through
+  /// transparent would misrepresent that. The appearance scalars
+  /// ([glowBlurRadius], [glowSpreadRadius], [glowOpacity]) always
+  /// interpolate smoothly.
+  ///
+  /// Returns null when both [a] and [b] are null. Used by
+  /// [GlassThemeVariant.lerp] to cross-fade between light and dark theme
+  /// variants during content-aware brightness flips.
+  static GlassGlowColors? lerp(
+    GlassGlowColors? a,
+    GlassGlowColors? b,
+    double t,
+  ) {
+    if (identical(a, b)) return a;
+    if (a == null || b == null) return t < 0.5 ? a : b;
+    return GlassGlowColors(
+      primary: _lerpColorField(a.primary, b.primary, t),
+      secondary: _lerpColorField(a.secondary, b.secondary, t),
+      success: _lerpColorField(a.success, b.success, t),
+      warning: _lerpColorField(a.warning, b.warning, t),
+      danger: _lerpColorField(a.danger, b.danger, t),
+      info: _lerpColorField(a.info, b.info, t),
+      glowBlurRadius: lerpDouble(a.glowBlurRadius, b.glowBlurRadius, t)!,
+      glowSpreadRadius: lerpDouble(a.glowSpreadRadius, b.glowSpreadRadius, t)!,
+      glowOpacity: lerpDouble(a.glowOpacity, b.glowOpacity, t)!,
+    );
+  }
+
+  static Color? _lerpColorField(Color? a, Color? b, double t) {
+    if (a != null && b != null) return Color.lerp(a, b, t);
+    return t < 0.5 ? a : b;
   }
 
   /// Fallback glow colors with sensible defaults.
@@ -200,6 +240,40 @@ class GlassThemeVariant {
     );
   }
 
+  /// Linearly interpolates between two theme variants.
+  ///
+  /// Continuous values interpolate smoothly; discrete or optional values
+  /// switch at the midpoint:
+  ///
+  /// - [settings] delegates to [GlassThemeSettings.lerp] (per-field smooth
+  ///   lerp with midpoint switching for one-sided `null`s).
+  /// - [glowColors] delegates to [GlassGlowColors.lerp].
+  /// - [borderRadius] interpolates when set on both sides, otherwise
+  ///   switches at the midpoint.
+  /// - [quality] is discrete and always switches at the midpoint.
+  ///
+  /// Used to cross-fade between the light and dark variants when a
+  /// content-aware brightness flip animates (see `GlassContentAwareScope`).
+  static GlassThemeVariant lerp(
+    GlassThemeVariant a,
+    GlassThemeVariant b,
+    double t,
+  ) {
+    if (identical(a, b)) return a;
+    final double? radius;
+    if (a.borderRadius != null && b.borderRadius != null) {
+      radius = lerpDouble(a.borderRadius, b.borderRadius, t);
+    } else {
+      radius = t < 0.5 ? a.borderRadius : b.borderRadius;
+    }
+    return GlassThemeVariant(
+      settings: GlassThemeSettings.lerp(a.settings, b.settings, t),
+      quality: t < 0.5 ? a.quality : b.quality,
+      glowColors: GlassGlowColors.lerp(a.glowColors, b.glowColors, t),
+      borderRadius: radius,
+    );
+  }
+
   /// Default light theme variant.
   ///
   /// [quality] is intentionally `null` here so that each widget's own
@@ -281,10 +355,11 @@ class GlassThemeVariant {
           runtimeType == other.runtimeType &&
           settings == other.settings &&
           quality == other.quality &&
-          glowColors == other.glowColors;
+          glowColors == other.glowColors &&
+          borderRadius == other.borderRadius;
 
   @override
-  int get hashCode => Object.hash(settings, quality, glowColors);
+  int get hashCode => Object.hash(settings, quality, glowColors, borderRadius);
 }
 
 /// Theme data for liquid glass widgets.

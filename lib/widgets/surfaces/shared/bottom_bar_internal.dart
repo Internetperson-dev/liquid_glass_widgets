@@ -52,6 +52,29 @@ const kBottomBarGlassDefaults = LiquidGlassSettings(
 );
 
 // =============================================================================
+// resolveBarLabelColor — shared icon/label color resolution
+// =============================================================================
+
+/// Resolves the dynamic icon/label color for both bars.
+///
+/// In the classic path ([darkAmount] null) this is the Cupertino label color
+/// resolved against the ambient brightness — identical to the historical
+/// behavior. When the content-aware brightness machinery is active,
+/// [darkAmount] is the animated light→dark cross-fade position, and the
+/// color interpolates between the label's light and dark variants so glyphs
+/// fade with the rest of the appearance instead of snapping. Non-dynamic
+/// custom label colors have no variants to fade between and are returned
+/// as-is.
+Color resolveBarLabelColor(BuildContext context, double? darkAmount) {
+  final labelColor = CupertinoTheme.of(context).textTheme.textStyle.color ??
+      CupertinoColors.label;
+  if (darkAmount != null && labelColor is CupertinoDynamicColor) {
+    return Color.lerp(labelColor.color, labelColor.darkColor, darkAmount)!;
+  }
+  return labelColor;
+}
+
+// =============================================================================
 // buildIconShadows — pure utility function (visibleForTesting for unit tests)
 // =============================================================================
 

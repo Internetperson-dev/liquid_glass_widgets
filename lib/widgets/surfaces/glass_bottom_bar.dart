@@ -8,11 +8,13 @@
 
 import 'dart:ui' as ui;
 import 'package:flutter/cupertino.dart';
+import 'package:flutter/foundation.dart' show ValueListenable;
 import '../../src/renderer/liquid_glass_renderer.dart';
 
 import '../../types/glass_quality.dart';
 import '../interactive/glass_button.dart';
 import '../shared/adaptive_liquid_glass_layer.dart';
+import '../shared/glass_content_aware_scope.dart';
 import '../shared/inherited_liquid_glass.dart';
 import '../../theme/glass_theme_data.dart';
 import '../../theme/glass_theme_helpers.dart';
@@ -22,7 +24,8 @@ import 'shared/bottom_bar_internal.dart'
         BottomBarExtraBtn,
         BottomBarTabItem,
         TabIndicator,
-        kBottomBarGlassDefaults;
+        kBottomBarGlassDefaults,
+        resolveBarLabelColor;
 import 'shared/bar_layout_utils.dart';
 
 /// A glass morphism bottom navigation bar following Apple's design patterns.
@@ -224,6 +227,9 @@ class GlassBottomBar extends StatefulWidget {
     this.interactionBehavior = GlassInteractionBehavior.full,
     this.pressScale = 1.04,
     this.platformViewBackdrop = false,
+    this.adaptiveBrightness = false,
+    this.onBrightnessChanged,
+    this.brightnessOverride,
   })  : assert(tabs.length > 0, 'GlassBottomBar requires at least one tab'),
         assert(
           selectedIndex >= 0 && selectedIndex < tabs.length,
@@ -281,6 +287,36 @@ class GlassBottomBar extends StatefulWidget {
   /// own icons — so premium animations survive over the PlatformView with no
   /// quality swap. Defaults to false.
   final bool platformViewBackdrop;
+
+  /// Whether the bar adapts its light/dark appearance to the content
+  /// scrolling underneath it, like the iOS 26 system bars.
+  ///
+  /// Requires an enclosing [GlassContentAwareScope] with the scrolling
+  /// content wrapped in a [GlassContentAwareContent]; without one the bar
+  /// keeps its ambient appearance. When the scope's contrast vote flips the
+  /// verdict, the bar cross-fades between the [GlassTheme] light and dark
+  /// variants — themed glass settings, glow palette and the default
+  /// icon/label colors all swap automatically.
+  ///
+  /// Defaults to false.
+  final bool adaptiveBrightness;
+
+  /// Called when the content-aware verdict flips (not for the initial
+  /// value).
+  ///
+  /// Use this to restyle elements the bar cannot see — page scrims, status
+  /// bar icons, custom-painted tab icons.
+  final ValueChanged<Brightness>? onBrightnessChanged;
+
+  /// External brightness source that bypasses the content sampler entirely.
+  ///
+  /// When non-null, the bar follows this listenable instead of registering
+  /// with the [GlassContentAwareScope] — the escape hatch for bars floating
+  /// over content that cannot be captured (iOS PlatformViews such as maps;
+  /// see [platformViewBackdrop]). Drive it from your own signal, e.g. the
+  /// active map style. Implies the adaptive behavior regardless of
+  /// [adaptiveBrightness].
+  final ValueListenable<Brightness>? brightnessOverride;
 
   /// The color of the directional glow effect when interacting with the bar.
   ///
@@ -555,6 +591,21 @@ class _GlassBottomBarState extends State<GlassBottomBar> {
 
   @override
   Widget build(BuildContext context) {
+    if (!widget.adaptiveBrightness && widget.brightnessOverride == null) {
+      return _buildBar(context, null);
+    }
+    return GlassContentAwareBrightness(
+      brightnessOverride: widget.brightnessOverride,
+      onBrightnessChanged: widget.onBrightnessChanged,
+      builder: (context, brightness, darkAmount) =>
+          _buildBar(context, darkAmount),
+    );
+  }
+
+  /// Builds the bar. [darkAmount] is the animated light→dark cross-fade
+  /// position when the adaptive brightness machinery is active, or null in
+  /// the classic (ambient-brightness) path.
+  Widget _buildBar(BuildContext context, double? darkAmount) {
     final effectiveQuality = GlassThemeHelpers.resolveQuality(
       context,
       widgetQuality: widget.quality,
@@ -568,9 +619,7 @@ class _GlassBottomBarState extends State<GlassBottomBar> {
     final effectiveInteractionGlowColor =
         widget.interactionGlowColor ?? resolvedGlowColors.primary;
 
-    final dynamicLabelColor =
-        CupertinoTheme.of(context).textTheme.textStyle.color ??
-            CupertinoColors.label;
+    final dynamicLabelColor = resolveBarLabelColor(context, darkAmount);
     final resolvedSelectedIconColor =
         widget.selectedIconColor ?? dynamicLabelColor;
     final resolvedUnselectedIconColor =

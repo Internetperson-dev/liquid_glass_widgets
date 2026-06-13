@@ -4,6 +4,7 @@
 import 'dart:math' as math;
 import 'dart:ui' as ui;
 import 'package:flutter/cupertino.dart';
+import 'package:flutter/foundation.dart' show ValueListenable;
 import 'package:flutter/physics.dart';
 
 import '../../src/renderer/liquid_glass_renderer.dart';
@@ -12,6 +13,7 @@ import '../../types/glass_quality.dart';
 import '../../theme/glass_theme_data.dart';
 import '../../theme/glass_theme_helpers.dart';
 import '../shared/adaptive_liquid_glass_layer.dart';
+import '../shared/glass_content_aware_scope.dart';
 import 'glass_bottom_bar.dart'
     show
         ExtraButtonPosition,
@@ -103,6 +105,10 @@ class GlassSearchableBottomBar extends StatefulWidget {
     this.whitenBottomThreshold = 45.0,
     this.whitenAtBottomTarget = 1.0,
     this.scrollController,
+    // ── Content-aware brightness ─────────────────────────────────────────────
+    this.adaptiveBrightness = false,
+    this.onBrightnessChanged,
+    this.brightnessOverride,
   })  : assert(tabs.length > 0,
             'GlassSearchableBottomBar requires at least one tab'),
         assert(
@@ -255,6 +261,37 @@ class GlassSearchableBottomBar extends StatefulWidget {
   /// disables the whiten-at-bottom effect — there is no scroll position to
   /// watch.
   final ScrollController? scrollController;
+
+  // ── Content-aware brightness ────────────────────────────────────────────────
+  /// Whether the bar adapts its light/dark appearance to the content
+  /// scrolling underneath it, like the iOS 26 system bars.
+  ///
+  /// Requires an enclosing [GlassContentAwareScope] with the scrolling
+  /// content wrapped in a [GlassContentAwareContent]; without one the bar
+  /// keeps its ambient appearance. When the scope's contrast vote flips the
+  /// verdict, the bar cross-fades between the [GlassTheme] light and dark
+  /// variants — themed glass settings, glow palette and the default
+  /// icon/label colors all swap automatically.
+  ///
+  /// Defaults to false.
+  final bool adaptiveBrightness;
+
+  /// Called when the content-aware verdict flips (not for the initial
+  /// value).
+  ///
+  /// Use this to restyle elements the bar cannot see — page scrims, status
+  /// bar icons, custom-painted tab icons.
+  final ValueChanged<Brightness>? onBrightnessChanged;
+
+  /// External brightness source that bypasses the content sampler entirely.
+  ///
+  /// When non-null, the bar follows this listenable instead of registering
+  /// with the [GlassContentAwareScope] — the escape hatch for bars floating
+  /// over content that cannot be captured (iOS PlatformViews such as maps;
+  /// see [platformViewBackdrop]). Drive it from your own signal, e.g. the
+  /// active map style. Implies the adaptive behavior regardless of
+  /// [adaptiveBrightness].
+  final ValueListenable<Brightness>? brightnessOverride;
 
   /// Rendering quality. Inherits from parent or defaults to [GlassQuality.premium].
   final GlassQuality? quality;
@@ -610,6 +647,21 @@ class _GlassSearchableBottomBarState extends State<GlassSearchableBottomBar>
 
   @override
   Widget build(BuildContext context) {
+    if (!widget.adaptiveBrightness && widget.brightnessOverride == null) {
+      return _buildBar(context, null);
+    }
+    return GlassContentAwareBrightness(
+      brightnessOverride: widget.brightnessOverride,
+      onBrightnessChanged: widget.onBrightnessChanged,
+      builder: (context, brightness, darkAmount) =>
+          _buildBar(context, darkAmount),
+    );
+  }
+
+  /// Builds the bar. [darkAmount] is the animated light→dark cross-fade
+  /// position when the adaptive brightness machinery is active, or null in
+  /// the classic (ambient-brightness) path.
+  Widget _buildBar(BuildContext context, double? darkAmount) {
     final effectiveQuality = GlassThemeHelpers.resolveQuality(
       context,
       widgetQuality: widget.quality,
@@ -623,9 +675,7 @@ class _GlassSearchableBottomBarState extends State<GlassSearchableBottomBar>
     final effectiveInteractionGlowColor =
         widget.interactionGlowColor ?? resolvedGlowColors.primary;
 
-    final dynamicLabelColor =
-        CupertinoTheme.of(context).textTheme.textStyle.color ??
-            CupertinoColors.label;
+    final dynamicLabelColor = resolveBarLabelColor(context, darkAmount);
     final resolvedSelectedIconColor =
         widget.selectedIconColor ?? dynamicLabelColor;
     final resolvedUnselectedIconColor =

@@ -1,3 +1,5 @@
+import 'dart:ui' show lerpDouble;
+
 import 'package:flutter/widgets.dart';
 
 import '../src/renderer/liquid_glass_settings.dart';
@@ -107,6 +109,58 @@ class GlassThemeSettings {
       saturation: saturation ?? base.saturation,
       specularSharpness: specularSharpness ?? base.specularSharpness,
     );
+  }
+
+  /// Linearly interpolates between two partial overrides.
+  ///
+  /// Because every field is an *optional* override, interpolation has to
+  /// respect the meaning of `null` ("use the widget's own default") rather
+  /// than treating it as zero:
+  ///
+  /// - When a field is non-null on **both** sides it is smoothly
+  ///   interpolated.
+  /// - When a field is null on **either** side it switches discretely at the
+  ///   midpoint (`t < 0.5` keeps [a]'s value, otherwise [b]'s). Interpolating
+  ///   against an unknown widget default would produce a visible flash
+  ///   through zero.
+  /// - [specularSharpness] is an enum and always switches at the midpoint.
+  ///
+  /// Returns null when both [a] and [b] are null. Used by
+  /// [GlassThemeVariant.lerp] to cross-fade between light and dark theme
+  /// variants during content-aware brightness flips.
+  static GlassThemeSettings? lerp(
+    GlassThemeSettings? a,
+    GlassThemeSettings? b,
+    double t,
+  ) {
+    if (identical(a, b)) return a;
+    if (a == null || b == null) return t < 0.5 ? a : b;
+    return GlassThemeSettings(
+      visibility: _lerpDoubleField(a.visibility, b.visibility, t),
+      glassColor: _lerpColorField(a.glassColor, b.glassColor, t),
+      thickness: _lerpDoubleField(a.thickness, b.thickness, t),
+      blur: _lerpDoubleField(a.blur, b.blur, t),
+      chromaticAberration:
+          _lerpDoubleField(a.chromaticAberration, b.chromaticAberration, t),
+      lightAngle: _lerpDoubleField(a.lightAngle, b.lightAngle, t),
+      lightIntensity: _lerpDoubleField(a.lightIntensity, b.lightIntensity, t),
+      ambientStrength:
+          _lerpDoubleField(a.ambientStrength, b.ambientStrength, t),
+      refractiveIndex:
+          _lerpDoubleField(a.refractiveIndex, b.refractiveIndex, t),
+      saturation: _lerpDoubleField(a.saturation, b.saturation, t),
+      specularSharpness: t < 0.5 ? a.specularSharpness : b.specularSharpness,
+    );
+  }
+
+  static double? _lerpDoubleField(double? a, double? b, double t) {
+    if (a != null && b != null) return lerpDouble(a, b, t);
+    return t < 0.5 ? a : b;
+  }
+
+  static Color? _lerpColorField(Color? a, Color? b, double t) {
+    if (a != null && b != null) return Color.lerp(a, b, t);
+    return t < 0.5 ? a : b;
   }
 
   /// Creates a copy with overridden values.
