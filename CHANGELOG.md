@@ -1,3 +1,19 @@
+# 0.16.1
+
+## 🐛 Bug Fix — `GlassQuality.minimal` crash in `GlassMenu` / `GlassPullDownButton` / `GlassPopover`
+
+Fixed an assertion error thrown when opening a `GlassMenu`, `GlassPullDownButton`, or `GlassPopover` while the app theme was set to `GlassQuality.minimal`.
+
+**Root cause:** The morphing overlay built by these widgets contained an explicit `LiquidGlassBlendGroup` nested directly inside `AdaptiveLiquidGlassLayer`. In `GlassQuality.minimal` mode, `AdaptiveLiquidGlassLayer` intentionally skips creating a `LiquidGlassLayer` (it is a transparent pass-through for performance). The hard-coded inner `LiquidGlassBlendGroup` then failed its assertion `renderLink != null` because no `LiquidGlassLayer` ancestor existed to provide the required render link.
+
+**Fix:** Removed the redundant `LiquidGlassBlendGroup` wrapper from the overlay builders in `GlassMenu` and `GlassPopover`. `AdaptiveLiquidGlassLayer` already manages the blend group conditionally — it creates one internally when quality is `premium`, and correctly omits it for `standard` and `minimal`. The explicit wrapper was both redundant and fragile.
+
+**Affected widgets:** `GlassMenu`, `GlassPullDownButton`, `GlassPopover`.
+
+**No API changes. No breaking changes.**
+
+---
+
 # 0.16.0
 
 ## 🎨 Content-Aware Light/Dark Adaptation

@@ -158,7 +158,7 @@ Most apps should use `GlassCard` or `GlassGroupedSection` instead.
 
 ```yaml
 dependencies:
-  liquid_glass_widgets: ^0.16.0
+  liquid_glass_widgets: ^0.16.1
 ```
 
 ```bash

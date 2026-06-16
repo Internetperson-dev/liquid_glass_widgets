@@ -350,65 +350,59 @@ class _GlassPopoverState extends State<GlassPopover>
                 (_morphController.isClosing && _morphController.hasHandedOff)
                     ? 0.0
                     : 1.0,
-            child: LiquidGlassLayer(
+            child: AdaptiveLiquidGlassLayer(
               settings: effectiveSettings,
-              child: InheritedLiquidGlass(
-                settings: effectiveSettings,
-                quality: effectiveQuality,
-                isBlurProvidedByAncestor: false,
-                child: LiquidGlassBlendGroup(
-                  blend: state.blend,
-                  child: Stack(
-                    clipBehavior: Clip.none,
-                    children: [
-                      // ── Blob A: Trigger Ghost ─────────────────────────
-                      // Stays perfectly centered on the trigger, shrinks to
-                      // 0 scale over the first 40% of the animation to
-                      // smoothly break the liquid bridge.
-                      Positioned(
-                        left: _triggerGlobalPosition.dx + state.pushDx,
-                        top: _triggerGlobalPosition.dy + state.pushDy,
-                        child: Transform.scale(
-                          scale: state.anchorScale,
-                          child: GlassContainer(
-                            useOwnLayer: false,
-                            settings: effectiveSettings,
-                            quality: effectiveQuality,
-                            width: tw,
-                            height: th,
-                            shape: LiquidRoundedSuperellipse(
-                              borderRadius: _triggerBorderRadius ??
-                                  _triggerSize!.shortestSide / 2.0,
-                            ),
-                          ),
+              quality: effectiveQuality,
+              blendAmount: state.blend,
+              child: Stack(
+                clipBehavior: Clip.none,
+                children: [
+                  // ── Blob A: Trigger Ghost ─────────────────────────
+                  // Stays perfectly centered on the trigger, shrinks to
+                  // 0 scale over the first 40% of the animation to
+                  // smoothly break the liquid bridge.
+                  Positioned(
+                    left: _triggerGlobalPosition.dx + state.pushDx,
+                    top: _triggerGlobalPosition.dy + state.pushDy,
+                    child: Transform.scale(
+                      scale: state.anchorScale,
+                      child: GlassContainer(
+                        useOwnLayer: false,
+                        settings: effectiveSettings,
+                        quality: effectiveQuality,
+                        width: tw,
+                        height: th,
+                        shape: LiquidRoundedSuperellipse(
+                          borderRadius: _triggerBorderRadius ??
+                              _triggerSize!.shortestSide / 2.0,
                         ),
                       ),
-
-                      // ── Blob B: Popover Body ─────────────────────────
-                      Positioned(
-                        left: _triggerGlobalPosition.dx +
-                            tw / 2.0 +
-                            state.currentDx -
-                            currentWidth / 2.0 +
-                            (_horizontalOffset * clampedValue),
-                        top: _triggerGlobalPosition.dy +
-                            th / 2.0 +
-                            state.currentDy -
-                            currentHeight / 2.0 +
-                            (_verticalOffset * clampedValue),
-                        child: IgnorePointer(
-                          ignoring: clampedValue < 0.8,
-                          child: _buildPopoverContainer(
-                            state,
-                            clampedValue,
-                            currentWidth,
-                            currentHeight,
-                          ),
-                        ),
-                      ),
-                    ],
+                    ),
                   ),
-                ),
+
+                  // ── Blob B: Popover Body ─────────────────────────
+                  Positioned(
+                    left: _triggerGlobalPosition.dx +
+                        tw / 2.0 +
+                        state.currentDx -
+                        currentWidth / 2.0 +
+                        (_horizontalOffset * clampedValue),
+                    top: _triggerGlobalPosition.dy +
+                        th / 2.0 +
+                        state.currentDy -
+                        currentHeight / 2.0 +
+                        (_verticalOffset * clampedValue),
+                    child: IgnorePointer(
+                      ignoring: clampedValue < 0.8,
+                      child: _buildPopoverContainer(
+                        state,
+                        clampedValue,
+                        currentWidth,
+                        currentHeight,
+                      ),
+                    ),
+                  ),
+                ],
               ),
             ),
           ),

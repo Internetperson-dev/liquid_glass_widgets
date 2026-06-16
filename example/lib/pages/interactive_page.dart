@@ -300,11 +300,14 @@ class _InteractivePageState extends State<InteractivePage> {
                         standardLabel: 'Standard',
                       ),
                       SizedBox(height: 12),
+                      // Demo-only: explicit quality override so this row always
+                      // shows the premium shader regardless of the app theme.
                       GlassSegmentedControl(
                         segments: ['Daily', 'Weekly', 'Monthly'],
                         selectedIndex: _segment1,
                         onSegmentSelected: (i) => setState(() => _segment1 = i),
-                        quality: GlassQuality.premium,
+                        quality: GlassQuality
+                            .premium, // intentional — theme bypass for showcase
                       ),
                       SizedBox(height: 12),
                       GlassSegmentedControl(
@@ -358,10 +361,13 @@ class _InteractivePageState extends State<InteractivePage> {
                         standardLabel: '',
                       ),
                       SizedBox(height: 8),
+                      // Demo-only: explicit quality override so this row always
+                      // shows the premium shader regardless of the app theme.
                       GlassSlider(
                         value: _slider1,
                         onChanged: (v) => setState(() => _slider1 = v),
-                        quality: GlassQuality.premium,
+                        quality: GlassQuality
+                            .premium, // intentional — theme bypass for showcase
                       ),
                       SizedBox(height: 8),
                       Text(
