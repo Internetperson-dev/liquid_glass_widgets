@@ -230,7 +230,7 @@ void main() {
         itemCount: 3,
         alignment: const Alignment(0.1, 0),
         thickness: 1.0,
-        expansion: 14.0,
+        expansion: const EdgeInsets.all(14.0),
         transform: Matrix4.identity(),
         borderRadius: 32.0,
       );
@@ -238,7 +238,7 @@ void main() {
         itemCount: 3,
         alignment: const Alignment(0.1 + 0.0001, 0), // sub-pixel
         thickness: 1.0,
-        expansion: 14.0,
+        expansion: const EdgeInsets.all(14.0),
         transform: Matrix4.identity(),
         borderRadius: 32.0,
       );
@@ -250,7 +250,7 @@ void main() {
         itemCount: 3,
         alignment: const Alignment(0.0, 0),
         thickness: 1.0,
-        expansion: 14.0,
+        expansion: const EdgeInsets.all(14.0),
         transform: Matrix4.identity(),
         borderRadius: 32.0,
       );
@@ -258,7 +258,7 @@ void main() {
         itemCount: 3,
         alignment: const Alignment(0.5, 0),
         thickness: 1.0,
-        expansion: 14.0,
+        expansion: const EdgeInsets.all(14.0),
         transform: Matrix4.identity(),
         borderRadius: 32.0,
       );
@@ -270,7 +270,7 @@ void main() {
         itemCount: 2,
         alignment: Alignment.center,
         thickness: 0.5,
-        expansion: 10.0,
+        expansion: const EdgeInsets.all(10.0),
         transform: Matrix4.identity(),
         borderRadius: 20.0,
         inverse: true,

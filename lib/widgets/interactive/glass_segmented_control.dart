@@ -124,6 +124,9 @@ class GlassSegmentedControl extends StatefulWidget {
     this.backgroundColor,
     this.indicatorColor,
     this.indicatorSettings,
+    this.indicatorPinchStrength = 0.4,
+    this.indicatorExpansion =
+        const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
     this.settings,
     this.useOwnLayer = false,
     this.quality,
@@ -222,6 +225,26 @@ class GlassSegmentedControl extends StatefulWidget {
   /// - chromaticAberration: 0.5
   /// - blur: 0
   final LiquidGlassSettings? indicatorSettings;
+
+  /// Maximum concave lens pinch strength for the sliding indicator pill.
+  ///
+  /// - `1.0` (default) — full Apple-calibrated pinch
+  /// - `0.0` — pinch fully disabled
+  /// Maximum concave lens pinch strength. Forwarded to [AnimatedGlassIndicator].
+  ///
+  /// Defaults to `0.4` — the iOS 26-calibrated gentle concave lens warp, matching
+  /// [GlassBottomBar] and [GlassTabBar] for a consistent feel across all
+  /// interactive indicator widgets. Set to `0.0` to disable, `1.0` to restore
+  /// the original full-strength warp.
+  final double indicatorPinchStrength;
+
+  /// Expansion padding applied to the active indicator pill during interaction.
+  ///
+  /// The pill grows by this amount beyond its segment boundary as the user drags,
+  /// creating the iOS 26 "jelly" overshoot. Defaults to
+  /// `EdgeInsets.symmetric(horizontal: 12, vertical: 8)` matching [GlassBottomBar]
+  /// and [GlassTabBar].
+  final EdgeInsetsGeometry indicatorExpansion;
 
   // ===========================================================================
   // Glass Effect Properties
@@ -323,6 +346,8 @@ class _GlassSegmentedControlState extends State<GlassSegmentedControl> {
         unselectedTextStyle: widget.unselectedTextStyle,
         indicatorColor: widget.indicatorColor,
         indicatorSettings: widget.indicatorSettings,
+        indicatorPinchStrength: widget.indicatorPinchStrength,
+        indicatorExpansion: widget.indicatorExpansion,
         borderRadius: widget.borderRadius,
         quality: effectiveQuality,
         backgroundKey: widget.backgroundKey,

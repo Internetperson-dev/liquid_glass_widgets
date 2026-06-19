@@ -8,7 +8,9 @@ library;
 
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 import 'package:liquid_glass_widgets/liquid_glass_widgets.dart';
+import '../constants/sf_symbols.dart';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // THEME CONSTANTS
@@ -302,8 +304,10 @@ class _AppleNewsHomeScreenState extends State<AppleNewsHomeScreen> {
           selectedIconColor: Color.fromRGBO(255, 90, 130, 1),
           unselectedIconColor: CupertinoColors.label.resolveFrom(context),
           labelFontSize: 10,
-          iconSize: 28,
+          iconSize: 26,
+          magnification: 1.15,
           iconLabelSpacing: 0,
+          spacing: 8,
           indicatorColor: CupertinoColors.tertiaryLabel.resolveFrom(context),
           quality: GlassQuality.premium,
           interactionBehavior: GlassInteractionBehavior.full,
@@ -313,9 +317,10 @@ class _AppleNewsHomeScreenState extends State<AppleNewsHomeScreen> {
                 : const Color(0xCCFFFFFF),
             thickness: 30,
             blur: 2,
-            chromaticAberration: .01,
+            chromaticAberration:
+                0.15, // iOS 26 has subtle iridescent rainbow fringing
             lightAngle: GlassDefaults.lightAngle,
-            lightIntensity: .5,
+            lightIntensity: .3,
             ambientStrength: 0,
             refractiveIndex: 1.2,
             saturation: 1.2,
@@ -330,6 +335,13 @@ class _AppleNewsHomeScreenState extends State<AppleNewsHomeScreen> {
             onSearchFocusChanged: (focused) =>
                 setState(() => _searchFieldFocused = focused),
             searchIconColor: CupertinoColors.label.resolveFrom(context),
+            // Slightly larger (26 pt) to match Apple News's proportionally bold
+            // magnifying-glass icon in the collapsed search pill.
+            searchIcon: Icon(
+              CupertinoIcons.search,
+              size: 30,
+              color: CupertinoColors.label.resolveFrom(context),
+            ),
             textInputAction: TextInputAction.search,
             autoFocusOnExpand: false,
             showsCancelButton: true,
@@ -338,22 +350,97 @@ class _AppleNewsHomeScreenState extends State<AppleNewsHomeScreen> {
           tabs: [
             GlassBottomBarTab(
               label: 'Today',
-              icon: Icon(CupertinoIcons.house),
-              activeIcon: Icon(CupertinoIcons.house_fill),
+              icon: SizedBox(
+                width: 24,
+                height: 24,
+                child: SvgPicture.asset(
+                  'assets/news_logo.svg',
+                  fit: BoxFit.contain,
+                  colorFilter: ColorFilter.mode(
+                    CupertinoColors.label.resolveFrom(context),
+                    BlendMode.srcIn,
+                  ),
+                ),
+              ),
+              activeIcon: SizedBox(
+                width: 24,
+                height: 24,
+                child: SvgPicture.asset(
+                  'assets/news_logo.svg',
+                  fit: BoxFit.contain,
+                  colorFilter: const ColorFilter.mode(
+                    Color.fromRGBO(255, 90, 130, 1),
+                    BlendMode.srcIn,
+                  ),
+                ),
+              ),
             ),
             GlassBottomBarTab(
               label: 'News+',
-              icon: Icon(CupertinoIcons.news_solid),
-              activeIcon: Icon(CupertinoIcons.news_solid),
+              icon: SizedBox(
+                width: 28,
+                height: 28,
+                child: Icon(SFSymbols.newspaper_fill, size: 28),
+              ),
+              activeIcon: SizedBox(
+                width: 28,
+                height: 28,
+                child: Icon(SFSymbols.newspaper_fill, size: 28),
+              ),
             ),
             GlassBottomBarTab(
               label: 'Audio',
-              icon: Icon(CupertinoIcons.headphones),
+              icon: SizedBox(
+                width: 26,
+                height: 26,
+                child: SvgPicture.asset(
+                  'assets/audio.svg',
+                  fit: BoxFit.contain,
+                  colorFilter: ColorFilter.mode(
+                    CupertinoColors.label.resolveFrom(context),
+                    BlendMode.srcIn,
+                  ),
+                ),
+              ),
+              activeIcon: SizedBox(
+                width: 26,
+                height: 26,
+                child: SvgPicture.asset(
+                  'assets/audio.svg',
+                  fit: BoxFit.contain,
+                  colorFilter: const ColorFilter.mode(
+                    Color.fromRGBO(255, 90, 130, 1),
+                    BlendMode.srcIn,
+                  ),
+                ),
+              ),
             ),
             GlassBottomBarTab(
               label: 'Following',
-              icon:
-                  Icon(CupertinoIcons.rectangle_fill_on_rectangle_angled_fill),
+              icon: SizedBox(
+                width: 26,
+                height: 26,
+                child: SvgPicture.asset(
+                  'assets/following.svg',
+                  fit: BoxFit.contain,
+                  colorFilter: ColorFilter.mode(
+                    CupertinoColors.label.resolveFrom(context),
+                    BlendMode.srcIn,
+                  ),
+                ),
+              ),
+              activeIcon: SizedBox(
+                width: 26,
+                height: 26,
+                child: SvgPicture.asset(
+                  'assets/following.svg',
+                  fit: BoxFit.contain,
+                  colorFilter: const ColorFilter.mode(
+                    Color.fromRGBO(255, 90, 130, 1),
+                    BlendMode.srcIn,
+                  ),
+                ),
+              ),
             ),
           ],
         ),
@@ -402,36 +489,37 @@ class _AppleNewsHomeScreenState extends State<AppleNewsHomeScreen> {
 
   Widget _buildNewsHeader() {
     return Padding(
-      padding: const EdgeInsets.fromLTRB(20, 8, 16, 0),
+      padding: const EdgeInsets.fromLTRB(10, 8, 16, 0),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Column(
             crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisAlignment: MainAxisAlignment.start,
             children: [
               Row(
                 children: [
                   Icon(Icons.apple,
                       color: CupertinoColors.label.resolveFrom(context),
-                      size: 28),
-                  SizedBox(width: 4),
+                      size: 38),
+                  //  SizedBox(width: 4),
                   Text(
                     'News',
                     style: TextStyle(
                       color: CupertinoColors.label.resolveFrom(context),
-                      fontSize: 28,
-                      fontWeight: FontWeight.w700,
+                      fontSize: 36,
+                      fontWeight: FontWeight.w800,
                       letterSpacing: -0.5,
                     ),
                   ),
                 ],
               ),
               Text(
-                '6 April',
+                '16 April',
                 style: TextStyle(
                   color: CupertinoColors.secondaryLabel.resolveFrom(context),
-                  fontSize: 28,
-                  fontWeight: FontWeight.w700,
+                  fontSize: 32,
+                  fontWeight: FontWeight.w800,
                   letterSpacing: -0.5,
                 ),
               ),

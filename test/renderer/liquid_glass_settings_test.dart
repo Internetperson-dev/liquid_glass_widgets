@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:liquid_glass_widgets/constants/glass_defaults.dart';
 import 'package:liquid_glass_widgets/src/renderer/liquid_glass_settings.dart';
+import 'package:liquid_glass_widgets/types/glass_tint_blend.dart';
 
 void main() {
   group('LiquidGlassSettings', () {
@@ -388,6 +389,99 @@ void main() {
         const s = LiquidGlassSettings(whitenStrength: 0.4, whitenGated: false);
         expect(s.props, contains(0.4));
         expect(s.props, contains(false));
+      });
+    });
+
+    group('tintBlend', () {
+      test('defaults to GlassTintBlend.auto (no behavior change)', () {
+        const s = LiquidGlassSettings();
+        expect(s.tintBlend, GlassTintBlend.auto);
+      });
+
+      test('copyWith round-trips tintBlend', () {
+        const base = LiquidGlassSettings();
+        final copy = base.copyWith(tintBlend: GlassTintBlend.luminosity);
+        expect(copy.tintBlend, GlassTintBlend.luminosity);
+        // Other fields untouched.
+        expect(copy.whitenStrength, base.whitenStrength);
+        expect(copy.blur, base.blur);
+        // Round-trip back.
+        expect(copy.copyWith(tintBlend: GlassTintBlend.auto), equals(base));
+      });
+
+      test('lerp switches tintBlend at t=0.5', () {
+        const a = LiquidGlassSettings(tintBlend: GlassTintBlend.luminosity);
+        const b = LiquidGlassSettings(tintBlend: GlassTintBlend.flat);
+        expect(LiquidGlassSettings.lerp(a, b, 0.49).tintBlend,
+            GlassTintBlend.luminosity);
+        expect(
+            LiquidGlassSettings.lerp(a, b, 0.5).tintBlend, GlassTintBlend.flat);
+        expect(
+            LiquidGlassSettings.lerp(a, b, 1.0).tintBlend, GlassTintBlend.flat);
+      });
+
+      test('equality includes tintBlend', () {
+        const a = LiquidGlassSettings(tintBlend: GlassTintBlend.flat);
+        const b = LiquidGlassSettings(tintBlend: GlassTintBlend.flat);
+        const c = LiquidGlassSettings();
+        expect(a, equals(b));
+        expect(a, isNot(equals(c)));
+      });
+
+      test('props contains tintBlend', () {
+        const s = LiquidGlassSettings(tintBlend: GlassTintBlend.luminosity);
+        expect(s.props, contains(GlassTintBlend.luminosity));
+      });
+    });
+
+    group('backerColor', () {
+      test('defaults to null (no backer, no behavior change)', () {
+        const s = LiquidGlassSettings();
+        expect(s.backerColor, isNull);
+      });
+
+      test('copyWith sets backerColor without touching other fields', () {
+        const base = LiquidGlassSettings();
+        final copy = base.copyWith(backerColor: const Color(0x59000000));
+        expect(copy.backerColor, const Color(0x59000000));
+        expect(copy.glassColor, base.glassColor);
+        expect(copy.blur, base.blur);
+      });
+
+      test('lerp fades backerColor smoothly (not a midpoint switch)', () {
+        const a = LiquidGlassSettings(backerColor: Color(0x00000000));
+        const b = LiquidGlassSettings(backerColor: Color(0xFF000000));
+        expect(LiquidGlassSettings.lerp(a, b, 0.25).backerColor!.a,
+            closeTo(0.25, 0.02));
+        expect(LiquidGlassSettings.lerp(a, b, 0.75).backerColor!.a,
+            closeTo(0.75, 0.02));
+      });
+
+      test('lerp from null fades in from transparent (Color.lerp semantics)',
+          () {
+        const a = LiquidGlassSettings(); // backerColor null
+        const b = LiquidGlassSettings(backerColor: Color(0xFF000000));
+        expect(LiquidGlassSettings.lerp(a, b, 0.5).backerColor!.a,
+            closeTo(0.5, 0.02));
+      });
+
+      test('lerp of two null backers stays null', () {
+        const a = LiquidGlassSettings();
+        const b = LiquidGlassSettings();
+        expect(LiquidGlassSettings.lerp(a, b, 0.5).backerColor, isNull);
+      });
+
+      test('equality includes backerColor', () {
+        const a = LiquidGlassSettings(backerColor: Color(0x59000000));
+        const b = LiquidGlassSettings(backerColor: Color(0x59000000));
+        const c = LiquidGlassSettings();
+        expect(a, equals(b));
+        expect(a, isNot(equals(c)));
+      });
+
+      test('props contains backerColor', () {
+        const s = LiquidGlassSettings(backerColor: Color(0x59000000));
+        expect(s.props, contains(const Color(0x59000000)));
       });
     });
   });

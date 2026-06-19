@@ -95,6 +95,7 @@ Eight focused, self-contained demos — one widget, one file, runnable standalon
 | `quality_comparison_demo.dart` — premium & standard quality comparison playground | `cd example && flutter run -t lib/demos/quality_comparison_demo.dart` |
 | `nav_bar_patterns_demo.dart` — GlassScaffold layout patterns | `cd example && flutter run -t lib/demos/nav_bar_patterns_demo.dart` |
 | `content_aware_brightness_demo.dart` — light/dark bar adaptation on scroll | `cd example && flutter run -t lib/demos/content_aware_brightness_demo.dart` |
+| `indicator_parity_demo.dart` — all four pill widgets side-by-side with live pinch/expansion/tint sliders | `cd example && flutter run -t lib/demos/indicator_parity_demo.dart` |
 
 
 ## Glass vs Content — Design Philosophy
@@ -158,7 +159,7 @@ Most apps should use `GlassCard` or `GlassGroupedSection` instead.
 
 ```yaml
 dependencies:
-  liquid_glass_widgets: ^0.16.1
+  liquid_glass_widgets: ^0.17.0
 ```
 
 ```bash

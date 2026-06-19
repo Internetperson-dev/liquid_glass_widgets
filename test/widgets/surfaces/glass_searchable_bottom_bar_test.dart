@@ -1044,14 +1044,27 @@ void main() {
   // ─────────────────────────────────────────────────────────────────────────
 
   group('GlassSearchableBottomBar.indicatorExpansion', () {
-    test('default indicatorExpansion is 14', () {
+    test('default indicatorExpansion matches iOS 26 calibration', () {
       final bar = GlassSearchableBottomBar(
         tabs: _testTabs,
         selectedIndex: 0,
         onTabSelected: (_) {},
         searchConfig: GlassSearchBarConfig(onSearchToggle: (_) {}),
       );
-      expect(bar.indicatorExpansion, 14);
+      expect(
+        bar.indicatorExpansion,
+        const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+      );
+    });
+
+    test('default indicatorPinchStrength is 0.4 (iOS 26 calibration)', () {
+      final bar = GlassSearchableBottomBar(
+        tabs: _testTabs,
+        selectedIndex: 0,
+        onTabSelected: (_) {},
+        searchConfig: GlassSearchBarConfig(onSearchToggle: (_) {}),
+      );
+      expect(bar.indicatorPinchStrength, 0.4);
     });
 
     testWidgets('accepts custom indicatorExpansion', (tester) async {
@@ -1061,7 +1074,7 @@ void main() {
             tabs: _testTabs,
             selectedIndex: 0,
             onTabSelected: (_) {},
-            indicatorExpansion: 6,
+            indicatorExpansion: const EdgeInsets.all(6.0),
             maskingQuality: MaskingQuality.off,
             searchConfig: GlassSearchBarConfig(onSearchToggle: (_) {}),
           ),
@@ -1069,7 +1082,7 @@ void main() {
       );
       final bar = tester.widget<GlassSearchableBottomBar>(
           find.byType(GlassSearchableBottomBar).first);
-      expect(bar.indicatorExpansion, 6);
+      expect(bar.indicatorExpansion, const EdgeInsets.all(6.0));
     });
 
     testWidgets('accepts zero indicatorExpansion', (tester) async {
@@ -1079,7 +1092,7 @@ void main() {
             tabs: _testTabs,
             selectedIndex: 0,
             onTabSelected: (_) {},
-            indicatorExpansion: 0,
+            indicatorExpansion: EdgeInsets.zero,
             maskingQuality: MaskingQuality.off,
             searchConfig: GlassSearchBarConfig(onSearchToggle: (_) {}),
           ),

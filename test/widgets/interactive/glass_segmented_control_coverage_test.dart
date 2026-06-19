@@ -128,4 +128,104 @@ void main() {
       expect(selected, lessThan(3));
     });
   });
+
+  // ── indicatorPinchStrength / indicatorExpansion / premium quality ─────────
+  // Targets the new parameters added in 0.17.0 and the isPremiumQuality
+  // second-pass path in segmented_control_internal.dart.
+
+  group('GlassSegmentedControl — pinch + expansion + premium quality', () {
+    testWidgets('premium quality renders both indicator passes without crash',
+        (tester) async {
+      await tester.pumpWidget(createTestApp(
+        child: SizedBox(
+          width: 300,
+          height: 50,
+          child: GlassSegmentedControl(
+            segments: _segments,
+            selectedIndex: 0,
+            onSegmentSelected: (_) {},
+            quality: GlassQuality.premium,
+          ),
+        ),
+      ));
+      await tester.pumpAndSettle();
+      expect(tester.takeException(), isNull);
+    });
+
+    testWidgets('indicatorPinchStrength: 0.0 disables pinch without crash',
+        (tester) async {
+      await tester.pumpWidget(createTestApp(
+        child: SizedBox(
+          width: 300,
+          height: 50,
+          child: GlassSegmentedControl(
+            segments: _segments,
+            selectedIndex: 1,
+            onSegmentSelected: (_) {},
+            indicatorPinchStrength: 0.0,
+          ),
+        ),
+      ));
+      await tester.pump();
+      expect(tester.takeException(), isNull);
+    });
+
+    testWidgets('indicatorPinchStrength: 0.4 (typical value) is accepted',
+        (tester) async {
+      await tester.pumpWidget(createTestApp(
+        child: SizedBox(
+          width: 300,
+          height: 50,
+          child: GlassSegmentedControl(
+            segments: _segments,
+            selectedIndex: 0,
+            onSegmentSelected: (_) {},
+            indicatorPinchStrength: 0.4,
+          ),
+        ),
+      ));
+      await tester.pump();
+      expect(tester.takeException(), isNull);
+    });
+
+    testWidgets('indicatorExpansion is accepted and applied', (tester) async {
+      await tester.pumpWidget(createTestApp(
+        child: SizedBox(
+          width: 300,
+          height: 50,
+          child: GlassSegmentedControl(
+            segments: _segments,
+            selectedIndex: 2,
+            onSegmentSelected: (_) {},
+            indicatorExpansion:
+                const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+          ),
+        ),
+      ));
+      await tester.pump();
+      expect(tester.takeException(), isNull);
+    });
+
+    testWidgets(
+        'premium quality + pinch + expansion combined renders correctly',
+        (tester) async {
+      await tester.pumpWidget(createTestApp(
+        child: SizedBox(
+          width: 300,
+          height: 50,
+          child: GlassSegmentedControl(
+            segments: _segments,
+            selectedIndex: 1,
+            onSegmentSelected: (_) {},
+            quality: GlassQuality.premium,
+            indicatorPinchStrength: 0.4,
+            indicatorExpansion:
+                const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+          ),
+        ),
+      ));
+      await tester.pumpAndSettle();
+      expect(tester.takeException(), isNull);
+    });
+  });
 }

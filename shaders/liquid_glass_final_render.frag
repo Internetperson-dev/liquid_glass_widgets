@@ -51,6 +51,11 @@ uniform float uWhiten;
 // behaviour, gives dark glass a small even lift toward white).
 uniform float uWhitenGated;
 
+// Slot 20: uPinchStrength. Concave horizontal-pinch strength [0..1].
+// When > 0, the pill's refraction is squeezed inward at the left/right edges,
+// creating the iOS 26 "pinched through a lens" look. The centre is left flat.
+uniform float uPinchStrength;
+
 uniform sampler2D uBackgroundTexture;
 uniform sampler2D uGeometryTexture;
 
@@ -131,7 +136,6 @@ void main() {
     vec3  baseRefract = refract(incident, normal, invN);
     float refractLen  = (height + baseHeight) / max(0.001, abs(baseRefract.z));
     vec2  displacement = baseRefract.xy * refractLen;
-
     // On OpenGL ES, screenUV.y is already flipped to (1.0 - y) to compensate
     // for the bottom-left texture-origin convention.  The displacement is
     // computed in Flutter's native Y-down space (outward normal at the bottom
@@ -142,7 +146,76 @@ void main() {
         displacement.y = -displacement.y;
     #endif
 
-    // Apply refraction — with optional chromatic aberration.
+    // ── Concave horizontal pinch ──────────────────────────────────────────────
+    // iOS 26 indicator pills make the bar content behind the left/right edges
+    // appear slightly compressed inward — as if the pill is a convex lens
+    // squeezing the bar through its edges. The effect is HORIZONTAL ONLY:
+    // the bar content at the pill edges is sampled from a position slightly
+    // closer to the pill centre, making those edge regions appear to pinch in.
+    //
+    // The centre of the pill (over the icon/label) is left completely flat.
+    //
+    // Scale: shifts are in UV space relative to the FULL backdrop (uSize).
+    // 0.015 UV on a 390pt screen ≈ 6pt logical pixels — subtle but visible.
+    //
+    // ── iOS 26 Concave Lens Pinch ─────────────────────────────────────────────
+    if (uPinchStrength > 0.001) {
+        // We cannot use normalXY because it is 0.0 in the flat interior of the pill,
+        // which prevents the background from being pinched at all.
+        // We also cannot use a circular distance field, because a circle mapped to a
+        // wide pill creates an elliptical lens that curves the flat top/bottom edges.
+        //
+        // Solution: Use an L6 norm (superellipse/squircle) distance field.
+        // This mathematically mimics the physical shape of a rounded rectangle:
+        // perfectly flat on the top/bottom/sides, and perfectly rounded in the corners.
+        vec2 centered = geometryUV - vec2(0.5);
+        vec2 absCentered = abs(centered) * 2.0; // 0.0 to 1.0
+
+        // Compute x^6 and y^6 using multiply chains instead of pow().
+        // pow(x, 6.0) compiles to exp(6*log(x)) — a pair of transcendentals.
+        // Two squares and two multiplies is significantly faster.
+        float x2 = absCentered.x * absCentered.x;
+        float ax6 = x2 * x2 * x2;
+        float y2 = absCentered.y * absCentered.y;
+        float ay6 = y2 * y2 * y2;
+
+        // An L6 superellipse (squircle) distance field.
+        // Approximates the rounded-rectangle shape of the pill, ensuring
+        // the pinch effect smoothly maps to the corners rather than bleeding
+        // out as a raw circle or sharp box.
+        float squircleDist = pow(ax6 + ay6, 1.0 / 6.0);
+
+        // Map the squircle distance to a 0..1 smooth curve.
+        float pinchRamp = smoothstep(0.0, 1.0, squircleDist);
+
+        // Vector pointing outwards from the pill centre, scaled by the ramp.
+        // uPinchStrength interpolates the effect during spring animations.
+        // 0.025 is the baseline UV shift magnitude (subtle but visible).
+        vec2 pinchShift = centered * pinchRamp * uPinchStrength * 0.025;
+
+        // Feather the pinch shift to zero at the pill's SDF boundary.
+        // Without this, there is a hard UV discontinuity at the pill edge:
+        // the background content inside the pill is sampled from a shifted UV
+        // while the content immediately outside is at the natural UV — this
+        // mismatch produces the "stepped/aliased" edge visible through the lens,
+        // especially where the bar's own clip edge is refracted inward.
+        // Multiplying by geometryData.a (which is 0 at the boundary and 1 by 2 px
+        // inside) ramps the shift smoothly from 0 → full pinch over the same AA
+        // zone as the pill alpha, eliminating the hard UV seam.
+        pinchShift *= geometryData.a;
+
+        // Correct Y-axis for OpenGL ES.
+        #ifdef IMPELLER_TARGET_OPENGLES
+            pinchShift.y = -pinchShift.y;
+        #endif
+
+        screenUV += pinchShift;
+        
+        // Guarantee we never sample outside the valid backdrop capture bounds,
+        // preventing black/void artifacts if the pill is pressed tightly against the edge.
+        screenUV = clamp(screenUV, vec2(0.001), vec2(0.999));
+    }
+
     // PP1 optimisation: when the surface normal is flat (pointing straight up,
     // i.e. normalXY ≈ 0), refract() always produces displacement = vec2(0) and
     // the refracted UV is identical to screenUV.  Skip refract() entirely and
@@ -305,8 +378,12 @@ void main() {
     // and doesn't accumulate on interior pixels where edgeFactor ≈ 0.
     //
     // Strength 0.10 produces a gentle brightening calibrated against Apple
-    // reference screenshots.  Fully branchless — no extra GPU divergence.
-    float fresnel = (1.0 - normalZ) * edgeFactor * 0.10;
+    // reference screenshots. Fully branchless — no extra GPU divergence.
+    // Fresnel strength 0.12 (was 0.10 in the calibration build).
+    // The extra 0.02 restores the subtle rim luminosity that the geometry AA band
+    // experiment temporarily reduced — keeping the glass edge visually present
+    // against dark bar backgrounds without making it glowing or harsh.
+    float fresnel = (1.0 - normalZ) * edgeFactor * 0.12;
     finalColor.rgb = clamp(finalColor.rgb + vec3(fresnel), 0.0, 1.0);
 
     float alpha  = geometryData.a;

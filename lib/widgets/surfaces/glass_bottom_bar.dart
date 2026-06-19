@@ -206,6 +206,7 @@ class GlassBottomBar extends StatefulWidget {
     this.showIndicator = true,
     this.indicatorColor,
     this.indicatorSettings,
+    this.indicatorPinchStrength = 0.4,
     this.selectedIconColor,
     this.unselectedIconColor,
     this.iconSize = 24,
@@ -216,12 +217,13 @@ class GlassBottomBar extends StatefulWidget {
     this.glowSpreadRadius = 8,
     this.glowOpacity = 0.6,
     this.quality,
-    this.magnification = 1.0,
+    this.magnification = 1.15,
     this.innerBlur = 0.0,
     this.maskingQuality = MaskingQuality.high,
     this.backgroundKey,
     this.tabWidth,
-    this.indicatorExpansion = 14,
+    this.indicatorExpansion =
+        const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
     this.interactionGlowColor,
     this.interactionGlowRadius = 1.5,
     this.interactionBehavior = GlassInteractionBehavior.full,
@@ -242,12 +244,14 @@ class GlassBottomBar extends StatefulWidget {
 
   /// Magnification factor for the content inside the selected indicator.
   ///
-  /// Values > 1.0 will zoom in the content, creating a lens effect.
+  /// Values > 1.0 zoom in the selected tab's icon and label, creating the
+  /// iOS 26 "lens" effect where the active tab appears slightly larger than
+  /// its neighbours.
   ///
-  /// **Recommended range:** 1.0-1.3
-  /// - 1.0: No magnification (default)
-  /// - 1.1-1.2: Subtle emphasis
-  /// - 1.3+: Dramatic effect (may look aggressive)
+  /// **Recommended range:** 1.0–1.3
+  /// - `1.15` (default) — matches Apple News / Safari selected-tab scale.
+  /// - `1.0` — no magnification; all tabs render at the same size.
+  /// - `1.2–1.3` — more dramatic; may feel large with dense labels.
   ///
   /// Only applies when [maskingQuality] is [MaskingQuality.high].
   final double magnification;
@@ -375,9 +379,13 @@ class GlassBottomBar extends StatefulWidget {
   /// How far the jelly indicator's leading and trailing edges expand
   /// past the tab boundary as the indicator translates between tabs.
   /// Higher values give a more dramatic "puff" stretch; lower values
-  /// produce a tighter, more iOS-native feel. Defaults to `14` —
-  /// matches the pre-existing visual.
-  final double indicatorExpansion;
+  /// a tighter, more iOS-native feel.
+  ///
+  /// Defaults to `EdgeInsets.symmetric(horizontal: 12, vertical: 8)` which
+  /// matches the iOS 26 bottom-bar pill proportions (slightly wider than tall).
+  /// To restore the previous symmetric behaviour pass
+  /// `indicatorExpansion: const EdgeInsets.all(8.0)`.
+  final EdgeInsetsGeometry indicatorExpansion;
 
   /// List of tabs to display in the bottom bar.
   ///
@@ -520,6 +528,16 @@ class GlassBottomBar extends StatefulWidget {
   /// - chromaticAberration: 0.5
   /// - blur: 0
   final LiquidGlassSettings? indicatorSettings;
+
+  /// Maximum concave lens pinch strength for the draggable indicator pill.
+  ///
+  /// Controls how strongly the bar content appears to pinch inward through
+  /// the pill's left and right edges during a drag (iOS 26 lens effect).
+  ///
+  /// - `1.0` (default) — full Apple-calibrated effect
+  /// - `0.5` — half the pinch depth
+  /// - `0.0` — pinch fully disabled
+  final double indicatorPinchStrength;
 
   // ===========================================================================
   // Tab Style Properties
@@ -711,6 +729,7 @@ class _GlassBottomBarState extends State<GlassBottomBar> {
                           tabCount: widget.tabs.length,
                           indicatorColor: widget.indicatorColor,
                           indicatorSettings: widget.indicatorSettings,
+                          indicatorPinchStrength: widget.indicatorPinchStrength,
                           onTabChanged: widget.onTabSelected,
                           barHeight: widget.barHeight,
                           barBorderRadius: widget.barBorderRadius,
@@ -1016,7 +1035,7 @@ class JellyClipper extends CustomClipper<Path> {
   final int itemCount;
   final Alignment alignment;
   final double thickness;
-  final double expansion;
+  final EdgeInsets expansion;
   final Matrix4 transform;
   final double borderRadius;
   final bool inverse;
@@ -1051,7 +1070,12 @@ class JellyClipper extends CustomClipper<Path> {
     );
 
     // Apply expansion based on thickness (drag state)
-    final inflatedRect = paddedRect.inflate(expansion * thickness);
+    final inflatedRect = Rect.fromLTRB(
+      paddedRect.left - (expansion.left * thickness),
+      paddedRect.top - (expansion.top * thickness),
+      paddedRect.right + (expansion.right * thickness),
+      paddedRect.bottom + (expansion.bottom * thickness),
+    );
 
     // Create rounded rect path
     final path = Path()

@@ -1,16 +1,182 @@
+# 0.17.0
+
+## 🔬 iOS 26 Concave Lens Pinch — All Four Pill Widgets
+
+The `indicatorPinchStrength` concave lens warp is now unified across all four interactive pill widgets. During a drag the pill edges curve inward (iOS 26 "through a lens" effect). Fully tunable — `0.0` disables it, `1.0` is maximum distortion.
+
+### New parameters
+
+- **`GlassTabBar.indicatorPinchStrength`** (default `0.4`)
+- **`GlassTabBar.indicatorExpansion`** (default `EdgeInsets.symmetric(horizontal: 12, vertical: 8)`)
+- **`GlassSegmentedControl.indicatorPinchStrength`** (default `0.4`)
+- **`GlassSegmentedControl.indicatorExpansion`** (default `EdgeInsets.symmetric(horizontal: 12, vertical: 8)`)
+- **`AnimatedGlassIndicator`** exported from the public API — enables `baseIndicatorSettings.copyWith(...)` from app code.
+
+### Changed defaults (`AnimatedGlassIndicator.baseIndicatorSettings`)
+
+- `glassColor`: `alpha: 0.15` → `alpha: 0.0` — glass pill no longer applies a white tint overlay by default.
+- `chromaticAberration`: `GlassDefaults.chromaticAberration` → `0.15` — the iridescent rim fringe is now explicitly set for iOS 26 parity.
+
+### Bug fixes
+
+- **`GlassSegmentedControl` refraction** — labels are now refracted through the glass pill at `GlassQuality.premium` (was rendered in wrong z-order).
+- **`GlassTabBar` indicator radius** — resting pill now inherits the tab bar's `borderRadius` (was hardcoded `16 px`).
+- **`AnimatedGlassIndicator` settings merge** — partial `indicatorSettings` overrides no longer silently reset `chromaticAberration`.
+- **Pinch lens jitter at rest** — icon and label content no longer shimmers through the lens when the pill settles. Root cause: the jelly spring's micro-oscillations (±10 % of `thickness`) were directly amplified into the UV warp. Fixed by applying a quadratic ease-out to the pinch multiplier (`1 − (1 − fade)²`), compressing the near-settled oscillation range ≈10×.
+
+### Try it — Indicator Parity demo
+
+The example app includes a live **Indicator Parity** demo (`Demos → Indicator Parity`) with all four pill widgets side-by-side and real-time sliders for `pinchStrength`, `indicatorExpansion`, and `chromaticAberration`. Use it to tune parameters before writing any code.
+
+## 🌑 Apple Dimming Layer — `LiquidGlassSettings.backerColor` ([#111](https://github.com/sdegenaar/liquid_glass_widgets/pull/111) by [@jfhair](https://github.com/jfhair))
+
+New optional `backerColor` on `LiquidGlassSettings` — a shape-matched color pad composited *behind* the glass, giving a control's content contrast over rich or colorful backdrops (video, maps, photography) where the glass tint alone can't. This is Apple's "dimming layer" guidance from the Human Interface Guidelines (Materials section) and the pattern behind SwiftUI's clear `Glass` variant.
+
+```dart
+LiquidGlassSettings(
+  glassColor: Color(0x20FFFFFF),
+  backerColor: Color(0x59000000), // ~35% black — Apple's starting point
+)
+```
+
+- **`backerColor`** (`Color?`, default `null`) — the color's alpha *is* the dimming opacity. `null` means no backer, so all existing recipes are untouched.
+- Rendered at the widget level (like `shadow`) and clipped to the glass shape via `ClipRRect`, so it composites correctly even over a `PlatformView` — maps, video — where a shader-side tint cannot reach.
+- Applies in both light and dark mode, and for flat-edge shapes (a bar over a map is a primary use case).
+- Skipped on the grouped path (like shadow) — inserting a `Stack` between grouped glass and its shared layer would break metaball morphing.
+- `lerp` fades `backerColor` smoothly from transparent when one side is `null`, rather than snapping at the midpoint.
+
+### Migration
+
+All four widgets share the same tuning API:
+
+```dart
+indicatorPinchStrength: 0.4,
+indicatorExpansion: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+indicatorSettings: AnimatedGlassIndicator.baseIndicatorSettings
+    .copyWith(chromaticAberration: 0.15),
+```
+
+---
+
+# 0.16.3
+
+## ✨ `GlassTintBlend` — selectable tint blending path ([#107](https://github.com/sdegenaar/liquid_glass_widgets/pull/107) by [@jfhair](https://github.com/jfhair))
+
+New `GlassTintBlend` enum on `LiquidGlassSettings` to explicitly control how `glassColor` blends with the refracted backdrop, instead of relying entirely on the chroma heuristic.
+
+- `GlassTintBlend.auto` — the default. Existing chroma gate, byte-for-byte unchanged behavior.
+- `GlassTintBlend.luminosity` — always preserve backdrop luminosity. For near-neutral tints that need to keep the glassy look rather than flattening to a film.
+- `GlassTintBlend.flat` — always impose the tint's brightness. For dimming layers, backing scrims, or deliberate frost-film surfaces.
+
+Fully threaded through `LiquidGlassSettings` (`copyWith`, `lerp`, `props`), both the Premium and Standard shader paths, and preserved through `AdaptiveGlass` elevation rebuilds. Frosted fallback renders flat by construction and ignores the setting.
+
+## ✨ `GlassScrollEdgeEffect.bottomFadeInset` ([#109](https://github.com/sdegenaar/liquid_glass_widgets/pull/109) by [@jfhair](https://github.com/jfhair))
+
+New optional `bottomFadeInset` parameter (default `0.0`) that lifts the bottom fade off the widget's true bottom edge by the specified logical pixels. Fixes cases where the scroll viewport extends below the visible area — such as a bottom sheet whose content box overflows past the screen bottom — causing the bottom fade to anchor off-screen and never appear.
+
+**No breaking changes.** All new parameters are optional with safe defaults.
+
+---
+
+# 0.16.2
+
+## 🐛 Bug Fix — `GlassMenu` / `GlassPopover` rebuild on keyboard open/close
+
+`GlassMenu` and `GlassPopover` were rebuilding on every keyboard open/close event,
+even when closed. Caused by `MediaQuery.of(context)` in `didChangeDependencies`
+subscribing to `viewInsets`. Fixed by switching to scoped accessors
+(`disableAnimationsOf`, `maybeSizeOf`, `textScalerOf`). Regression tests added.
+
+## ✨ Content-luminance scroll-edge scrim ([#106](https://github.com/sdegenaar/liquid_glass_widgets/pull/106) by [@jfhair](https://github.com/jfhair))
+
+The continuous companion to the `contentAwareBrightness` discrete lever. Scroll-edge
+fades now track content luminance and dissolve toward a dark color as dark content
+scrolls under the bars — matching the native App Store early-darkening behaviour.
+
+- `GlassContentAwareScope.register()` gains `onLuminanceChanged` (brightness callback is now optional). Per-rect mean luminance is delivered from the existing single capture; deliveries are gated on >0.005 movement.
+- `GlassScrollEdgeEffect.contentAwareFade` — each edge band registers with the scope and lerps toward `darkFadeColor` as content darkens (`luminanceDarkBelow` / `luminanceLightAbove` thresholds, 280 ms ease-out). Inert without a scope.
+- `GlassScaffold.contentAwareEdgeFade` — one flag to enable both bars, composing with `contentAwareBrightness`.
+- **Latent wrap-order fix (0.16.0):** `GlassScaffold` was wrapping the body in `GlassContentAwareContent` *after* the edge fade, so the fade overlays were inside the sampled region. With the adaptive scrim this is a feedback loop. Wrap order corrected + regression test added.
+
+## 🐛 `GlassModalSheet` handle-drag fixes ([#106](https://github.com/sdegenaar/liquid_glass_widgets/pull/106))
+
+- Handle drag no longer fights the inner scroll. `_handleDragActive` notifier is set on pointer-down (before the inner `Scrollable` can claim slop), disabling inner scroll for the gesture lifetime. Fixes a freeze when dragging the handle over a `PlatformView`.
+- `dragIndicatorColor` now actually reaches the drag indicator — it was silently wired into `_SheetLayout` but never forwarded to `_GlassDragIndicator`.
+
+## 🐛 `GlassEffect` — defer capture when boundary is mid-paint ([#106](https://github.com/sdegenaar/liquid_glass_widgets/pull/106))
+
+`toImageSync` called during a dirty repaint boundary spammed `[GlassEffect] toImageSync failed` in debug and dropped the frame's capture. Guarded with `debugNeedsPaint` check (release-safe, same pattern as `GlassScrollEdgeEffect`).
+
+**No breaking changes.** New parameters are all optional with safe defaults — existing code compiles and behaves identically without changes.
+
+---
+
 # 0.16.1
 
-## 🐛 Bug Fix — `GlassQuality.minimal` crash in `GlassMenu` / `GlassPullDownButton` / `GlassPopover`
 
-Fixed an assertion error thrown when opening a `GlassMenu`, `GlassPullDownButton`, or `GlassPopover` while the app theme was set to `GlassQuality.minimal`.
+## 🍎 iOS 26 Indicator Defaults — Parity Calibration
 
-**Root cause:** The morphing overlay built by these widgets contained an explicit `LiquidGlassBlendGroup` nested directly inside `AdaptiveLiquidGlassLayer`. In `GlassQuality.minimal` mode, `AdaptiveLiquidGlassLayer` intentionally skips creating a `LiquidGlassLayer` (it is a transparent pass-through for performance). The hard-coded inner `LiquidGlassBlendGroup` then failed its assertion `renderLink != null` because no `LiquidGlassLayer` ancestor existed to provide the required render link.
+Three indicator defaults have been updated across `GlassBottomBar` and
+`GlassSearchableBottomBar` to better match the iOS 26 bottom-bar pill
+out of the box. No API changes — all parameters remain fully configurable.
 
-**Fix:** Removed the redundant `LiquidGlassBlendGroup` wrapper from the overlay builders in `GlassMenu` and `GlassPopover`. `AdaptiveLiquidGlassLayer` already manages the blend group conditionally — it creates one internally when quality is `premium`, and correctly omits it for `standard` and `minimal`. The explicit wrapper was both redundant and fragile.
+### Changed defaults
 
-**Affected widgets:** `GlassMenu`, `GlassPullDownButton`, `GlassPopover`.
+#### `indicatorPinchStrength` — `1.0` → `0.4`
 
-**No API changes. No breaking changes.**
+The previous default of `1.0` applied the maximum concave lens / pinch effect
+during drag. iOS 26's actual pinch is more restrained — `0.4` produces the
+characteristic "through a lens" look without over-distorting the edges.
+
+**To restore the previous behaviour:**
+```dart
+GlassBottomBar(
+  indicatorPinchStrength: 1.0,
+  ...
+)
+```
+
+#### `indicatorExpansion` — `EdgeInsets.all(8)` → `EdgeInsets.symmetric(horizontal: 12, vertical: 8)`
+
+The indicator pill in iOS 26 bottom bars is slightly wider than it is tall —
+a subtle "landing pad" shape that reads as a rounded rectangle rather than a
+near-circle. The new default matches this proportion.
+
+**To restore the previous behaviour:**
+```dart
+GlassBottomBar(
+  indicatorExpansion: const EdgeInsets.all(8.0),
+  ...
+)
+```
+
+#### `AnimatedGlassIndicator` chromatic aberration — `0.0` → `0.15`
+
+The indicator's internal `_baseGlassSettings` now sets
+`chromaticAberration: 0.15`. Real iOS 26 glass has a faint iridescent
+rainbow fringe at the rim. At `0.15` the effect is a whisper — visible
+up close, subliminal during normal use.
+
+**To disable the aberration** pass a full `indicatorSettings` override:
+```dart
+GlassBottomBar(
+  indicatorSettings: LiquidGlassSettings(
+    chromaticAberration: 0.0,
+    // include other fields you need
+  ),
+  ...
+)
+```
+
+### Affected widgets
+
+- `GlassBottomBar` — `indicatorPinchStrength` and `indicatorExpansion`
+- `GlassSearchableBottomBar` — `indicatorPinchStrength` and `indicatorExpansion`
+- All widgets using `AnimatedGlassIndicator` — `chromaticAberration` baseline
+
+`GlassTabBar` and `GlassSegmentedControl` retain their existing expansion
+defaults (`EdgeInsets.all(8.0)`) as their geometry is different from a
+bottom navigation bar.
 
 ---
 

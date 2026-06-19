@@ -1,95 +1,105 @@
 // GlassTabBar Scrollable Demo
 //
 // Demonstrates a scrollable GlassTabBar with a dynamic number of tabs.
-// The demo shows how to add tabs at runtime and updates the selected
-// tab index accordingly. It also follows the library's initialization
-// pattern (LiquidGlassWidgets.initialize + wrap) for consistency with
-// other examples.
+// Uses CupertinoPageScaffold + GlassAppBar — the iOS 26-correct pattern
+// where the bar is a transparent layout container and glass effects belong
+// on the interactive elements (GlassButton), not the bar surface.
 
 import 'package:flutter/cupertino.dart';
-import 'package:flutter/material.dart';
 import 'package:liquid_glass_widgets/liquid_glass_widgets.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await LiquidGlassWidgets.initialize();
-  runApp(LiquidGlassWidgets.wrap(child: const TabBarTestApp()));
+  runApp(LiquidGlassWidgets.wrap(child: const TabBarScrollableApp()));
 }
 
-/// Root application widget.
-class TabBarTestApp extends StatelessWidget {
-  const TabBarTestApp({super.key});
+/// Root application widget — CupertinoApp is the correct root for iOS-style demos.
+class TabBarScrollableApp extends StatelessWidget {
+  const TabBarScrollableApp({super.key});
 
   @override
   Widget build(BuildContext context) {
-    return CupertinoApp(
+    return const CupertinoApp(
       title: 'GlassTabBar Scrollable Demo',
-      theme: const CupertinoThemeData(brightness: Brightness.dark),
-      builder: (context, child) => Theme(
-        data: ThemeData.dark(useMaterial3: true).copyWith(
-          scaffoldBackgroundColor: const Color(0xFF1E1E1E),
-        ),
-        child: child!,
-      ),
-      home: const TabBarTestHome(),
+      theme: CupertinoThemeData(brightness: Brightness.dark),
+      home: TabBarScrollableHome(),
       debugShowCheckedModeBanner: false,
     );
   }
 }
 
 /// Home page containing the scrollable GlassTabBar.
-class TabBarTestHome extends StatefulWidget {
-  const TabBarTestHome({super.key});
+class TabBarScrollableHome extends StatefulWidget {
+  const TabBarScrollableHome({super.key});
 
   @override
-  State<TabBarTestHome> createState() => _TabBarTestHomeState();
+  State<TabBarScrollableHome> createState() => _TabBarScrollableHomeState();
 }
 
-class _TabBarTestHomeState extends State<TabBarTestHome> {
-  int _tabCount = 5; // Start with five tabs.
+class _TabBarScrollableHomeState extends State<TabBarScrollableHome> {
+  int _tabCount = 5;
   int _selectedIndex = 0;
 
-  /// Adds a new tab by incrementing [_tabCount].
-  void _addTab() {
-    setState(() => _tabCount++);
-  }
+  void _addTab() => setState(() => _tabCount++);
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('GlassTabBar – isScrollable: true'),
+    return CupertinoPageScaffold(
+      // GlassAppBar: iOS 26-correct — transparent bar, glass on the buttons.
+      navigationBar: GlassAppBar(
+        title: const Text(
+          'GlassTabBar — Scrollable',
+          style: TextStyle(
+            color: CupertinoColors.label,
+            fontSize: 17,
+            fontWeight: FontWeight.w600,
+          ),
+        ),
         actions: [
-          IconButton(
-            icon: const Icon(Icons.add),
-            tooltip: 'Add Tab',
-            onPressed: _addTab,
+          GlassButton(
+            icon: const Icon(CupertinoIcons.add),
+            onTap: _addTab,
           ),
         ],
       ),
-      body: Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            // The scrollable GlassTabBar.
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16.0),
-              child: GlassTabBar(
-                selectedIndex: _selectedIndex,
-                onTabSelected: (i) => setState(() => _selectedIndex = i),
-                isScrollable: true,
-                tabs: List.generate(
-                  _tabCount,
-                  (i) => GlassTab(label: 'Tab ${i + 1}'),
+      child: SafeArea(
+        child: Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              // Scrollable GlassTabBar — grows horizontally as tabs are added.
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                child: GlassTabBar(
+                  quality: GlassQuality.premium,
+                  selectedIndex: _selectedIndex,
+                  onTabSelected: (i) => setState(() => _selectedIndex = i),
+                  isScrollable: true,
+                  tabs: List.generate(
+                    _tabCount,
+                    (i) => GlassTab(label: 'Tab ${i + 1}'),
+                  ),
                 ),
               ),
-            ),
-            const SizedBox(height: 32),
-            Text(
-              'Tab count: $_tabCount',
-              style: const TextStyle(fontSize: 18, color: Colors.white),
-            ),
-          ],
+              const SizedBox(height: 32),
+              Text(
+                'Tabs: $_tabCount   ·   Selected: ${_selectedIndex + 1}',
+                style: const TextStyle(
+                  color: CupertinoColors.secondaryLabel,
+                  fontSize: 15,
+                ),
+              ),
+              const SizedBox(height: 8),
+              Text(
+                'Tap + to add tabs',
+                style: TextStyle(
+                  color: CupertinoColors.tertiaryLabel.resolveFrom(context),
+                  fontSize: 13,
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );

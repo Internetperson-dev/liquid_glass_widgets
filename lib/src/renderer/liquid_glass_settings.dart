@@ -5,12 +5,19 @@ import 'package:flutter/widgets.dart';
 import '../../constants/glass_defaults.dart';
 import '../../constants/glass_shadow.dart';
 import '../../types/glass_specular_sharpness.dart';
+import '../../types/glass_tint_blend.dart';
 import 'liquid_glass_renderer.dart';
 import 'liquid_glass_render_scope.dart';
 
 /// Represents the settings for a liquid glass effect.
 class LiquidGlassSettings with EquatableMixin {
   /// Creates a new [LiquidGlassSettings] with the given settings.
+  /// Public constructor — all material glass properties.
+  ///
+  /// [pinchStrength] is intentionally absent here. It is an internal
+  /// shader-transport value set only by [AnimatedGlassIndicator] via
+  /// [copyWithPinch]. Users configure the effect through the hosting
+  /// widget's `indicatorPinchStrength` parameter instead.
   const LiquidGlassSettings({
     this.visibility = 1.0,
     this.glassColor = const Color.fromARGB(0, 255, 255, 255),
@@ -29,6 +36,36 @@ class LiquidGlassSettings with EquatableMixin {
     this.shadow,
     this.whitenStrength = 0.0,
     this.whitenGated = true,
+    this.tintBlend = GlassTintBlend.auto,
+    this.backerColor,
+  }) : pinchStrength = 0.0;
+
+  /// Private constructor used exclusively by [copyWithPinch].
+  ///
+  /// Carries the full field set including [pinchStrength] so that
+  /// [AnimatedGlassIndicator] can thread the animated pinch value to
+  /// the render shader without exposing [pinchStrength] in the public API.
+  const LiquidGlassSettings._withPinch({
+    required this.visibility,
+    required this.glassColor,
+    required this.thickness,
+    required this.blur,
+    required this.chromaticAberration,
+    required this.lightAngle,
+    required this.lightIntensity,
+    required this.ambientStrength,
+    required this.refractiveIndex,
+    required this.saturation,
+    required this.glowIntensity,
+    required this.specularSharpness,
+    required this.standardOpacityMultiplier,
+    required this.shadowElevation,
+    required this.shadow,
+    required this.whitenStrength,
+    required this.whitenGated,
+    required this.tintBlend,
+    this.backerColor,
+    required this.pinchStrength,
   });
 
   /// Creates [LiquidGlassSettings] using Figma-inspired parameter names.
@@ -251,6 +288,70 @@ class LiquidGlassSettings with EquatableMixin {
   /// approximations are always uniform.
   final bool whitenGated;
 
+  /// Internal shader transport — the animated pinch strength for the concave
+  /// lens effect on indicator pills.
+  ///
+  /// Always `0.0` on instances created via the public constructor.
+  /// Only non-zero when set by [AnimatedGlassIndicator] via [copyWithPinch].
+  /// Configure from outside via the hosting widget's `indicatorPinchStrength`.
+  final double pinchStrength;
+
+  /// Returns a copy of these settings with [pinchStrength] set to [value].
+  ///
+  /// **Internal use only** — called exclusively by [AnimatedGlassIndicator]
+  /// to thread the animated pinch value into the render shader.
+  /// Users should configure this via `indicatorPinchStrength` on
+  /// [GlassBottomBar], [GlassTabBar], [GlassSegmentedControl], or
+  /// [GlassSearchableBottomBar].
+  LiquidGlassSettings copyWithPinch(double value) =>
+      LiquidGlassSettings._withPinch(
+        visibility: visibility,
+        glassColor: glassColor,
+        thickness: thickness,
+        blur: blur,
+        chromaticAberration: chromaticAberration,
+        lightAngle: lightAngle,
+        lightIntensity: lightIntensity,
+        ambientStrength: ambientStrength,
+        refractiveIndex: refractiveIndex,
+        saturation: saturation,
+        glowIntensity: glowIntensity,
+        specularSharpness: specularSharpness,
+        standardOpacityMultiplier: standardOpacityMultiplier,
+        shadowElevation: shadowElevation,
+        shadow: shadow,
+        whitenStrength: whitenStrength,
+        whitenGated: whitenGated,
+        tintBlend: tintBlend,
+        backerColor: backerColor,
+        pinchStrength: value,
+      );
+
+  /// Controls how [glassColor] blends with the refracted backdrop.
+  ///
+  /// See [GlassTintBlend] for the available modes.
+  final GlassTintBlend tintBlend;
+
+  /// Optional dimming "backer" painted directly behind the glass.
+  ///
+  /// A shape-matched, color-filled pad composited *behind* the glass surface —
+  /// the inverse of [shadow], which sits outside the boundary. It provides
+  /// contrast for a control's content over rich or colorful backdrops where the
+  /// glass tint alone can't: video, maps, photography, or any control floating
+  /// over busy content. This is Apple's "dimming layer" guidance for keeping
+  /// glass controls legible (see the Materials section of the Human Interface
+  /// Guidelines, and SwiftUI's clear `Glass` variant).
+  ///
+  /// The color's alpha *is* the dimming opacity. Apple suggests roughly 35% as
+  /// a starting point — e.g. `Color(0x59000000)` for a neutral dark dim.
+  ///
+  /// Rendered at the widget level (like [shadow]), clipped to the glass shape,
+  /// so it composites correctly even over a PlatformView — where a shader-side
+  /// tint cannot reach.
+  ///
+  /// Defaults to null: no backer, and no change to existing rendering.
+  final Color? backerColor;
+
   /// The effective saturation taking visibility into account.
   double get effectiveSaturation => 1 + (saturation - 1) * visibility;
 
@@ -273,27 +374,33 @@ class LiquidGlassSettings with EquatableMixin {
     if (a == null) return b!;
     if (b == null) return a;
 
-    return LiquidGlassSettings(
-      visibility: lerpDouble(a.visibility, b.visibility, t)!,
-      glassColor: Color.lerp(a.glassColor, b.glassColor, t)!,
-      thickness: lerpDouble(a.thickness, b.thickness, t)!,
-      blur: lerpDouble(a.blur, b.blur, t)!,
-      chromaticAberration:
-          lerpDouble(a.chromaticAberration, b.chromaticAberration, t)!,
-      lightAngle: lerpDouble(a.lightAngle, b.lightAngle, t)!,
-      lightIntensity: lerpDouble(a.lightIntensity, b.lightIntensity, t)!,
-      ambientStrength: lerpDouble(a.ambientStrength, b.ambientStrength, t)!,
-      refractiveIndex: lerpDouble(a.refractiveIndex, b.refractiveIndex, t)!,
-      saturation: lerpDouble(a.saturation, b.saturation, t)!,
-      glowIntensity: lerpDouble(a.glowIntensity, b.glowIntensity, t)!,
-      specularSharpness: t < 0.5 ? a.specularSharpness : b.specularSharpness,
-      standardOpacityMultiplier: lerpDouble(
-          a.standardOpacityMultiplier, b.standardOpacityMultiplier, t)!,
-      shadowElevation: lerpDouble(a.shadowElevation, b.shadowElevation, t)!,
-      shadow: t < 0.5 ? a.shadow : b.shadow,
-      whitenStrength: lerpDouble(a.whitenStrength, b.whitenStrength, t)!,
-      whitenGated: t < 0.5 ? a.whitenGated : b.whitenGated,
-    );
+    return LiquidGlassSettings._withPinch(
+        visibility: lerpDouble(a.visibility, b.visibility, t)!,
+        glassColor: Color.lerp(a.glassColor, b.glassColor, t)!,
+        thickness: lerpDouble(a.thickness, b.thickness, t)!,
+        blur: lerpDouble(a.blur, b.blur, t)!,
+        chromaticAberration:
+            lerpDouble(a.chromaticAberration, b.chromaticAberration, t)!,
+        lightAngle: lerpDouble(a.lightAngle, b.lightAngle, t)!,
+        lightIntensity: lerpDouble(a.lightIntensity, b.lightIntensity, t)!,
+        ambientStrength: lerpDouble(a.ambientStrength, b.ambientStrength, t)!,
+        refractiveIndex: lerpDouble(a.refractiveIndex, b.refractiveIndex, t)!,
+        saturation: lerpDouble(a.saturation, b.saturation, t)!,
+        glowIntensity: lerpDouble(a.glowIntensity, b.glowIntensity, t)!,
+        specularSharpness: t < 0.5 ? a.specularSharpness : b.specularSharpness,
+        standardOpacityMultiplier: lerpDouble(
+            a.standardOpacityMultiplier, b.standardOpacityMultiplier, t)!,
+        shadowElevation: lerpDouble(a.shadowElevation, b.shadowElevation, t)!,
+        shadow: t < 0.5 ? a.shadow : b.shadow,
+        whitenStrength: lerpDouble(a.whitenStrength, b.whitenStrength, t)!,
+        whitenGated: t < 0.5 ? a.whitenGated : b.whitenGated,
+        tintBlend: t < 0.5 ? a.tintBlend : b.tintBlend,
+        // Lerp the color so the backer fades smoothly (from/to transparent when
+        // one side is null), rather than popping at the midpoint.
+        backerColor: Color.lerp(a.backerColor, b.backerColor, t),
+        // pinchStrength is interaction state — lerp it so transitions are smooth
+        // when the indicator fades between active/resting states.
+        pinchStrength: lerpDouble(a.pinchStrength, b.pinchStrength, t)!);
   }
 
   /// Helper for linear interpolation of doubles.
@@ -324,8 +431,10 @@ class LiquidGlassSettings with EquatableMixin {
     List<BoxShadow>? shadow,
     double? whitenStrength,
     bool? whitenGated,
+    GlassTintBlend? tintBlend,
+    Color? backerColor,
   }) =>
-      LiquidGlassSettings(
+      LiquidGlassSettings._withPinch(
         visibility: visibility ?? this.visibility,
         glassColor: glassColor ?? this.glassColor,
         thickness: thickness ?? this.thickness,
@@ -344,6 +453,12 @@ class LiquidGlassSettings with EquatableMixin {
         shadow: shadow ?? this.shadow,
         whitenStrength: whitenStrength ?? this.whitenStrength,
         whitenGated: whitenGated ?? this.whitenGated,
+        tintBlend: tintBlend ?? this.tintBlend,
+        backerColor: backerColor ?? this.backerColor,
+        // Preserve current pinchStrength — copyWith is called by AnimatedGlassIndicator
+        // to change visibility while keeping the live pinch value alive.
+        // To set a new pinch value, call copyWithPinch() instead.
+        pinchStrength: pinchStrength,
       );
 
   @override
@@ -365,5 +480,8 @@ class LiquidGlassSettings with EquatableMixin {
         shadow,
         whitenStrength,
         whitenGated,
+        tintBlend,
+        backerColor,
+        pinchStrength,
       ];
 }

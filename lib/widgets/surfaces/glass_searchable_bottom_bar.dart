@@ -75,6 +75,7 @@ class GlassSearchableBottomBar extends StatefulWidget {
     this.showIndicator = true,
     this.indicatorColor,
     this.indicatorSettings,
+    this.indicatorPinchStrength = 0.4,
     this.selectedIconColor,
     this.unselectedIconColor,
     this.iconSize = 24,
@@ -87,7 +88,7 @@ class GlassSearchableBottomBar extends StatefulWidget {
     this.interactionGlowColor,
     this.interactionGlowRadius = 1.5,
     this.quality,
-    this.magnification = 1.0,
+    this.magnification = 1.15,
     this.innerBlur = 0.0,
     this.platformViewBackdrop = false,
     this.maskingQuality = MaskingQuality.high,
@@ -98,7 +99,8 @@ class GlassSearchableBottomBar extends StatefulWidget {
     this.interactionBehavior = GlassInteractionBehavior.full,
     this.pressScale = 1.04,
     this.tabWidth,
-    this.indicatorExpansion = 14,
+    this.indicatorExpansion =
+        const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
     this.onBarTap,
     // ── Whiten-at-bottom (light-mode legibility) ─────────────────────────────
     this.whitenAtBottom = true,
@@ -306,6 +308,12 @@ class GlassSearchableBottomBar extends StatefulWidget {
   /// Custom glass settings for the indicator element.
   final LiquidGlassSettings? indicatorSettings;
 
+  /// Maximum concave lens pinch strength for the draggable indicator pill.
+  ///
+  /// - `1.0` (default) — full Apple-calibrated pinch
+  /// - `0.0` — pinch fully disabled
+  final double indicatorPinchStrength;
+
   // ── Tab style ────────────────────────────────────────────────────────────────
   /// Icon color when a tab is selected. Defaults to dynamic label color.
   final Color? selectedIconColor;
@@ -369,7 +377,14 @@ class GlassSearchableBottomBar extends StatefulWidget {
   final double pressScale;
 
   // ── Advanced ─────────────────────────────────────────────────────────────────
-  /// Magnification factor for the selected indicator lens effect. Defaults to 1.0.
+  /// Magnification factor for the selected indicator lens effect.
+  ///
+  /// Values > 1.0 zoom in the selected tab's icon and label, creating the
+  /// iOS 26 "lens" effect where the active tab appears slightly larger than
+  /// its neighbours.
+  ///
+  /// - `1.15` (default) — matches Apple News / Safari selected-tab scale.
+  /// - `1.0` — no magnification; all tabs render at the same size.
   final double magnification;
 
   /// Blur amount inside the selected indicator. Defaults to 0.0.
@@ -432,7 +447,7 @@ class GlassSearchableBottomBar extends StatefulWidget {
   /// Higher values give a more dramatic "puff" stretch; lower values
   /// produce a tighter, more iOS-native feel. Defaults to `14` —
   /// matches the pre-existing visual.
-  final double indicatorExpansion;
+  final EdgeInsetsGeometry indicatorExpansion;
 
   /// Called when the user taps anywhere on the bar.
   ///
@@ -1008,6 +1023,7 @@ class _GlassSearchableBottomBarState extends State<GlassSearchableBottomBar>
                           indicatorColor: widget.indicatorColor,
                           indicatorExpansion: widget.indicatorExpansion,
                           indicatorSettings: widget.indicatorSettings,
+                          indicatorPinchStrength: widget.indicatorPinchStrength,
                           backgroundKey: widget.backgroundKey,
                           platformViewBackdrop: widget.platformViewBackdrop,
                           isSearchActive: searching,
