@@ -270,9 +270,9 @@ Widget _buildBackground() {
 }
 
 const _kTabs = [
-  GlassBottomBarTab(label: 'Home', icon: Icon(CupertinoIcons.home)),
-  GlassBottomBarTab(label: 'Browse', icon: Icon(CupertinoIcons.compass)),
-  GlassBottomBarTab(label: 'Profile', icon: Icon(CupertinoIcons.person)),
+  GlassTab(label: 'Home', icon: Icon(CupertinoIcons.home)),
+  GlassTab(label: 'Browse', icon: Icon(CupertinoIcons.compass)),
+  GlassTab(label: 'Profile', icon: Icon(CupertinoIcons.person)),
 ];
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -343,7 +343,7 @@ class _ScenarioExtraButtonState extends State<_ScenarioExtraButton> {
           left: 0,
           right: 0,
           bottom: 0,
-          child: GlassSearchableBottomBar(
+          child: GlassTabBar.searchable(
             selectedIndex: _selectedIndex,
             isSearchActive: _searching,
             searchBarHeight: widget.config.searchBarHeight,
@@ -447,7 +447,7 @@ class _ScenarioSpringDesyncState extends State<_ScenarioSpringDesync> {
           left: 0,
           right: 0,
           bottom: 0,
-          child: GlassSearchableBottomBar(
+          child: GlassTabBar.searchable(
             selectedIndex: _selectedIndex,
             isSearchActive: _searching,
             searchBarHeight: widget.config.searchBarHeight,
@@ -520,7 +520,7 @@ class _ScenarioPaddingFlickerState extends State<_ScenarioPaddingFlicker> {
           left: 0,
           right: 0,
           bottom: 0,
-          child: GlassSearchableBottomBar(
+          child: GlassTabBar.searchable(
             selectedIndex: _selectedIndex,
             isSearchActive: _searching,
             horizontalPadding: hPad,

@@ -67,7 +67,11 @@ class _IndicatorParityDemoPageState extends State<IndicatorParityDemoPage> {
   bool _isSearching = false;
 
   // ── Tab/segment data ───────────────────────────────────────────────────────
-  static const _segments = ['Journals', 'Photos', 'Clips'];
+  static const _segments = <GlassTab>[
+    GlassTab(label: 'Journals'),
+    GlassTab(label: 'Photos'),
+    GlassTab(label: 'Clips')
+  ];
 
   static const _tabs = [
     GlassTab(label: 'Featured', icon: Icon(CupertinoIcons.star_fill)),
@@ -77,11 +81,10 @@ class _IndicatorParityDemoPageState extends State<IndicatorParityDemoPage> {
   ];
 
   static const _barTabs = [
-    GlassBottomBarTab(label: 'Home', icon: Icon(CupertinoIcons.home)),
-    GlassBottomBarTab(
-        label: 'Discover', icon: Icon(CupertinoIcons.compass_fill)),
-    GlassBottomBarTab(label: 'Library', icon: Icon(CupertinoIcons.book_fill)),
-    GlassBottomBarTab(label: 'Profile', icon: Icon(CupertinoIcons.person_fill)),
+    GlassTab(label: 'Home', icon: Icon(CupertinoIcons.home)),
+    GlassTab(label: 'Discover', icon: Icon(CupertinoIcons.compass_fill)),
+    GlassTab(label: 'Library', icon: Icon(CupertinoIcons.book_fill)),
+    GlassTab(label: 'Profile', icon: Icon(CupertinoIcons.person_fill)),
   ];
 
   // ── Derived ────────────────────────────────────────────────────────────────
@@ -220,28 +223,29 @@ class _IndicatorParityDemoPageState extends State<IndicatorParityDemoPage> {
 
                 const SizedBox(height: 16),
 
-                // ── GlassTabBar ──────────────────────────────────────────────
+                // ── GlassSegmentedControl ──────────────────────────────────────────────
                 _WidgetSection(
-                  label: 'GlassTabBar',
+                  label: 'GlassSegmentedControl',
                   color: const Color(0xFF0A84FF),
                   child: Padding(
                     padding: const EdgeInsets.all(16),
-                    child: GlassTabBar(
-                      tabs: _tabs,
+                    child: GlassSegmentedControl(
+                      segments: _tabs,
                       selectedIndex: _tabSelected,
-                      onTabSelected: (i) => setState(() => _tabSelected = i),
+                      onSegmentSelected: (i) =>
+                          setState(() => _tabSelected = i),
                       quality: GlassQuality.premium,
                       // height: 56 required for icon + label tabs.
                       // Default 44 is for icon-only or text-only.
                       height: 56,
                       // Full-pill radius — matches the bottom bars' rounded look.
-                      borderRadius: BorderRadius.circular(28),
+                      borderRadius: 28,
                       iconSize: 20,
-                      selectedLabelStyle: const TextStyle(
+                      selectedTextStyle: const TextStyle(
                         fontSize: 11,
                         fontWeight: FontWeight.w600,
                       ),
-                      unselectedLabelStyle: const TextStyle(
+                      unselectedTextStyle: const TextStyle(
                         fontSize: 11,
                         fontWeight: FontWeight.w400,
                       ),
@@ -258,14 +262,14 @@ class _IndicatorParityDemoPageState extends State<IndicatorParityDemoPage> {
                 _WidgetSection(
                   label: 'GlassBottomBar',
                   color: const Color(0xFFFF375F),
-                  child: GlassBottomBar(
+                  child: GlassTabBar.bottom(
                     tabs: _barTabs,
                     selectedIndex: _barSelected,
                     onTabSelected: (i) => setState(() => _barSelected = i),
                     quality: GlassQuality.premium,
                     indicatorPinchStrength: _pinchStrength,
                     indicatorExpansion: _expansion,
-                    indicatorSettings: _indicatorSettings,
+                    // indicatorSettings: _indicatorSettings,
                   ),
                 ),
 
@@ -275,7 +279,7 @@ class _IndicatorParityDemoPageState extends State<IndicatorParityDemoPage> {
                 _WidgetSection(
                   label: 'GlassSearchableBottomBar',
                   color: const Color(0xFF30D158),
-                  child: GlassSearchableBottomBar(
+                  child: GlassTabBar.searchable(
                     tabs: _barTabs,
                     selectedIndex: _searchBarSelected,
                     isSearchActive: _isSearching,
@@ -674,7 +678,8 @@ class _WidgetSection extends StatelessWidget {
               color: color.withValues(alpha: 0.2),
             ),
           ),
-          clipBehavior: Clip.antiAlias,
+          clipBehavior:
+              Clip.none, // Allow jelly physics and glow to overshoot the card
           child: child,
         ),
       ],
@@ -740,7 +745,7 @@ class _LiveValuesBadge extends StatelessWidget {
     final v = expansionV.round();
     final pinch = pinchStrength.toStringAsFixed(2);
     final aber = aberration.toStringAsFixed(2);
-    return 'GlassBottomBar(\n'
+    return 'GlassTabBar.bottom(\n'
         '  indicatorPinchStrength: $pinch,\n'
         '  indicatorExpansion: EdgeInsets.symmetric(\n'
         '    horizontal: $h, vertical: $v,\n'

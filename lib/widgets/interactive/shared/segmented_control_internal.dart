@@ -24,6 +24,7 @@ import '../../../types/glass_quality.dart';
 import '../../../utils/draggable_indicator_physics.dart';
 import '../../../utils/glass_spring.dart';
 import '../../shared/animated_glass_indicator.dart';
+import '../../surfaces/glass_tab_bar.dart' show GlassTab;
 
 // =============================================================================
 // Widget
@@ -54,7 +55,9 @@ class SegmentedControlContent extends StatefulWidget {
     super.key,
   });
 
-  final List<String> segments;
+  /// List of segments to display. Each [GlassTab] may have a label, an icon,
+  /// or both. Minimum 2 segments required.
+  final List<GlassTab> segments;
   final int selectedIndex;
   final ValueChanged<int> onSegmentSelected;
   final TextStyle? selectedTextStyle;
@@ -214,19 +217,17 @@ class SegmentedControlContentState extends State<SegmentedControlContent> {
         CupertinoTheme.of(context).textTheme.textStyle.color ??
             CupertinoColors.label;
 
-    final selectedTextStyle = widget.selectedTextStyle ??
-        TextStyle(
-          fontSize: 13,
-          fontWeight: FontWeight.w600,
-          color: dynamicLabelColor,
-        );
+    final selectedTextStyle = TextStyle(
+      fontSize: 13,
+      fontWeight: FontWeight.w600,
+      color: dynamicLabelColor,
+    ).merge(widget.selectedTextStyle);
 
-    final unselectedTextStyle = widget.unselectedTextStyle ??
-        TextStyle(
-          fontSize: 13,
-          fontWeight: FontWeight.w500,
-          color: dynamicLabelColor.withValues(alpha: 0.6),
-        );
+    final unselectedTextStyle = TextStyle(
+      fontSize: 13,
+      fontWeight: FontWeight.w500,
+      color: dynamicLabelColor.withValues(alpha: 0.6),
+    ).merge(widget.unselectedTextStyle);
 
     return Listener(
       // Raw pointer events fire BEFORE gesture recognizers and never compete
@@ -266,13 +267,36 @@ class SegmentedControlContentState extends State<SegmentedControlContent> {
                   : 0.0,
               builder: (context, thickness, child) {
                 final isPremiumQuality = widget.quality == GlassQuality.premium;
-                return RepaintBoundary(
-                  child: Stack(
-                    clipBehavior: Clip.none,
-                    children: [
-                      // Pass 1 — solid background pill, always below labels.
-                      // For non-premium quality the glass effect is also included
-                      // here (single-pass, cheaper path).
+                return Stack(
+                  clipBehavior: Clip.none,
+                  children: [
+                    // Pass 1 — solid background pill, always below labels.
+                    // For non-premium quality the glass effect is also included
+                    // here (single-pass, cheaper path).
+                    AnimatedGlassIndicator(
+                      velocity: velocity,
+                      itemCount: widget.segments.length,
+                      alignment: alignment,
+                      thickness: thickness,
+                      quality: widget.quality,
+                      indicatorColor: indicatorColor,
+                      isBackgroundIndicator: false,
+                      paintBackground: true,
+                      paintGlass: !isPremiumQuality,
+                      borderRadius: indicatorRadius,
+                      settings: widget.indicatorSettings,
+                      pinchStrength: widget.indicatorPinchStrength,
+                      expansion: widget.indicatorExpansion,
+                      backgroundKey: widget.backgroundKey,
+                    ),
+                    // Segment labels paint between the two indicator passes so
+                    // the premium glass layer above can refract them.
+                    child!,
+                    // Pass 2 (premium only) — glass-only pass rendered ABOVE
+                    // the labels so the shader samples and refracts them,
+                    // matching the iOS 26 refraction seen in GlassTabBar /
+                    // GlassBottomBar.
+                    if (isPremiumQuality)
                       AnimatedGlassIndicator(
                         velocity: velocity,
                         itemCount: widget.segments.length,
@@ -281,40 +305,15 @@ class SegmentedControlContentState extends State<SegmentedControlContent> {
                         quality: widget.quality,
                         indicatorColor: indicatorColor,
                         isBackgroundIndicator: false,
-                        paintBackground: true,
-                        paintGlass: !isPremiumQuality,
+                        paintBackground: false,
+                        paintGlass: true,
                         borderRadius: indicatorRadius,
                         settings: widget.indicatorSettings,
                         pinchStrength: widget.indicatorPinchStrength,
                         expansion: widget.indicatorExpansion,
                         backgroundKey: widget.backgroundKey,
                       ),
-                      // Segment labels paint between the two indicator passes so
-                      // the premium glass layer above can refract them.
-                      child!,
-                      // Pass 2 (premium only) — glass-only pass rendered ABOVE
-                      // the labels so the shader samples and refracts them,
-                      // matching the iOS 26 refraction seen in GlassTabBar /
-                      // GlassBottomBar.
-                      if (isPremiumQuality)
-                        AnimatedGlassIndicator(
-                          velocity: velocity,
-                          itemCount: widget.segments.length,
-                          alignment: alignment,
-                          thickness: thickness,
-                          quality: widget.quality,
-                          indicatorColor: indicatorColor,
-                          isBackgroundIndicator: false,
-                          paintBackground: false,
-                          paintGlass: true,
-                          borderRadius: indicatorRadius,
-                          settings: widget.indicatorSettings,
-                          pinchStrength: widget.indicatorPinchStrength,
-                          expansion: widget.indicatorExpansion,
-                          backgroundKey: widget.backgroundKey,
-                        ),
-                    ],
-                  ),
+                  ],
                 );
               },
               child: Row(
@@ -325,7 +324,6 @@ class SegmentedControlContentState extends State<SegmentedControlContent> {
                         child: GestureDetector(
                           onTap: () => _onSegmentTap(i),
                           onTapDown: (_) {
-                            // Trigger selection immediately on touch down.
                             if (i != widget.selectedIndex) {
                               widget.onSegmentSelected(i);
                             }
@@ -334,18 +332,13 @@ class SegmentedControlContentState extends State<SegmentedControlContent> {
                           child: Semantics(
                             button: true,
                             selected: widget.selectedIndex == i,
-                            label: widget.segments[i],
+                            label: widget.segments[i].label ?? '',
                             child: Center(
-                              child: AnimatedDefaultTextStyle(
-                                duration: const Duration(milliseconds: 200),
-                                style: widget.selectedIndex == i
-                                    ? selectedTextStyle
-                                    : unselectedTextStyle,
-                                child: Text(
-                                  widget.segments[i],
-                                  maxLines: 1,
-                                  overflow: TextOverflow.ellipsis,
-                                ),
+                              child: _buildSegmentContent(
+                                widget.segments[i],
+                                isSelected: widget.selectedIndex == i,
+                                selectedStyle: selectedTextStyle,
+                                unselectedStyle: unselectedTextStyle,
                               ),
                             ),
                           ),
@@ -361,12 +354,70 @@ class SegmentedControlContentState extends State<SegmentedControlContent> {
               for (var i = 0; i < widget.segments.length; i++)
                 Expanded(
                   child: Center(
-                    child: Text(widget.segments[i]),
+                    child: widget.segments[i].label != null
+                        ? Text(widget.segments[i].label!)
+                        : (widget.segments[i].icon ?? const SizedBox.shrink()),
                   ),
                 ),
             ],
           ),
         ),
+      ),
+    );
+  }
+
+  // ── Segment content builder ───────────────────────────────────────────────
+
+  /// Builds the content for a single segment — label only, icon only, or both.
+  Widget _buildSegmentContent(
+    GlassTab tab, {
+    required bool isSelected,
+    required TextStyle selectedStyle,
+    required TextStyle unselectedStyle,
+  }) {
+    final style = isSelected ? selectedStyle : unselectedStyle;
+    final hasLabel = tab.label != null && tab.label!.isNotEmpty;
+    final hasIcon = tab.icon != null;
+
+    if (hasIcon && hasLabel) {
+      return Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          IconTheme(
+            data: IconThemeData(
+              color: style.color,
+              size: 16,
+            ),
+            child: tab.icon!,
+          ),
+          const SizedBox(height: 2),
+          AnimatedDefaultTextStyle(
+            duration: const Duration(milliseconds: 200),
+            style: style,
+            child: Text(
+              tab.label!,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+            ),
+          ),
+        ],
+      );
+    }
+
+    if (hasIcon) {
+      return IconTheme(
+        data: IconThemeData(color: style.color, size: 20),
+        child: tab.icon!,
+      );
+    }
+
+    return AnimatedDefaultTextStyle(
+      duration: const Duration(milliseconds: 200),
+      style: style,
+      child: Text(
+        tab.label ?? '',
+        maxLines: 1,
+        overflow: TextOverflow.ellipsis,
       ),
     );
   }

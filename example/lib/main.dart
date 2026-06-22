@@ -120,22 +120,22 @@ class _ShowcaseHomePageState extends State<ShowcaseHomePage> {
   int _selectedTab = 0;
 
   static const _tabs = [
-    GlassBottomBarTab(
+    GlassTab(
       label: 'Explore',
       icon: Icon(CupertinoIcons.compass),
       activeIcon: Icon(CupertinoIcons.compass_fill),
     ),
-    GlassBottomBarTab(
+    GlassTab(
       label: 'Widgets',
       icon: Icon(CupertinoIcons.square_grid_2x2),
       activeIcon: Icon(CupertinoIcons.square_grid_2x2_fill),
     ),
-    GlassBottomBarTab(
+    GlassTab(
       label: 'Demos',
       icon: Icon(Icons.apple, size: 30),
       activeIcon: Icon(Icons.apple, size: 30),
     ),
-    GlassBottomBarTab(
+    GlassTab(
       label: 'Examples',
       icon: Icon(CupertinoIcons.cube),
       activeIcon: Icon(CupertinoIcons.cube_fill),
@@ -153,7 +153,7 @@ class _ShowcaseHomePageState extends State<ShowcaseHomePage> {
           isDark ? GlassStatusBarStyle.light : GlassStatusBarStyle.dark,
       settings: RecommendedGlassSettings.standard,
       topEdgeFade: true,
-      bottomBar: GlassBottomBar(
+      bottomBar: GlassTabBar.bottom(
         selectedIndex: _selectedTab,
         onTabSelected: (i) => setState(() => _selectedTab = i),
         interactionBehavior: GlassInteractionBehavior.full,

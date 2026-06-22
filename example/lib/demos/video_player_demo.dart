@@ -249,23 +249,23 @@ class _VideoGlassDemoPageState extends State<VideoGlassDemoPage> {
             ),
           ],
         ),
-        bottomNavigationBar: GlassBottomBar(
+        bottomNavigationBar: GlassTabBar.bottom(
           selectedIndex: _selectedTab,
           onTabSelected: (i) => setState(() => _selectedTab = i),
           selectedIconColor: Colors.white,
           unselectedIconColor: Colors.white.withValues(alpha: 0.5),
           tabs: [
-            GlassBottomBarTab(
+            GlassTab(
               label: 'Home',
               icon: const Icon(CupertinoIcons.home),
               activeIcon: const Icon(CupertinoIcons.home),
             ),
-            GlassBottomBarTab(
+            GlassTab(
               label: 'Browse',
               icon: const Icon(CupertinoIcons.compass),
               activeIcon: const Icon(CupertinoIcons.compass_fill),
             ),
-            GlassBottomBarTab(
+            GlassTab(
               label: 'Library',
               icon: const Icon(CupertinoIcons.music_albums),
               activeIcon: const Icon(CupertinoIcons.music_albums_fill),

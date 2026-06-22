@@ -26,9 +26,9 @@ class _PlatformViewDemoState extends State<PlatformViewDemo> {
   late final PageController _pageController;
 
   static const _tabs = [
-    GlassBottomBarTab(icon: Icon(Icons.home_rounded), label: 'Home'),
-    GlassBottomBarTab(icon: Icon(Icons.map_rounded), label: 'Map'),
-    GlassBottomBarTab(icon: Icon(Icons.person_rounded), label: 'Profile'),
+    GlassTab(icon: Icon(Icons.home_rounded), label: 'Home'),
+    GlassTab(icon: Icon(Icons.map_rounded), label: 'Map'),
+    GlassTab(icon: Icon(Icons.person_rounded), label: 'Profile'),
   ];
 
   @override
@@ -63,7 +63,7 @@ class _PlatformViewDemoState extends State<PlatformViewDemo> {
             PlaceholderTab(label: 'Profile'),
           ],
         ),
-        bottomNavigationBar: GlassBottomBar(
+        bottomNavigationBar: GlassTabBar.bottom(
           settings: const LiquidGlassSettings(glassColor: Colors.black54),
           // ┌─────────────────────────────────────────────────────────────┐
           // │  THE FIX: Use platformViewBackdrop: true on iOS.          │

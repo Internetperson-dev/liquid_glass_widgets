@@ -1,7 +1,7 @@
-/// Bottom bar widgets — tabWidth demo
+/// Tab bar widgets — tabWidth demo
 ///
-/// Demonstrates how [GlassSearchableBottomBar.tabWidth] and
-/// [GlassBottomBar.tabWidth] control the tab pill width on both bar variants.
+/// Demonstrates how [GlassTabBar.bottom] and [GlassTabBar.searchable]
+/// control the tab pill width on both bar variants.
 ///
 /// Run standalone:
 ///   flutter run -t example/lib/demos/bottom_bar_tab_width_demo.dart
@@ -69,16 +69,13 @@ class _TabWidthDemoPageState extends State<TabWidthDemoPage> {
 
   static const _kCounts = [2, 3, 4, 5];
 
-  List<GlassBottomBarTab> get _tabs => [
-        const GlassBottomBarTab(label: 'Home', icon: Icon(CupertinoIcons.home)),
-        const GlassBottomBarTab(
-            label: 'Browse', icon: Icon(CupertinoIcons.compass)),
-        const GlassBottomBarTab(
-            label: 'Library', icon: Icon(CupertinoIcons.book)),
-        const GlassBottomBarTab(
+  List<GlassTab> get _tabs => [
+        const GlassTab(label: 'Home', icon: Icon(CupertinoIcons.home)),
+        const GlassTab(label: 'Browse', icon: Icon(CupertinoIcons.compass)),
+        const GlassTab(label: 'Library', icon: Icon(CupertinoIcons.book)),
+        const GlassTab(
             label: 'Radio', icon: Icon(CupertinoIcons.radiowaves_left)),
-        const GlassBottomBarTab(
-            label: 'Profile', icon: Icon(CupertinoIcons.person)),
+        const GlassTab(label: 'Profile', icon: Icon(CupertinoIcons.person)),
       ].take(_tabCount).toList();
 
   @override
@@ -204,7 +201,7 @@ class _TabWidthDemoPageState extends State<TabWidthDemoPage> {
             right: 0,
             bottom: 0,
             child: _variant == _BarVariant.searchable
-                ? GlassSearchableBottomBar(
+                ? GlassTabBar.searchable(
                     tabs: _tabs,
                     selectedIndex: clampedSelected,
                     isSearchActive: _searching,
@@ -220,7 +217,7 @@ class _TabWidthDemoPageState extends State<TabWidthDemoPage> {
                       onSearchToggle: (v) => setState(() => _searching = v),
                     ),
                   )
-                : GlassBottomBar(
+                : GlassTabBar.bottom(
                     tabs: _tabs,
                     selectedIndex: clampedSelected,
                     tabWidth: _tabWidth,

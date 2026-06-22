@@ -597,25 +597,25 @@ class _TabBarBottomFadeDemoState extends State<_TabBarBottomFadeDemo> {
       background: const ShowcaseBackground(),
       settings: RecommendedGlassSettings.standard,
       statusBarStyle: GlassStatusBarStyle.auto,
-      bottomBar: GlassBottomBar(
+      bottomBar: GlassTabBar.bottom(
         selectedIndex: _selectedTab,
         onTabSelected: (index) => setState(() => _selectedTab = index),
         settings:
             RecommendedGlassSettings.standard.copyWith(thickness: 20, blur: 3),
         tabs: const [
-          GlassBottomBarTab(
+          GlassTab(
             icon: Icon(CupertinoIcons.house_fill),
             label: 'Home',
           ),
-          GlassBottomBarTab(
+          GlassTab(
             icon: Icon(CupertinoIcons.search),
             label: 'Search',
           ),
-          GlassBottomBarTab(
+          GlassTab(
             icon: Icon(CupertinoIcons.bell_fill),
             label: 'Alerts',
           ),
-          GlassBottomBarTab(
+          GlassTab(
             icon: Icon(CupertinoIcons.person_fill),
             label: 'Profile',
           ),
@@ -726,21 +726,21 @@ class _FadeHeaderDemoState extends State<_FadeHeaderDemo> {
       headerFadeDistance: 30,
 
       // ── Bottom bar (no app bar in this pattern) ─────────────────────────
-      bottomBar: GlassBottomBar(
+      bottomBar: GlassTabBar.bottom(
         selectedIndex: 0,
         onTabSelected: (_) {},
         settings:
             RecommendedGlassSettings.standard.copyWith(thickness: 20, blur: 3),
         tabs: const [
-          GlassBottomBarTab(
+          GlassTab(
             icon: Icon(CupertinoIcons.house_fill),
             label: 'Home',
           ),
-          GlassBottomBarTab(
+          GlassTab(
             icon: Icon(CupertinoIcons.antenna_radiowaves_left_right),
             label: 'Radio',
           ),
-          GlassBottomBarTab(
+          GlassTab(
             icon: Icon(CupertinoIcons.music_albums),
             label: 'Library',
           ),

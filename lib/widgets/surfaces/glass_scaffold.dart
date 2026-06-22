@@ -440,7 +440,14 @@ class GlassScaffold extends StatelessWidget {
                 ? AnimatedBuilder(
                     animation: headerScrollController!,
                     builder: (context, child) {
-                      final offset = headerScrollController!.hasClients
+                      // Guard: during AnimatedSwitcher cross-fades, both old
+                      // and new scroll views briefly share the same controller.
+                      // Reading .offset (or .positions.last) throws if there
+                      // are multiple positions. Falling back to 0.0 for that
+                      // brief ~300 ms window is correct UX — the header just
+                      // stays fully visible during the transition.
+                      final offset = headerScrollController!.hasClients &&
+                              headerScrollController!.positions.length == 1
                           ? headerScrollController!.offset
                           : 0.0;
                       // Guard against divide-by-zero if headerFadeDistance == 0.
@@ -482,16 +489,28 @@ class GlassScaffold extends StatelessWidget {
         ),
 
       // 3. Bottom bar (above body — painted after body in Stack).
+      // SafeArea ensures the bar is never obscured by the Android system
+      // navigation bar or the iOS home indicator on any device.
       if (bottomBar != null)
         Positioned(
           key: const ValueKey('glass_scaffold_bottom_bar'),
           left: 0,
           right: 0,
           bottom: 0,
-          child: GlassIsolationScope(
-            isolated: true,
-            defaultQuality: GlassQuality.premium,
-            child: bottomBar!,
+          child: SafeArea(
+            top: false,
+            left: false,
+            right: false,
+            // iOS 26 floats pills natively over the home indicator visually
+            // (the 20px gap straddles the indicator).
+            // Android uses a physical nav bar or gesture bar that requires
+            // being pushed up explicitly.
+            bottom: Theme.of(context).platform == TargetPlatform.android,
+            child: GlassIsolationScope(
+              isolated: true,
+              defaultQuality: GlassQuality.premium,
+              child: bottomBar!,
+            ),
           ),
         ),
     ];

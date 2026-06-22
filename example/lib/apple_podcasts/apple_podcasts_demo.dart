@@ -396,106 +396,102 @@ class _ApplePodcastsHomeScreenState extends State<ApplePodcastsHomeScreen> {
       ],
 
       // ── Bottom navigation bar ──────────────────────────────────────────────
-      bottomBar: Padding(
-        padding: EdgeInsets.only(bottom: bottomOffset),
-        child: GlassSearchableBottomBar(
-          isSearchActive: _isMiniMode || _isSearching,
-          selectedIndex: _selectedTab,
-          onTabSelected: (index) {
-            if (index == _selectedTab && _isMiniMode) {
-              _dismissMiniMode();
+      bottomBar: GlassTabBar.searchable(
+        isSearchActive: _isMiniMode || _isSearching,
+        selectedIndex: _selectedTab,
+        onTabSelected: (index) {
+          if (index == _selectedTab && _isMiniMode) {
+            _dismissMiniMode();
+          } else {
+            setState(() {
+              _selectedTab = index;
+              _isSearching = false;
+            });
+          }
+        },
+        barHeight: _kBarH,
+        searchBarHeight: 50.0,
+        horizontalPadding: _kPaddingH,
+        verticalPadding: _kPaddingV,
+        spacing: _kSpacing,
+        selectedIconColor: _kPodcastsPurple,
+        unselectedIconColor: CupertinoColors.label.resolveFrom(context),
+        indicatorColor: CupertinoColors.tertiaryLabel.resolveFrom(context),
+        labelFontSize: 10,
+        iconSize: 28,
+        iconLabelSpacing: 0,
+        quality: GlassQuality.premium,
+        interactionBehavior: GlassInteractionBehavior.full,
+        settings: LiquidGlassSettings(
+          glassColor: CupertinoTheme.brightnessOf(context) == Brightness.dark
+              ? const Color.fromRGBO(28, 28, 30, 0.8)
+              : const Color.fromRGBO(242, 242, 247, 0.8),
+          thickness: 30,
+          blur: 4,
+          chromaticAberration: .01,
+          lightAngle: GlassDefaults.lightAngle,
+          lightIntensity: .5,
+          ambientStrength: 0,
+          refractiveIndex: 1.2,
+          saturation: 1.2,
+          specularSharpness: GlassSpecularSharpness.medium,
+        ),
+        searchConfig: GlassSearchBarConfig(
+          focusNode: _searchFocusNode,
+          autoFocusOnExpand: false,
+          showsCancelButton: true,
+          expandWhenActive: !_isMiniMode || _isSearching,
+          hintText: 'Search Podcasts',
+          collapsedLogoBuilder: (context) {
+            final isHome = _selectedTab == 0;
+            IconData iconData = CupertinoIcons.play_circle_fill;
+            if (_selectedTab == 1) {
+              iconData = CupertinoIcons.square_grid_2x2_fill;
+            } else if (_selectedTab == 2) {
+              iconData = CupertinoIcons.square_stack_3d_up_fill;
+            }
+            return Center(
+              child: IconTheme(
+                data: IconThemeData(
+                  color: isHome
+                      ? _kPodcastsPurple
+                      : CupertinoColors.label.resolveFrom(context),
+                  size: 28,
+                ),
+                child: Icon(iconData),
+              ),
+            );
+          },
+          onSearchToggle: (active) {
+            if (active) {
+              setState(() => _isSearching = true);
             } else {
+              final wasSearching = _isSearching;
               setState(() {
-                _selectedTab = index;
                 _isSearching = false;
+                _searchFieldFocused = false;
               });
+              if (!wasSearching && _isMiniMode) _dismissMiniMode();
             }
           },
-          barHeight: _kBarH,
-          searchBarHeight: 50.0,
-          horizontalPadding: _kPaddingH,
-          verticalPadding: _kPaddingV,
-          spacing: _kSpacing,
-          selectedIconColor: _kPodcastsPurple,
-          unselectedIconColor: CupertinoColors.label.resolveFrom(context),
-          indicatorColor: CupertinoColors.tertiaryLabel.resolveFrom(context),
-          labelFontSize: 10,
-          iconSize: 28,
-          iconLabelSpacing: 0,
-          quality: GlassQuality.premium,
-          interactionBehavior: GlassInteractionBehavior.full,
-          settings: LiquidGlassSettings(
-            glassColor: CupertinoTheme.brightnessOf(context) == Brightness.dark
-                ? const Color.fromRGBO(28, 28, 30, 0.8)
-                : const Color.fromRGBO(242, 242, 247, 0.8),
-            thickness: 30,
-            blur: 4,
-            chromaticAberration: .01,
-            lightAngle: GlassDefaults.lightAngle,
-            lightIntensity: .5,
-            ambientStrength: 0,
-            refractiveIndex: 1.2,
-            saturation: 1.2,
-            specularSharpness: GlassSpecularSharpness.medium,
-          ),
-          searchConfig: GlassSearchBarConfig(
-            focusNode: _searchFocusNode,
-            autoFocusOnExpand: false,
-            showsCancelButton: true,
-            expandWhenActive: !_isMiniMode || _isSearching,
-            hintText: 'Search Podcasts',
-            collapsedLogoBuilder: (context) {
-              final isHome = _selectedTab == 0;
-              IconData iconData = CupertinoIcons.play_circle_fill;
-              if (_selectedTab == 1) {
-                iconData = CupertinoIcons.square_grid_2x2_fill;
-              } else if (_selectedTab == 2) {
-                iconData = CupertinoIcons.square_stack_3d_up_fill;
-              }
-              return Center(
-                child: IconTheme(
-                  data: IconThemeData(
-                    color: isHome
-                        ? _kPodcastsPurple
-                        : CupertinoColors.label.resolveFrom(context),
-                    size: 28,
-                  ),
-                  child: Icon(iconData),
-                ),
-              );
-            },
-            onSearchToggle: (active) {
-              if (active) {
-                setState(() => _isSearching = true);
-              } else {
-                final wasSearching = _isSearching;
-                setState(() {
-                  _isSearching = false;
-                  _searchFieldFocused = false;
-                });
-                if (!wasSearching && _isMiniMode) _dismissMiniMode();
-              }
-            },
-            onSearchFocusChanged: (f) =>
-                setState(() => _searchFieldFocused = f),
-            searchIconColor: CupertinoColors.label.resolveFrom(context),
-            textInputAction: TextInputAction.search,
-          ),
-          tabs: [
-            GlassBottomBarTab(
-                label: 'Home',
-                icon: Icon(CupertinoIcons.play_circle),
-                activeIcon: Icon(CupertinoIcons.play_circle_fill)),
-            GlassBottomBarTab(
-                label: 'New',
-                icon: Icon(CupertinoIcons.square_grid_2x2),
-                activeIcon: Icon(CupertinoIcons.square_grid_2x2_fill)),
-            GlassBottomBarTab(
-                label: 'Library',
-                icon: Icon(CupertinoIcons.square_stack_3d_up),
-                activeIcon: Icon(CupertinoIcons.square_stack_3d_up_fill)),
-          ],
+          onSearchFocusChanged: (f) => setState(() => _searchFieldFocused = f),
+          searchIconColor: CupertinoColors.label.resolveFrom(context),
+          textInputAction: TextInputAction.search,
         ),
+        tabs: [
+          GlassTab(
+              label: 'Home',
+              icon: Icon(CupertinoIcons.play_circle),
+              activeIcon: Icon(CupertinoIcons.play_circle_fill)),
+          GlassTab(
+              label: 'New',
+              icon: Icon(CupertinoIcons.square_grid_2x2),
+              activeIcon: Icon(CupertinoIcons.square_grid_2x2_fill)),
+          GlassTab(
+              label: 'Library',
+              icon: Icon(CupertinoIcons.square_stack_3d_up),
+              activeIcon: Icon(CupertinoIcons.square_stack_3d_up_fill)),
+        ],
       ),
     );
   }
@@ -1237,7 +1233,12 @@ class _NowPlayingViewState extends State<NowPlayingView> {
           ),
           const SizedBox(height: 30),
           GlassSegmentedControl(
-            segments: const ['0.5x', '1x', '1.5x', '2x'],
+            segments: [
+              GlassTab(label: '0.5x'),
+              GlassTab(label: '1x'),
+              GlassTab(label: '1.5x'),
+              GlassTab(label: '2x')
+            ],
             selectedIndex: _speedIndex,
             onSegmentSelected: (i) => setState(() => _speedIndex = i),
             useOwnLayer: true,

@@ -128,8 +128,10 @@ class SurfacesPage extends StatelessWidget {
 
                       SizedBox(height: 40),
 
-                      // ── GlassTabBar ──────────────────────────────────
-                      const _SectionTitle(title: 'GlassTabBar'),
+                      // ── GlassSegmentedControl / GlassTabBar (Inline) ────────
+                      const _SectionTitle(
+                          title:
+                              'GlassTabBar (Inline) / GlassSegmentedControl'),
                       SizedBox(height: 16),
                       const _TabBarDemo(),
 
@@ -239,22 +241,22 @@ class _BottomBarDemoPageState extends State<_BottomBarDemoPage> {
   int _selectedIndex = 0;
 
   static const _tabs = [
-    GlassBottomBarTab(
+    GlassTab(
       label: 'Home',
       icon: Icon(CupertinoIcons.house),
       activeIcon: Icon(CupertinoIcons.house_fill),
     ),
-    GlassBottomBarTab(
+    GlassTab(
       label: 'Browse',
       icon: Icon(CupertinoIcons.compass),
       activeIcon: Icon(CupertinoIcons.compass_fill),
     ),
-    GlassBottomBarTab(
+    GlassTab(
       label: 'Favorites',
       icon: Icon(CupertinoIcons.heart),
       activeIcon: Icon(CupertinoIcons.heart_fill),
     ),
-    GlassBottomBarTab(
+    GlassTab(
       label: 'Profile',
       icon: Icon(CupertinoIcons.person),
       activeIcon: Icon(CupertinoIcons.person_fill),
@@ -331,7 +333,7 @@ class _BottomBarDemoPageState extends State<_BottomBarDemoPage> {
             ],
           ),
         ),
-        bottomNavigationBar: GlassBottomBar(
+        bottomNavigationBar: GlassTabBar.bottom(
           selectedIndex: _selectedIndex,
           onTabSelected: (i) => setState(() => _selectedIndex = i),
           quality: GlassQuality.premium,
@@ -358,17 +360,17 @@ class _SearchableBarDemoPageState extends State<_SearchableBarDemoPage> {
   bool _isMiniMode = false;
 
   static const _tabs = [
-    GlassBottomBarTab(
+    GlassTab(
       label: 'Home',
       icon: Icon(CupertinoIcons.house),
       activeIcon: Icon(CupertinoIcons.house_fill),
     ),
-    GlassBottomBarTab(
+    GlassTab(
       label: 'Browse',
       icon: Icon(CupertinoIcons.compass),
       activeIcon: Icon(CupertinoIcons.compass_fill),
     ),
-    GlassBottomBarTab(
+    GlassTab(
       label: 'Profile',
       icon: Icon(CupertinoIcons.person),
       activeIcon: Icon(CupertinoIcons.person_fill),
@@ -493,7 +495,7 @@ class _SearchableBarDemoPageState extends State<_SearchableBarDemoPage> {
               left: 0,
               right: 0,
               bottom: 0,
-              child: GlassSearchableBottomBar(
+              child: GlassTabBar.searchable(
                 selectedIndex: _selectedIndex,
                 isSearchActive: _isMiniMode || _isSearching,
                 onTabSelected: (i) {
@@ -759,14 +761,14 @@ class _TabBarDemoState extends State<_TabBarDemo> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        GlassTabBar(
-          tabs: [
+        GlassSegmentedControl(
+          segments: [
             GlassTab(label: 'Photos'),
             GlassTab(label: 'Albums'),
             GlassTab(label: 'Shared'),
           ],
           selectedIndex: _selectedIndex,
-          onTabSelected: (index) => setState(() => _selectedIndex = index),
+          onSegmentSelected: (index) => setState(() => _selectedIndex = index),
         ),
         SizedBox(height: 16),
         Container(
@@ -825,14 +827,14 @@ class _TabBarLabelExampleState extends State<_TabBarLabelExample> {
 
   @override
   Widget build(BuildContext context) {
-    return GlassTabBar(
-      tabs: [
+    return GlassSegmentedControl(
+      segments: [
         GlassTab(label: 'Timeline'),
         GlassTab(label: 'Mentions'),
         GlassTab(label: 'Messages'),
       ],
       selectedIndex: _selectedIndex,
-      onTabSelected: (index) => setState(() => _selectedIndex = index),
+      onSegmentSelected: (index) => setState(() => _selectedIndex = index),
     );
   }
 }
@@ -849,15 +851,15 @@ class _TabBarIconExampleState extends State<_TabBarIconExample> {
 
   @override
   Widget build(BuildContext context) {
-    return GlassTabBar(
-      tabs: [
+    return GlassSegmentedControl(
+      segments: [
         GlassTab(icon: Icon(Icons.home)),
         GlassTab(icon: Icon(Icons.search)),
         GlassTab(icon: Icon(Icons.notifications)),
         GlassTab(icon: Icon(Icons.settings)),
       ],
       selectedIndex: _selectedIndex,
-      onTabSelected: (index) => setState(() => _selectedIndex = index),
+      onSegmentSelected: (index) => setState(() => _selectedIndex = index),
     );
   }
 }
@@ -875,14 +877,13 @@ class _TabBarScrollableExampleState extends State<_TabBarScrollableExample> {
 
   @override
   Widget build(BuildContext context) {
-    return GlassTabBar(
-      isScrollable: true,
-      tabs: List.generate(
+    return GlassSegmentedControl.scrollable(
+      segments: List.generate(
         10,
         (i) => GlassTab(label: 'Category ${i + 1}'),
       ),
       selectedIndex: _selectedIndex,
-      onTabSelected: (index) => setState(() => _selectedIndex = index),
+      onSegmentSelected: (index) => setState(() => _selectedIndex = index),
     );
   }
 }

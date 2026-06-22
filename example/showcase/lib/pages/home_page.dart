@@ -591,7 +591,7 @@ class _HomePageState extends State<HomePage> {
         0.75 * math.pi; // 135° — Apple standard, upper-left
     return Padding(
       padding: const EdgeInsets.only(bottom: 0),
-      child: GlassBottomBar(
+      child: GlassTabBar.bottom(
         verticalPadding: 0,
         horizontalPadding: 8,
         indicatorColor: Colors.black26,
@@ -619,17 +619,17 @@ class _HomePageState extends State<HomePage> {
           label: 'Concierge',
         ),
         tabs: [
-          GlassBottomBarTab(
+          GlassTab(
             label: 'Explore',
             icon: const Icon(Icons.explore_outlined),
             activeIcon: const Icon(Icons.explore),
           ),
-          GlassBottomBarTab(
+          GlassTab(
             label: 'Saved',
             icon: const Icon(Icons.favorite_outline),
             activeIcon: const Icon(Icons.favorite),
           ),
-          GlassBottomBarTab(
+          GlassTab(
             label: 'Trips',
             icon: const Icon(Icons.backpack_outlined),
             activeIcon: const Icon(Icons.backpack),
