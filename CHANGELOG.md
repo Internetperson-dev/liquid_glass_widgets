@@ -1,3 +1,8 @@
+# 0.18.1
+
+- **Hotfix:** Resolved missing coverage in layout engines and segmented controls.
+- **Hotfix:** Fixed package analysis warnings due to unused local variables and unnecessary imports in test files.
+
 # 0.18.0
 
 ## 🏗️ Unified Navigation API — iOS 26 Alignment
