@@ -159,6 +159,8 @@ class GlassTabBar extends StatefulWidget {
     Color? unselectedIconColor,
     Color? selectedLabelColor,
     Color? unselectedLabelColor,
+    TextStyle? selectedLabelStyle,
+    TextStyle? unselectedLabelStyle,
     double iconSize = 24,
     double labelFontSize = 11,
     TextStyle? textStyle,
@@ -209,6 +211,8 @@ class GlassTabBar extends StatefulWidget {
           unselectedIconColor: unselectedIconColor,
           selectedLabelColor: selectedLabelColor,
           unselectedLabelColor: unselectedLabelColor,
+          selectedLabelStyle: selectedLabelStyle,
+          unselectedLabelStyle: unselectedLabelStyle,
           iconSize: iconSize,
           labelFontSize: labelFontSize,
           textStyle: textStyle,
@@ -269,6 +273,8 @@ class GlassTabBar extends StatefulWidget {
     Color? unselectedIconColor,
     Color? selectedLabelColor,
     Color? unselectedLabelColor,
+    TextStyle? selectedLabelStyle,
+    TextStyle? unselectedLabelStyle,
     double iconSize = 24,
     double labelFontSize = 11,
     TextStyle? textStyle,
@@ -330,6 +336,8 @@ class GlassTabBar extends StatefulWidget {
           unselectedIconColor: unselectedIconColor,
           selectedLabelColor: selectedLabelColor,
           unselectedLabelColor: unselectedLabelColor,
+          selectedLabelStyle: selectedLabelStyle,
+          unselectedLabelStyle: unselectedLabelStyle,
           iconSize: iconSize,
           labelFontSize: labelFontSize,
           textStyle: textStyle,
@@ -376,6 +384,8 @@ class GlassTabBar extends StatefulWidget {
       this.unselectedIconColor,
       this.selectedLabelColor,
       this.unselectedLabelColor,
+      this.selectedLabelStyle,
+      this.unselectedLabelStyle,
       this.iconSize = 24.0,
       this.settings,
       this.quality,
@@ -457,6 +467,14 @@ class GlassTabBar extends StatefulWidget {
 
   /// Label color for unselected tabs.
   final Color? unselectedLabelColor;
+
+  /// Per-state label text style, merged over the base label style — overrides
+  /// font / weight / letter-spacing while keeping the resolved label color
+  /// unless the style sets its own. Null leaves existing behavior unchanged.
+  final TextStyle? selectedLabelStyle;
+
+  /// See [selectedLabelStyle].
+  final TextStyle? unselectedLabelStyle;
 
   /// Size of the icons.
   final double iconSize;
@@ -699,6 +717,8 @@ class _GlassTabBarState extends State<GlassTabBar> {
       unselectedIconColor: widget.unselectedIconColor,
       selectedLabelColor: widget.selectedLabelColor,
       unselectedLabelColor: widget.unselectedLabelColor,
+      selectedLabelStyle: widget.selectedLabelStyle,
+      unselectedLabelStyle: widget.unselectedLabelStyle,
       iconSize: widget.iconSize,
       labelFontSize: widget.labelFontSize,
       textStyle: widget.textStyle,
@@ -763,6 +783,8 @@ class _GlassTabBarState extends State<GlassTabBar> {
       unselectedIconColor: widget.unselectedIconColor,
       selectedLabelColor: widget.selectedLabelColor,
       unselectedLabelColor: widget.unselectedLabelColor,
+      selectedLabelStyle: widget.selectedLabelStyle,
+      unselectedLabelStyle: widget.unselectedLabelStyle,
       iconSize: widget.iconSize,
       labelFontSize: widget.labelFontSize,
       textStyle: widget.textStyle,

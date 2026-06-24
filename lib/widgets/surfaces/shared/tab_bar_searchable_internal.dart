@@ -486,6 +486,7 @@ class SearchableTabIndicatorState extends State<SearchableTabIndicator>
               quality: widget.quality,
               indicatorColor: indicatorColor,
               isBackgroundIndicator: false,
+              innerBlur: widget.innerBlur,
               borderRadius: thickness < 1 ? backgroundRadius : glassRadius,
               padding: const EdgeInsets.all(4),
               expansion: widget.indicatorExpansion,
@@ -559,6 +560,7 @@ class SearchableTabIndicatorState extends State<SearchableTabIndicator>
                     isBackgroundIndicator: false,
                     paintBackground: true,
                     paintGlass: false,
+                    innerBlur: widget.innerBlur,
                     borderRadius: effRadius,
                     padding: const EdgeInsets.all(4),
                     expansion: widget.indicatorExpansion,
@@ -568,52 +570,70 @@ class SearchableTabIndicatorState extends State<SearchableTabIndicator>
                   ),
 
                   // 2. Icon Content Layer (Unselected + Selected combined for refraction)
-                  Positioned.fill(
-                    child: RepaintBoundary(
-                      // Keyed so the premium indicator can refract this icon layer
-                      // (capturable) over a PlatformView.
-                      key: _iconLayerKey,
-                      child: Stack(
-                        children: [
-                          ClipPath(
-                            clipBehavior: Clip.antiAliasWithSaveLayer,
-                            clipper: JellyClipper(
-                              itemCount: widget.tabCount,
-                              alignment: alignment,
-                              thickness: thickness,
-                              expansion: widget.indicatorExpansion
-                                  .resolve(Directionality.of(context)),
-                              transform: jellyTransform,
-                              borderRadius: effRadius,
-                              inverse: true,
-                            ),
-                            child: Container(
-                              padding: widget.tabPadding,
-                              height: widget.barHeight,
-                              child: widget.childUnselected,
+                  // We expand the RepaintBoundary bounds using negative Positioned
+                  // offsets matching the indicator expansion. This ensures that when
+                  // the active glass pill overshoots its bounds during a jelly animation
+                  // or stretch, it never samples outside the captured texture (which
+                  // causes extreme wrap-around chromatic aliasing on Impeller).
+                  Builder(
+                    builder: (context) {
+                      final exp = widget.indicatorExpansion
+                          .resolve(Directionality.of(context));
+                      return Positioned(
+                        top: -exp.top,
+                        bottom: -exp.bottom,
+                        left: -exp.left,
+                        right: -exp.right,
+                        child: RepaintBoundary(
+                          // Keyed so the premium indicator can refract this icon layer
+                          // (capturable) over a PlatformView.
+                          key: _iconLayerKey,
+                          child: Padding(
+                            padding: exp,
+                            child: Stack(
+                              children: [
+                                ClipPath(
+                                  clipBehavior: Clip.antiAliasWithSaveLayer,
+                                  clipper: JellyClipper(
+                                    itemCount: widget.tabCount,
+                                    alignment: alignment,
+                                    thickness: thickness,
+                                    expansion: widget.indicatorExpansion
+                                        .resolve(Directionality.of(context)),
+                                    transform: jellyTransform,
+                                    borderRadius: effRadius,
+                                    inverse: true,
+                                  ),
+                                  child: Container(
+                                    padding: widget.tabPadding,
+                                    height: widget.barHeight,
+                                    child: widget.childUnselected,
+                                  ),
+                                ),
+                                ClipPath(
+                                  clipBehavior: Clip.antiAliasWithSaveLayer,
+                                  clipper: JellyClipper(
+                                    itemCount: widget.tabCount,
+                                    alignment: alignment,
+                                    thickness: thickness,
+                                    expansion: widget.indicatorExpansion
+                                        .resolve(Directionality.of(context)),
+                                    transform: jellyTransform,
+                                    borderRadius: effRadius,
+                                  ),
+                                  child: Container(
+                                    padding: widget.tabPadding,
+                                    height: widget.barHeight,
+                                    child: widget.selectedTabBuilder(
+                                        context, thickness, alignment),
+                                  ),
+                                ),
+                              ],
                             ),
                           ),
-                          ClipPath(
-                            clipBehavior: Clip.antiAliasWithSaveLayer,
-                            clipper: JellyClipper(
-                              itemCount: widget.tabCount,
-                              alignment: alignment,
-                              thickness: thickness,
-                              expansion: widget.indicatorExpansion
-                                  .resolve(Directionality.of(context)),
-                              transform: jellyTransform,
-                              borderRadius: effRadius,
-                            ),
-                            child: Container(
-                              padding: widget.tabPadding,
-                              height: widget.barHeight,
-                              child: widget.selectedTabBuilder(
-                                  context, thickness, alignment),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
+                        ),
+                      );
+                    },
                   ),
                 ],
               ),

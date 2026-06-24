@@ -123,6 +123,8 @@ class BottomBarTabItem extends StatelessWidget {
     required this.unselectedIconColor,
     this.selectedLabelColor,
     this.unselectedLabelColor,
+    this.selectedLabelStyle,
+    this.unselectedLabelStyle,
     required this.iconSize,
     required this.textStyle,
     required this.labelFontSize,
@@ -141,6 +143,14 @@ class BottomBarTabItem extends StatelessWidget {
   final Color unselectedIconColor;
   final Color? selectedLabelColor;
   final Color? unselectedLabelColor;
+
+  /// Per-state label text style. Merged over the base label style, so it can
+  /// override font family / weight / letter-spacing while keeping the resolved
+  /// [selectedLabelColor] / [unselectedLabelColor] (unless the style sets its
+  /// own color). Null leaves the existing behavior unchanged.
+  final TextStyle? selectedLabelStyle;
+  final TextStyle? unselectedLabelStyle;
+
   final double iconSize;
   final TextStyle? textStyle;
 
@@ -162,10 +172,34 @@ class BottomBarTabItem extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final iconColor = selected ? selectedIconColor : unselectedIconColor;
-    final labelColor = selected
-        ? (selectedLabelColor ?? selectedIconColor)
-        : (unselectedLabelColor ?? unselectedIconColor);
     final iconWidget = selected ? (tab.activeIcon ?? tab.icon) : tab.icon;
+
+    // Label style resolution — most-specific-wins:
+    //   1. Base typography: caller [textStyle], else the built-in default keyed
+    //      to the per-state icon color.
+    //   2. An explicit per-state label color
+    //      ([selectedLabelColor]/[unselectedLabelColor]) overrides the base
+    //      color — including a color baked into [textStyle] — since it's the more
+    //      specific intent. When null, textStyle's own color (or the icon-color
+    //      default) stands.
+    //   3. The per-state [selectedLabelStyle]/[unselectedLabelStyle] merges last,
+    //      so a caller can set a heavier/different selected font on top.
+    var baseLabelStyle = textStyle ??
+        TextStyle(
+          color: iconColor,
+          fontSize: labelFontSize,
+          fontWeight: selected ? FontWeight.w600 : FontWeight.w500,
+        );
+    final perStateLabelColor =
+        selected ? selectedLabelColor : unselectedLabelColor;
+    if (perStateLabelColor != null) {
+      baseLabelStyle = baseLabelStyle.copyWith(color: perStateLabelColor);
+    }
+    final stateLabelStyle =
+        selected ? selectedLabelStyle : unselectedLabelStyle;
+    final resolvedLabelStyle = stateLabelStyle != null
+        ? baseLabelStyle.merge(stateLabelStyle)
+        : baseLabelStyle;
 
     return GestureDetector(
       // onTap may be null when selection is owned by the outer TabIndicator
@@ -255,13 +289,7 @@ class BottomBarTabItem extends StatelessWidget {
                     maxLines: 1,
                     textAlign: TextAlign.center,
                     overflow: TextOverflow.ellipsis,
-                    style: textStyle ??
-                        TextStyle(
-                          color: labelColor,
-                          fontSize: labelFontSize,
-                          fontWeight:
-                              selected ? FontWeight.w600 : FontWeight.w500,
-                        ),
+                    style: resolvedLabelStyle,
                   ),
               ],
             ),
@@ -704,6 +732,7 @@ class TabIndicatorState extends State<TabIndicator>
               quality: widget.quality,
               indicatorColor: indicatorColor,
               isBackgroundIndicator: false,
+              innerBlur: widget.innerBlur,
               borderRadius: thickness < 1 ? backgroundRadius : glassRadius,
               padding: const EdgeInsets.all(4),
               expansion: widget.indicatorExpansion,
@@ -783,6 +812,7 @@ class TabIndicatorState extends State<TabIndicator>
                     isBackgroundIndicator: false,
                     paintBackground: true,
                     paintGlass: false,
+                    innerBlur: widget.innerBlur,
                     borderRadius:
                         thickness < 1 ? backgroundRadius : glassRadius,
                     padding: const EdgeInsets.all(4),

@@ -1,3 +1,107 @@
+# 0.18.5
+
+## 🔧 Corrected minimum SDK constraint — Flutter ≥ 3.41.0
+
+- **Fix:** Raised the minimum Flutter constraint to `3.41.0`. The `filterQuality` parameter on `FragmentShader.setImageSampler()` was actually introduced in Flutter 3.41.0 (commit `add442b29c`), not 3.24.0 as previously stated. This prevents users on 3.38.x from failing at compile time.
+- **Reverted:** Raised the internal `meta` constraint back to `^1.18.0` since Flutter 3.41.0 guarantees this version is available.
+
+---
+
+# 0.18.4
+
+- **Fix:** Loosened the `meta` dependency constraint to `^1.12.0` (instead of `^1.18.0`) to avoid pub resolution conflicts for users on older Flutter SDKs where `flutter_test` is bound to `meta 1.17.0`.
+
+---
+
+# 0.18.3
+
+## ✨ Per-state label text style on bottom bars — `selectedLabelStyle` / `unselectedLabelStyle`
+
+Adds `selectedLabelStyle` / `unselectedLabelStyle` (`TextStyle?`) to `GlassTabBar.bottom`, `GlassTabBar.searchable`, and the deprecated `GlassBottomBar` / `GlassSearchableBottomBar`.
+
+This complements the `selectedLabelColor` / `unselectedLabelColor` parameters by letting callers set the selected/unselected label's **font family, weight, and letter-spacing per state** — needed to match Apple's tab bar, where the selected label is heavier than a single shared `textStyle` can express.
+
+The per-state style is **merged over** the base label style, so it overrides only the fields it sets and keeps the resolved per-state label color unless the style provides its own. Both default to `null` → existing behavior unchanged.
+
+Also fixes a related precedence bug: an explicit `selectedLabelColor` / `unselectedLabelColor` was silently dropped whenever a `textStyle` was also supplied (the per-state color only fed the fallback style). It now overrides the base color — including a color baked into `textStyle` — while `textStyle`-only callers are unaffected.
+
+
+## ✨ `innerBlur` — Apple-style rest-blur behind the selected tab
+
+The `innerBlur` parameter on `GlassTabBar.bottom`/`.searchable` (and the deprecated `GlassBottomBar`/`GlassSearchableBottomBar` shims) now renders. It was declared and threaded bar→internal, but never forwarded to the indicator, and `AnimatedGlassIndicator` had no implementation. This wires it through the tab-bar internals and adds the rest-gated `BackdropFilter`.
+
+It paints a backdrop blur behind the **resting** selected pill — the iOS 26 "frost at rest" look — with the sigma scaled by the pill's resting opacity, so the frost is full when settled and fades out as it morphs into the liquid-glass lens during a drag/tap (motion stays crisp).
+
+- `0.0` (default) disables it — no behavior change for existing callers.
+- Only the background-painting indicator is affected (reads through a translucent `indicatorColor`).
+
+## ✨ `platformViewBackdrop` on the public glass widgets
+
+Follows up [#94](https://github.com/sdegenaar/liquid_glass_widgets/pull/94) by exposing the premium-over-PlatformView flag on the remaining public widgets — `GlassContainer`, `GlassButton`, `GlassIconButton`, `GlassButtonGroup`, `GlassMenu`, and `GlassModalSheet` — so apps can render premium glass cleanly over an iOS PlatformView (e.g. a Mapbox `MapWidget`) for any control, not just the bottom bar.
+
+Each gets an explicit `platformViewBackdrop` parameter defaulting to `false` (zero overhead / no behavior change for callers that don't need it), forwarded to the underlying `AdaptiveGlass`. For `GlassModalSheet` the flag threads through `GlassModalSheetScaffold` and the sheet state down to the `_SheetLayout`'s glass. Adds widget tests covering the simple-widget forwards.
+
+
+## 🧹 Removed — `GlassTintBlend` (a no-op since 0.17.0)
+
+`GlassTintBlend` (added in [#107](https://github.com/sdegenaar/liquid_glass_widgets/pull/107)) and the `LiquidGlassSettings.tintBlend` field have been removed.
+
+Since the 0.17.0 shader rewrite, `tintBlend` was never wired into the renderer — it was packed into no uniform, so setting it had no effect: every surface used the automatic chroma-gated blend regardless of the value. We only caught this during real-device tuning, after all the related PRs had already landed.
+
+The automatic behavior is unchanged. `applyGlassColor` still picks luminosity-preserving blending for chromatic tints and flat blending for achromatic tints. Recipes that previously passed `tintBlend: flat` for achromatic (white / grey / near-black) tints render identically, because the chroma gate already resolves those to the flat path.
+
+**Breaking, but inert:** code that passed `LiquidGlassSettings(tintBlend: …)` must drop the argument. No rendered output changes.
+
+## 🔧 SDK constraints bump *(corrected in 0.18.5)*
+
+Raised minimum Flutter to `>=3.24.0` — this was incorrect. The actual minimum is `3.41.0`, corrected in `0.18.5`.
+
+---
+
+# 0.18.2
+
+### Rendering Quality
+
+- **Fix:** Eliminated stair-step aliasing on `AnimatedGlassIndicator` / `GlassEffect` pill edges during press animations.
+  Root cause: `FragmentShader.setImageSampler()` defaults to `FilterQuality.none` (Nearest-Neighbor). The 4 % press-scale animation was block-replicating geometry texels into 2×2 stair-step patterns visible as jagged fringe on the pill rim.
+  **Resolution:** Pass `filterQuality: FilterQuality.medium` to every `setImageSampler()` call in `liquid_glass_render_object.dart`, `glass_effect.dart`, and `lightweight_liquid_glass.dart`. Zero GPU cost — hardware bilinear filtering happens in a single texel-unit clock cycle.
+
+- **Fix:** Eliminated 2×2 blocky normal artifacts on glass pill edges (all platforms, most visible on iOS/macOS Metal).
+  Root cause: Metal's `dFdx`/`dFdy` evaluate in 2×2 pixel quads, so all four neighbours share one gradient vector. At the high-contrast white rim of the pill this produces a coarse stair-step normal map that manifests as jaggy rainbow banding regardless of scale.
+  **Resolution:** Replaced hardware derivatives with per-pixel central finite differences in `liquid_glass_geometry_blended.frag` (`dx = sceneSDF(p + 0.5) − sceneSDF(p − 0.5)`). Costs 4 extra SDF evaluations per geometry pixel — negligible on a cached, one-shot geometry pass.
+
+- **Fix:** Restored full rim brightness after the anti-aliasing band was widened.
+  Root cause: The previous asymmetric `smoothstep(-smoothing, 0.0, sd)` placed the mathematical pill boundary (`sd = 0`) at the dark end of the alpha ramp (alpha = 0). The rim-lighting peak lives exactly at `sd = 0`, so it was multiplied by zero and rendered invisible.
+  **Resolution:** Centred the smoothstep around the boundary — `smoothstep(smoothing * 0.5, -smoothing * 0.5, sd)` — so `sd = 0` maps to alpha = 0.5. This is the canonical SDF anti-aliasing formulation and restores maximum rim brightness with no other visual side-effect.
+
+- **Fix:** Eliminated backdrop texture wrap-around artifacts during `LiquidStretch` scaling and jelly overshoot.
+  Root cause: Impeller's default texture sampler wrap mode is `Repeat`. A fragment slightly outside `uGeometrySize` (e.g. during a spring overshoot) produced a `geometryUV` marginally above 1.0; the sampler wrapped it to near-0.0, sampling the opposite edge of the SDF and producing inverted normals and extreme chromatic aliasing.
+  **Resolution:** Clamp `geometryUV` to `[0, 1]` before the texture fetch. Clamped-edge pixels have near-zero SDF alpha and are discarded by the existing `geometryData.a < 0.01` early-out — no separate bounds-check branch required.
+
+- **Fix:** Eliminated chromatic wrap artifacts during jelly overshoot in `interactive_indicator.frag`.
+  Root cause: When the indicator pill overshoots its `RepaintBoundary` bounds, out-of-bounds `textureBilinear` sample points could trigger the same Repeat-mode wrap in the background texture.
+  **Resolution:** Explicitly clamp all four bilinear sample points to `[0, physSize − 1]` before the `texture()` fetch.
+
+- **Fix:** Eliminated jagged/pixelated stair-step artifacts on `AnimatedGlassIndicator` pill edges when `indicatorPinchStrength > 0`.
+  Root cause: `BackdropFilterLayer` implicit samplers are bound to `FragmentShader` as Nearest-Neighbor with no Dart API to override it ([Flutter Issue #139887](https://github.com/flutter/flutter/issues/139887)). Continuous sub-pixel UV shifts from the lens pinch and chromatic aberration were snapping to integer texels, producing blocky rainbow fringes on high-contrast backgrounds.
+  **Resolution:** Added a `textureBilinear` helper to `liquid_glass_final_render.frag` that performs a standard 4-texel bilinear interpolation in GLSL, restoring perfectly smooth sub-pixel background sampling. The geometry texture (`uGeometryTexture`) is intentionally excluded — its pixel-aligned SDF data must not be softened.
+
+- **Fix:** Eliminated pixelation on the interactive indicator pill (`GlassSegmentedControl`, `GlassEffect`).
+  Two compounding causes: (1) the background texture was previously captured at `pixelRatio: 1.0`, so each texel covered a 3×3 block of physical pixels on a 3× Retina display; (2) Impeller's `setImageSampler()` binding defaults to Nearest-Neighbor, snapping continuous UV offsets from edge refraction to these large texels.
+  **Resolution:** Background capture now uses the device's full DPR. A `textureBilinear` GLSL helper replaces all raw `texture()` calls in `interactive_indicator.frag`. ~250 KB additional GPU texture memory; sub-0.1 ms additional GPU time per frame — negligible on any modern device.
+
+- **Fix:** Resolved intermittent Metal API Validation abort on iOS (`GlassQuality.premium`) — missing buffer bindings for `uWhiten`, `uWhitenGated`, and `uPinchStrength` ([#121](https://github.com/sdegenaar/liquid_glass_widgets/issues/121)).
+  All shader uniforms (slots 0–20) are now written atomically on every paint frame, preventing a stale or zero-initialised `FragmentShader` snapshot from reaching the Metal draw call. Affected: `GlassTabBar.bottom(quality: GlassQuality.premium)` with an animating indicator. No API changes.
+
+### Notes
+
+- **Note (Flutter engine limitation):** The `textureBilinear` workaround in `liquid_glass_final_render.frag` (4-tap bilinear in GLSL) remains necessary for backdrop sampling because Impeller binds the implicit `BackdropFilterLayer` sampler as Nearest-Neighbor with no Dart API to override `FilterQuality`. A Flutter engine feature request to expose sampler filter quality for backdrop layers has been filed at [Flutter Issue #188365](https://github.com/flutter/flutter/issues/188365). Once resolved, the GLSL workaround can be replaced with a single `texture()` call.
+
+### Chore
+
+- **Chore:** Removed unreachable early-out branch in `liquid_glass_final_render.frag` — the `if (any(lessThan(geometryUV, ...)))` check after `clamp(geometryUV, 0.0, 1.0)` could never fire. Replaced with a single consolidated comment explaining how the clamp and the downstream alpha check together handle both the Impeller Repeat-mode and clipExpansion cases.
+- **Chore:** Removed dead code from `render.glsl` (`computeY`, `getHeight`, `calculateLighting`, `calculateRefraction`, `renderLiquidGlass`, `debugNormals`) — functions superseded by the inline logic in `liquid_glass_final_render.frag`. Reduces compiled shader binary size.
+
 # 0.18.1
 
 - **Hotfix:** Resolved missing coverage in layout engines and segmented controls.

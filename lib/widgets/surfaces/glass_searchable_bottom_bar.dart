@@ -83,6 +83,8 @@ class GlassSearchableBottomBar extends StatelessWidget {
     this.unselectedIconColor,
     this.selectedLabelColor,
     this.unselectedLabelColor,
+    this.selectedLabelStyle,
+    this.unselectedLabelStyle,
     this.iconSize = 24,
     this.labelFontSize = 11,
     this.textStyle,
@@ -328,6 +330,13 @@ class GlassSearchableBottomBar extends StatelessWidget {
   /// Label color for unselected tabs.
   final Color? unselectedLabelColor;
 
+  /// Per-state label text style, merged over the base label style — overrides
+  /// font / weight / letter-spacing while keeping the resolved label color.
+  final TextStyle? selectedLabelStyle;
+
+  /// See [selectedLabelStyle].
+  final TextStyle? unselectedLabelStyle;
+
   /// Size of tab icons. Defaults to 24.
   final double iconSize;
 
@@ -504,6 +513,8 @@ class GlassSearchableBottomBar extends StatelessWidget {
         unselectedIconColor: unselectedIconColor,
         selectedLabelColor: selectedLabelColor,
         unselectedLabelColor: unselectedLabelColor,
+        selectedLabelStyle: selectedLabelStyle,
+        unselectedLabelStyle: unselectedLabelStyle,
         iconSize: iconSize,
         labelFontSize: labelFontSize,
         textStyle: textStyle,

@@ -57,6 +57,8 @@ class TabBarBottomLayout extends StatefulWidget {
     this.unselectedIconColor,
     this.selectedLabelColor,
     this.unselectedLabelColor,
+    this.selectedLabelStyle,
+    this.unselectedLabelStyle,
     this.iconSize = 24,
     this.labelFontSize = 11,
     this.textStyle,
@@ -107,6 +109,8 @@ class TabBarBottomLayout extends StatefulWidget {
   final Color? unselectedIconColor;
   final Color? selectedLabelColor;
   final Color? unselectedLabelColor;
+  final TextStyle? selectedLabelStyle;
+  final TextStyle? unselectedLabelStyle;
   final double iconSize;
   final double labelFontSize;
   final TextStyle? textStyle;
@@ -291,6 +295,10 @@ class _TabBarBottomLayoutState extends State<TabBarBottomLayout> {
                                         widget.selectedLabelColor,
                                     unselectedLabelColor:
                                         widget.unselectedLabelColor,
+                                    selectedLabelStyle:
+                                        widget.selectedLabelStyle,
+                                    unselectedLabelStyle:
+                                        widget.unselectedLabelStyle,
                                     iconSize: widget.iconSize,
                                     labelFontSize: widget.labelFontSize,
                                     textStyle: widget.textStyle,
@@ -349,6 +357,8 @@ class _TabBarBottomLayoutState extends State<TabBarBottomLayout> {
                       unselectedIconColor: resolvedUnselectedIconColor,
                       selectedLabelColor: widget.selectedLabelColor,
                       unselectedLabelColor: widget.unselectedLabelColor,
+                      selectedLabelStyle: widget.selectedLabelStyle,
+                      unselectedLabelStyle: widget.unselectedLabelStyle,
                       iconSize: widget.iconSize,
                       labelFontSize: widget.labelFontSize,
                       textStyle: widget.textStyle,

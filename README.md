@@ -159,12 +159,16 @@ Most apps should use `GlassCard` or `GlassGroupedSection` instead.
 
 ```yaml
 dependencies:
-  liquid_glass_widgets: ^0.18.1
+  liquid_glass_widgets: ^0.18.5
 ```
 
 ```bash
 flutter pub get
 ```
+
+> **Flutter version requirement:** Requires Flutter ≥ 3.41.0 (Dart ≥ 3.5.0).
+> **Recommended: Flutter 3.41+** for the best Impeller rendering quality.
+> This package uses cutting-edge shader APIs that improve significantly with each Flutter release.
 
 
 ## Quick Start
