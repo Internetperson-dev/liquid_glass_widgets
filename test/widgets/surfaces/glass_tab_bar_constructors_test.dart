@@ -266,7 +266,7 @@ void main() {
           tabs: [_tab('Home'), _tab('Search')],
           selectedIndex: 0,
           onTabSelected: (_) {},
-          extraButton: GlassBottomBarExtraButton(
+          extraButton: GlassTabBarExtraButton(
             icon: const Icon(Icons.add),
             label: 'Add',
             onTap: () => extraTapped = true,
@@ -524,7 +524,10 @@ void main() {
           child: AdaptiveLiquidGlassLayer(
             settings: settingsWithoutLighting,
             child: GlassSegmentedControl(
-              segments: const [GlassTab(label: 'X'), GlassTab(label: 'Y')],
+              segments: const [
+                GlassSegment(label: 'X'),
+                GlassSegment(label: 'Y')
+              ],
               selectedIndex: 0,
               onSegmentSelected: (_) {},
             ),

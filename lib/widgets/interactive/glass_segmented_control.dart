@@ -3,11 +3,12 @@ import 'package:flutter/cupertino.dart';
 import '../../constants/glass_defaults.dart';
 import '../../src/renderer/liquid_glass_renderer.dart';
 import '../../src/types/glass_interaction_behavior.dart';
+import '../../theme/glass_theme.dart';
 import '../../theme/glass_theme_helpers.dart';
 import '../../types/glass_quality.dart';
 import '../shared/adaptive_liquid_glass_layer.dart';
 import '../surfaces/glass_bottom_bar.dart' show MaskingQuality;
-import '../surfaces/glass_tab_bar.dart' show DividerSettings, GlassTab;
+import '../surfaces/glass_tab_bar.dart' show DividerSettings, GlassSegment;
 import 'shared/scrollable_segment_content.dart';
 import 'shared/segmented_control_internal.dart';
 
@@ -257,12 +258,12 @@ class GlassSegmentedControl extends StatefulWidget {
 
   /// List of segments to display.
   ///
-  /// Each [GlassTab] may have a [GlassTab.label], a [GlassTab.icon], or both.
+  /// Each [GlassSegment] may have a [GlassSegment.label], a [GlassSegment.icon], or both.
   /// In fixed mode (default), all segments are equal-width. In scrollable mode
   /// segments have natural widths and scroll horizontally.
   ///
   /// Minimum 2 segments required (fixed mode), 1 segment (scrollable mode).
-  final List<GlassTab> segments;
+  final List<GlassSegment> segments;
 
   /// Whether this control scrolls horizontally.
   ///
@@ -489,7 +490,7 @@ class _GlassSegmentedControlState extends State<GlassSegmentedControl> {
 
     // ── Scrollable mode: 100% mirrors GlassTabBar(isScrollable: true) ────────
     if (widget.isScrollable) {
-      final isLight = CupertinoTheme.brightnessOf(context) == Brightness.light;
+      final isLight = GlassTheme.brightnessOf(context) == Brightness.light;
       final bg = widget.backgroundColor ??
           (isLight ? _defaultLightBg : _defaultDarkBg);
       final borderRadius = BorderRadius.circular(widget.borderRadius);
@@ -538,7 +539,7 @@ class _GlassSegmentedControlState extends State<GlassSegmentedControl> {
 
     // ── Fixed mode: equal-width SegmentedControlContent ───────────────────────
     final backgroundColor = widget.backgroundColor ??
-        (CupertinoTheme.brightnessOf(context) == Brightness.light
+        (GlassTheme.brightnessOf(context) == Brightness.light
             ? CupertinoColors.black.withValues(alpha: 0.08)
             : CupertinoColors.white.withValues(alpha: 0.12));
 

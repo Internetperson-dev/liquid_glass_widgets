@@ -302,9 +302,9 @@ class _InteractivePageState extends State<InteractivePage> {
                       SizedBox(height: 12),
                       GlassSegmentedControl(
                         segments: [
-                          GlassTab(label: 'Daily'),
-                          GlassTab(label: 'Weekly'),
-                          GlassTab(label: 'Monthly')
+                          GlassSegment(label: 'Daily'),
+                          GlassSegment(label: 'Weekly'),
+                          GlassSegment(label: 'Monthly')
                         ],
                         selectedIndex: _segment1,
                         onSegmentSelected: (i) => setState(() => _segment1 = i),
@@ -313,9 +313,9 @@ class _InteractivePageState extends State<InteractivePage> {
                       SizedBox(height: 12),
                       GlassSegmentedControl(
                         segments: [
-                          GlassTab(label: 'Daily'),
-                          GlassTab(label: 'Weekly'),
-                          GlassTab(label: 'Monthly')
+                          GlassSegment(label: 'Daily'),
+                          GlassSegment(label: 'Weekly'),
+                          GlassSegment(label: 'Monthly')
                         ],
                         selectedIndex: _segment1,
                         onSegmentSelected: (i) => setState(() => _segment1 = i),
@@ -323,11 +323,11 @@ class _InteractivePageState extends State<InteractivePage> {
                       SizedBox(height: 24),
                       GlassSegmentedControl(
                         segments: [
-                          GlassTab(label: 'XS'),
-                          GlassTab(label: 'S'),
-                          GlassTab(label: 'M'),
-                          GlassTab(label: 'L'),
-                          GlassTab(label: 'XL')
+                          GlassSegment(label: 'XS'),
+                          GlassSegment(label: 'S'),
+                          GlassSegment(label: 'M'),
+                          GlassSegment(label: 'L'),
+                          GlassSegment(label: 'XL')
                         ],
                         selectedIndex: _segment2,
                         onSegmentSelected: (i) => setState(() => _segment2 = i),
@@ -458,15 +458,15 @@ class _InteractivePageState extends State<InteractivePage> {
                           GlassButtonGroup.icons(
                             useOwnLayer: true,
                             items: [
-                              GlassGroupItem(
+                              GlassButtonGroupItem(
                                 icon: Icon(CupertinoIcons.text_alignleft),
                                 onTap: () {},
                               ),
-                              GlassGroupItem(
+                              GlassButtonGroupItem(
                                 icon: Icon(CupertinoIcons.trash),
                                 onTap: () {},
                               ),
-                              GlassGroupItem(
+                              GlassButtonGroupItem(
                                 icon: Icon(CupertinoIcons.add),
                                 onTap: () {},
                               ),
@@ -484,19 +484,19 @@ class _InteractivePageState extends State<InteractivePage> {
                         child: GlassButtonGroup.icons(
                           useOwnLayer: true,
                           items: [
-                            GlassGroupItem(
+                            GlassButtonGroupItem(
                               icon: Icon(CupertinoIcons.arrow_uturn_left),
                               onTap: () {},
                             ),
-                            GlassGroupItem(
+                            GlassButtonGroupItem(
                               icon: Icon(CupertinoIcons.arrow_uturn_right),
                               onTap: () {},
                             ),
-                            GlassGroupItem(
+                            GlassButtonGroupItem(
                               icon: Icon(CupertinoIcons.pencil_outline),
                               onTap: () {},
                             ),
-                            GlassGroupItem(
+                            GlassButtonGroupItem(
                               icon: Icon(CupertinoIcons.ellipsis),
                               onTap: () {},
                             ),

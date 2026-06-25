@@ -148,7 +148,7 @@ void main() {
       bool hasDismiss = false,
       bool dismissVisible = false,
       double extraFullW = 0,
-      ExtraButtonPosition extraPos = ExtraButtonPosition.beforeSearch,
+      GlassExtraButtonPosition extraPos = GlassExtraButtonPosition.beforeSearch,
       bool extraCollapsesOnSearch = true,
       bool isKeyboardActive = false,
       double keyboardH = 0,
@@ -201,15 +201,15 @@ void main() {
     });
 
     test('tabW accounts for beforeSearch extra button', () {
-      final l =
-          compute(extraFullW: 60, extraPos: ExtraButtonPosition.beforeSearch);
+      final l = compute(
+          extraFullW: 60, extraPos: GlassExtraButtonPosition.beforeSearch);
       // maxTabW = 400 - 64 - 8 - (60 + 8) = 260
       expect(l.targetTabW, closeTo(260, 0.01));
     });
 
     test('tabW accounts for afterSearch extra button', () {
-      final l =
-          compute(extraFullW: 60, extraPos: ExtraButtonPosition.afterSearch);
+      final l = compute(
+          extraFullW: 60, extraPos: GlassExtraButtonPosition.afterSearch);
       // maxTabW = 400 - 64 - 8 - (60 + 8) = 260
       expect(l.targetTabW, closeTo(260, 0.01));
     });
@@ -229,7 +229,7 @@ void main() {
       double? collapsedTabWidth,
       GlassTabPillAnchor anchor = GlassTabPillAnchor.start,
       double extraFullW = 0,
-      ExtraButtonPosition extraPos = ExtraButtonPosition.beforeSearch,
+      GlassExtraButtonPosition extraPos = GlassExtraButtonPosition.beforeSearch,
       bool extraCollapsesOnSearch = true,
       bool isKeyboardActive = false,
       double keyboardH = 0,
@@ -330,7 +330,7 @@ void main() {
         collapsedTabWidth: null,
         tabPillAnchor: GlassTabPillAnchor.start,
         extraFullW: 0,
-        extraPos: ExtraButtonPosition.beforeSearch,
+        extraPos: GlassExtraButtonPosition.beforeSearch,
         extraCollapsesOnSearch: true,
         isKeyboardActive: true,
         keyboardH: 336,
@@ -354,7 +354,7 @@ void main() {
         collapsedTabWidth: null,
         tabPillAnchor: GlassTabPillAnchor.start,
         extraFullW: 0,
-        extraPos: ExtraButtonPosition.beforeSearch,
+        extraPos: GlassExtraButtonPosition.beforeSearch,
         extraCollapsesOnSearch: true,
         isKeyboardActive: false,
         keyboardH: 0,
@@ -525,7 +525,7 @@ void main() {
           collapsedTabWidth: collapsedTabWidth,
           tabPillAnchor: GlassTabPillAnchor.start,
           extraFullW: 0,
-          extraPos: ExtraButtonPosition.beforeSearch,
+          extraPos: GlassExtraButtonPosition.beforeSearch,
           extraCollapsesOnSearch: true,
           isKeyboardActive: false,
           keyboardH: 0,

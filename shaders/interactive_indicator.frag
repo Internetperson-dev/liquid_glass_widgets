@@ -254,14 +254,21 @@ void main() {
   float edgeLightCatch = dot(surfaceNormal, uLightDirection);
   
   // Key light: bright highlight on edges facing the light
-  // TWEAK: pow exponent (8.0) controls sharpness - higher = tighter highlight
-  // NOTE: Using * 0.5 (same scale as kickHighlight) to avoid an over-bright "dot"
-  // at the pill corner where the light direction perfectly aligns with the corner normal.
-  float keyHighlight = pow(max(edgeLightCatch, 0.0), 8.0) * uLightIntensity * 0.5;
+  // PP2: pow(x, 8.0) replaced with multiply chain — zero transcendentals.
+  // x^8 = ((x^2)^2)^2 — 3 multiplies vs exp(8·log(x)).
+  // Same optimisation already applied in lightweight_glass.frag.
+  float lc  = max(edgeLightCatch,  0.0);
+  float lc2 = lc  * lc;
+  float lc4 = lc2 * lc2;
+  float keyHighlight = lc4 * lc4 * uLightIntensity * 0.5;  // lc^8
   
   // Kick light: subtle highlight on opposite edge (back-reflection)
-  // TWEAK: pow exponent (12.0) is higher for tighter back-reflection
-  float kickHighlight = pow(max(-edgeLightCatch, 0.0), 12.0) * uLightIntensity * 0.5;
+  // PP2: pow(x, 12.0) = x^8 * x^4 — 4 multiplies vs transcendental.
+  float kc  = max(-edgeLightCatch, 0.0);
+  float kc2 = kc  * kc;
+  float kc4 = kc2 * kc2;
+  float kc8 = kc4 * kc4;
+  float kickHighlight = kc8 * kc4 * uLightIntensity * 0.5; // kc^12
   
   // TWEAK: ambientRim - minimum rim brightness regardless of light direction
   float rimBrightness = uAmbientRim + keyHighlight + kickHighlight;
@@ -271,8 +278,8 @@ void main() {
   // ==========================================================================
   // Subtle glow at grazing angles (edges appear slightly brighter)
   
-  // TWEAK: multiplier (0.25) controls fresnel intensity
-  float fresnel = pow(radialDist, 2.0) * 0.25;
+  // PP2: pow(radialDist, 2.0) → radialDist * radialDist (1 multiply, no transcendental).
+  float fresnel = (radialDist * radialDist) * 0.25;
   
   // ==========================================================================
   // HAIRLINE RIM
@@ -320,10 +327,10 @@ void main() {
   float bgBoost = uSaturation;
   vec3 finalColor = (uHasBackground > 0.5) ? (bg * bgBoost) : bg;
   
-  // Add rim highlight (only if rimColor is non-zero)
-  finalColor += rimColor * borderMask;
-  // Secondary rim pass: extra bevel definition at the edge
-  finalColor += rimColor * borderMask * 0.5;
+  // Rim highlight: primary + secondary bevel definition collapsed to one operation.
+  // Was: finalColor += rimColor * borderMask; finalColor += rimColor * borderMask * 0.5;
+  // 1.5× is mathematically identical with one fewer MAD per border fragment.
+  finalColor += rimColor * borderMask * 1.5;
 
   // Add fresnel glow — uGlowIntensity controls how visible the glass-edge luminosity is.
   // Default: glowIntensity=0.75 matches previous hardcoded value.

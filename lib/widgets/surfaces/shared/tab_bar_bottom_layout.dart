@@ -18,7 +18,7 @@ import '../../shared/glass_content_aware_scope.dart';
 import '../../../theme/glass_theme_data.dart';
 import '../../../theme/glass_theme_helpers.dart';
 import '../glass_bottom_bar.dart'
-    show GlassBottomBarExtraButton, GlassBottomBarTab, MaskingQuality;
+    show GlassTabBarExtraButton, GlassBottomBarTab, MaskingQuality;
 import 'tab_bar_bottom_internal.dart'
     show
         BottomBarExtraBtn,
@@ -90,7 +90,7 @@ class TabBarBottomLayout extends StatefulWidget {
   final List<GlassBottomBarTab> tabs;
   final int selectedIndex;
   final ValueChanged<int> onTabSelected;
-  final GlassBottomBarExtraButton? extraButton;
+  final GlassTabBarExtraButton? extraButton;
   final double spacing;
   final double horizontalPadding;
   final double verticalPadding;

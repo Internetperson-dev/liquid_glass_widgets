@@ -215,15 +215,15 @@ class _ShadowClippingDemoPageState extends State<ShadowClippingDemoPage> {
                       shadowElevation: 2.0,
                     ),
                     items: [
-                      GlassGroupItem(
+                      GlassButtonGroupItem(
                         icon: const Icon(CupertinoIcons.reply),
                         onTap: () {},
                       ),
-                      GlassGroupItem(
+                      GlassButtonGroupItem(
                         icon: const Icon(CupertinoIcons.heart),
                         onTap: () {},
                       ),
-                      GlassGroupItem(
+                      GlassButtonGroupItem(
                         icon: const Icon(CupertinoIcons.share),
                         onTap: () {},
                       ),

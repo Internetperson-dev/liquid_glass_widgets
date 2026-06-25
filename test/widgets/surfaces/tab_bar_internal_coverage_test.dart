@@ -21,24 +21,24 @@ import '../../shared/test_helpers.dart';
 
 /// Five tabs reused across most tests.
 final _tabs = [
-  const GlassTab(label: 'One'),
-  const GlassTab(label: 'Two'),
-  const GlassTab(label: 'Three'),
-  const GlassTab(label: 'Four'),
-  const GlassTab(label: 'Five'),
+  const GlassSegment(label: 'One'),
+  const GlassSegment(label: 'Two'),
+  const GlassSegment(label: 'Three'),
+  const GlassSegment(label: 'Four'),
+  const GlassSegment(label: 'Five'),
 ];
 
 /// Three-tab set for boundary / edge-clamp tests.
 final _tabs3 = [
-  const GlassTab(label: 'A'),
-  const GlassTab(label: 'B'),
-  const GlassTab(label: 'C'),
+  const GlassSegment(label: 'A'),
+  const GlassSegment(label: 'B'),
+  const GlassSegment(label: 'C'),
 ];
 
 /// Pumps a [GlassTabBar] and waits for tab measurement to complete.
 Future<void> _pumpBar(
   WidgetTester tester, {
-  required List<GlassTab> tabs,
+  required List<GlassSegment> tabs,
   required ValueNotifier<int> selectedIndex,
   bool isScrollable = false,
   double width = 400,
@@ -472,10 +472,10 @@ void main() {
             builder: (ctx, idx, _) => SizedBox(
               width: 300,
               height: 56,
-              child: GlassSegmentedControl.scrollable(
-                  segments: const [GlassTab(label: 'A'), GlassTab(label: 'B')],
-                  selectedIndex: idx,
-                  onSegmentSelected: (i) => sel.value = i),
+              child: GlassSegmentedControl.scrollable(segments: const [
+                GlassSegment(label: 'A'),
+                GlassSegment(label: 'B')
+              ], selectedIndex: idx, onSegmentSelected: (i) => sel.value = i),
             ),
           ),
         ),
@@ -508,14 +508,14 @@ void main() {
       // 8 tabs in a 200 px viewport — content is much wider than the viewport
       // so right-most tabs start off-screen.
       const narrowTabs = [
-        GlassTab(label: 'T1'),
-        GlassTab(label: 'T2'),
-        GlassTab(label: 'T3'),
-        GlassTab(label: 'T4'),
-        GlassTab(label: 'T5'),
-        GlassTab(label: 'T6'),
-        GlassTab(label: 'T7'),
-        GlassTab(label: 'T8'),
+        GlassSegment(label: 'T1'),
+        GlassSegment(label: 'T2'),
+        GlassSegment(label: 'T3'),
+        GlassSegment(label: 'T4'),
+        GlassSegment(label: 'T5'),
+        GlassSegment(label: 'T6'),
+        GlassSegment(label: 'T7'),
+        GlassSegment(label: 'T8'),
       ];
       await tester.pumpWidget(
         createTestApp(
@@ -633,8 +633,8 @@ void main() {
               height: 56,
               child: GlassSegmentedControl.scrollable(
                 segments: const [
-                  GlassTab(label: 'Left'),
-                  GlassTab(label: 'Right'),
+                  GlassSegment(label: 'Left'),
+                  GlassSegment(label: 'Right'),
                 ],
                 selectedIndex: idx,
                 onSegmentSelected: (i) => sel.value = i,

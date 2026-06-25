@@ -27,7 +27,7 @@ Widget _buildBar({
   SearchableBottomBarController? controller,
   bool isSearchActive = false,
   GlassSearchBarConfig? searchConfig,
-  GlassBottomBarExtraButton? extraButton,
+  GlassTabBarExtraButton? extraButton,
   int selectedIndex = 0,
   ValueChanged<int>? onTabSelected,
   bool enableBlend = true,
@@ -186,7 +186,7 @@ void main() {
                 searchConfig: GlassSearchBarConfig(
                   onSearchToggle: (v) => outerSetState(() => searchActive = v),
                 ),
-                extraButton: GlassBottomBarExtraButton(
+                extraButton: GlassTabBarExtraButton(
                   icon: const Icon(Icons.add),
                   label: 'Add',
                   onTap: () {},
@@ -273,7 +273,7 @@ void main() {
       await tester.pumpWidget(
         _buildBar(
           enableBlend: false,
-          extraButton: GlassBottomBarExtraButton(
+          extraButton: GlassTabBarExtraButton(
             icon: const Icon(Icons.add),
             onTap: () {},
             label: 'Add',

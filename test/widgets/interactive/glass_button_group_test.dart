@@ -111,12 +111,12 @@ void main() {
           home: Center(
             child: GlassButtonGroup.icons(
               items: [
-                GlassGroupItem(
+                GlassButtonGroupItem(
                   icon: const Icon(CupertinoIcons.bold),
                   onTap: () => tapCount++,
                   label: 'Bold',
                 ),
-                GlassGroupItem(
+                GlassButtonGroupItem(
                   icon: const Icon(CupertinoIcons.italic),
                   onTap: () {},
                   enabled: false,
@@ -156,11 +156,11 @@ void main() {
               showDividers: true,
               direction: Axis.vertical,
               items: [
-                GlassGroupItem(
+                GlassButtonGroupItem(
                   icon: const Icon(CupertinoIcons.bold),
                   onTap: () {},
                 ),
-                GlassGroupItem(
+                GlassButtonGroupItem(
                   icon: const Icon(CupertinoIcons.italic),
                   onTap: () {},
                 ),

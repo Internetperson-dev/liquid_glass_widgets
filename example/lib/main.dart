@@ -173,7 +173,7 @@ class _ShowcaseHomePageState extends State<ShowcaseHomePage> {
           saturation: 1.2,
           specularSharpness: GlassSpecularSharpness.medium,
         ),
-        extraButton: GlassBottomBarExtraButton(
+        extraButton: GlassTabBarExtraButton(
           icon: Icon(isDark ? CupertinoIcons.sun_max : CupertinoIcons.moon),
           label: isDark ? 'Light mode' : 'Dark mode',
           onTap: scope.toggleBrightness,

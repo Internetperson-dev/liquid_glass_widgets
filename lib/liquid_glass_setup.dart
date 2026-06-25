@@ -8,6 +8,8 @@ import 'types/glass_quality.dart';
 import 'utils/accessibility_config.dart' as glass_config;
 import 'utils/glass_performance_monitor.dart';
 import 'src/renderer/liquid_glass_renderer.dart';
+import 'src/renderer/shaders.dart';
+import 'src/renderer/internal/multi_shader_builder.dart';
 import 'widgets/shared/glass_adaptive_scope.dart';
 import 'widgets/shared/glass_effect.dart';
 import 'widgets/shared/glass_accessibility_scope.dart';
@@ -98,16 +100,34 @@ class LiquidGlassWidgets {
   /// 2. Pre-warms the interactive indicator shader (custom refraction).
   /// 3. Pre-warms the Impeller rendering pipeline (iOS / Android / macOS).
   /// 4. Optionally registers the debug performance monitor.
+  ///
+  /// ### Shaders pre-warmed
+  ///
+  /// | Shader | Role |
+  /// |---|---|
+  /// | `lightweight_glass.frag` | Minimal glass layer |
+  /// | `interactive_indicator.frag` | Custom refraction effect |
+  /// | `liquid_glass_geometry_blended.frag` | Geometry / SDF pass |
+  /// | `liquid_glass_final_render.frag` | Final composite pass |
   static Future<void> initialize({
     bool enablePerformanceMonitor = true,
   }) async {
     debugPrint('[LiquidGlass] Initializing library...');
 
-    // 1. Pre-warm shaders — prevents the "white flash" on first render.
+    // 1. Pre-warm all shaders in parallel — prevents first-frame jank / "white
+    //    flash" when glass widgets first appear.
+    //    lightweight_glass + interactive_indicator have their own preWarm()
+    //    methods. The two main renderer shaders (geometry + final composite) are
+    //    loaded lazily by MultiShaderBuilder; precacheShaders() forces them to
+    //    compile now, before runApp, so the first glass widget mount is instant.
     await Future.wait([
       LightweightLiquidGlass.preWarm(),
       GlassEffect.preWarm(),
       _warmUpImpellerPipeline(),
+      MultiShaderBuilder.precacheShaders([
+        ShaderKeys.blendedGeometry,
+        ShaderKeys.liquidGlassRender,
+      ]),
     ]);
 
     // 2. Register the debug performance monitor (no-op in release builds).

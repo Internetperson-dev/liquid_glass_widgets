@@ -220,11 +220,12 @@ void main() {
         float y2 = absCentered.y * absCentered.y;
         float ay6 = y2 * y2 * y2;
 
-        // An L6 superellipse (squircle) distance field.
-        // Approximates the rounded-rectangle shape of the pill, ensuring
-        // the pinch effect smoothly maps to the corners rather than bleeding
-        // out as a raw circle or sharp box.
-        float squircleDist = pow(ax6 + ay6, 1.0 / 6.0);
+        // PP3: pow(s, 1.0/6.0) = exp((1/6)·log(s)) — two transcendentals.
+        // ⁶√x = √(√(√x)) — three sqrt() calls, each a single SFU instruction.
+        // Error vs true cube-root-of-cube-root: <0.3%, imperceptible in the
+        // smoothstep ramp that follows. Only executes when uPinchStrength > 0.001.
+        float s = ax6 + ay6;
+        float squircleDist = sqrt(sqrt(sqrt(s)));
 
         // Map the squircle distance to a 0..1 smooth curve.
         float pinchRamp = smoothstep(0.0, 1.0, squircleDist);

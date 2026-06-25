@@ -8,9 +8,9 @@ class _GlassModalSheetState extends State<GlassModalSheet>
   late Animation<double> _saturationAnimation;
 
   // ── State ─────────────────────────────────────────────────────────────────
-  late final ValueNotifier<SheetState> _currentStateNotifier;
-  SheetState get _currentState => _currentStateNotifier.value;
-  set _currentState(SheetState v) => _currentStateNotifier.value = v;
+  late final ValueNotifier<GlassSheetState> _currentStateNotifier;
+  GlassSheetState get _currentState => _currentStateNotifier.value;
+  set _currentState(GlassSheetState v) => _currentStateNotifier.value = v;
 
   /// The state most recently published to consumers via
   /// [GlassModalSheet.onStateChanged] (and from which haptics and
@@ -28,7 +28,7 @@ class _GlassModalSheetState extends State<GlassModalSheet>
   /// [_settledState] is updated only inside the side-effects branch,
   /// so the equality check correctly answers "did the state change
   /// since the last time we told consumers about it".
-  late SheetState _settledState;
+  late GlassSheetState _settledState;
 
   double _currentPosition = 0.0;
   double _currentEffectiveHeight = 0.0;
@@ -129,7 +129,8 @@ class _GlassModalSheetState extends State<GlassModalSheet>
         halfSize: widget.halfSize,
         fullSize: widget.fullSize,
         peekSize: widget.peekSize,
-        enablePeek: widget.enablePeek ?? (widget.mode == SheetMode.persistent),
+        enablePeek:
+            widget.enablePeek ?? (widget.mode == GlassSheetMode.persistent),
       );
 
   void _updateScreenSize() {
@@ -141,12 +142,13 @@ class _GlassModalSheetState extends State<GlassModalSheet>
   // Snap & State Management
   // ════════════════════════════════════════════════════════════════════════
 
-  void _snapToState(SheetState state,
+  void _snapToState(GlassSheetState state,
       {bool animate = true, double velocity = 0}) {
     if (!mounted) return;
 
-    if (widget.mode == SheetMode.persistent && state == SheetState.hidden) {
-      state = SheetState.peek;
+    if (widget.mode == GlassSheetMode.persistent &&
+        state == GlassSheetState.hidden) {
+      state = GlassSheetState.peek;
     }
 
     final screenHeight = MediaQuery.sizeOf(context).height;
@@ -173,7 +175,7 @@ class _GlassModalSheetState extends State<GlassModalSheet>
     // branch, ensuring side effects fire on every consumer-visible
     // state transition.
     if (state != _settledState) {
-      if (state == SheetState.peek || state == SheetState.hidden) {
+      if (state == GlassSheetState.peek || state == GlassSheetState.hidden) {
         HapticFeedback.lightImpact();
       } else {
         HapticFeedback.mediumImpact();
@@ -183,7 +185,7 @@ class _GlassModalSheetState extends State<GlassModalSheet>
       _settledState = state;
       widget.onStateChanged?.call(state);
 
-      if (state != SheetState.full && _scrollController.hasClients) {
+      if (state != GlassSheetState.full && _scrollController.hasClients) {
         _scrollController.jumpTo(0);
       }
     }
@@ -264,7 +266,7 @@ class _GlassModalSheetState extends State<GlassModalSheet>
 
     // Haptic and saturation only fire for genuine sheet-level touches
     // (not for touches on child buttons that were suppressed above).
-    final isFull = _currentState == SheetState.full;
+    final isFull = _currentState == GlassSheetState.full;
 
     if (widget.enableInteractionGlow && !isFull) {
       HapticFeedback.selectionClick();
@@ -308,8 +310,8 @@ class _GlassModalSheetState extends State<GlassModalSheet>
       }
 
       final dy = event.position.dy - _gestureArena.dragStartY;
-      if ((_currentState == SheetState.half ||
-              _currentState == SheetState.peek) &&
+      if ((_currentState == GlassSheetState.half ||
+              _currentState == GlassSheetState.peek) &&
           dy < 0) {
         _frozenState = FrozenState(
           bottomScale: widget.interactionScale,
@@ -385,7 +387,8 @@ class _GlassModalSheetState extends State<GlassModalSheet>
     );
 
     if (target != _currentState &&
-        (widget.mode != SheetMode.dismissible || target != SheetState.hidden)) {
+        (widget.mode != GlassSheetMode.dismissible ||
+            target != GlassSheetState.hidden)) {
       _currentState = target;
     }
   }
@@ -396,9 +399,9 @@ class _GlassModalSheetState extends State<GlassModalSheet>
 
   double get _expandProgress {
     final halfPos =
-        _geometry.positionForState(SheetState.half, _screenSize.height);
+        _geometry.positionForState(GlassSheetState.half, _screenSize.height);
     final fullPos =
-        _geometry.positionForState(SheetState.full, _screenSize.height);
+        _geometry.positionForState(GlassSheetState.full, _screenSize.height);
     if (fullPos <= halfPos) return 0.0;
     return ((_currentPosition - halfPos) / (fullPos - halfPos)).clamp(0.0, 1.0);
   }
@@ -449,7 +452,7 @@ class _GlassModalSheetState extends State<GlassModalSheet>
     // baseSettings is now passed from outside to avoid theme lookups every frame.
 
     // Calculate state-specific settings interpolation
-    final peekPos = _geometry.positionForState(SheetState.peek, mqHeight);
+    final peekPos = _geometry.positionForState(GlassSheetState.peek, mqHeight);
 
     final sPeek = widget.peekSettings ?? baseSettings;
     final sHalf = widget.halfSettings ?? baseSettings;
@@ -509,14 +512,14 @@ class _GlassModalSheetState extends State<GlassModalSheet>
         } else {
           final fadeRange = (1.0 - widget.fillThreshold).clamp(0.01, 1.0);
           switch (widget.fillTransition) {
-            case FillTransition.gradual:
+            case GlassFillTransition.gradual:
               const plateau = 0.04;
               final rawT =
                   ((tProgress - widget.fillThreshold) / (fadeRange - plateau))
                       .clamp(0.0, 1.0);
               colorOpacity = Curves.easeInOutCubic.transform(rawT);
               break;
-            case FillTransition.instant:
+            case GlassFillTransition.instant:
               colorOpacity = tProgress >= widget.fillThreshold ? 1.0 : 0.0;
               break;
           }
@@ -562,7 +565,7 @@ class _GlassModalSheetState extends State<GlassModalSheet>
             .clamp(0.0, _screenSize.width / 2.0);
       }
 
-      if (widget.mode == SheetMode.persistent) {
+      if (widget.mode == GlassSheetMode.persistent) {
         // Morph from peek metrics to half metrics
         effectiveBottom =
             lerpDouble(peekBMargin, widget.bottomMargin, tProgress)!;
@@ -596,7 +599,7 @@ class _GlassModalSheetState extends State<GlassModalSheet>
       } else {
         // Dismissible mode: hiding downwards
         final pivotPos = _geometry.enablePeek
-            ? _geometry.positionForState(SheetState.peek, mqHeight)
+            ? _geometry.positionForState(GlassSheetState.peek, mqHeight)
             : halfPos;
 
         final pivotVisualHeight = pivotPos * mqHeight;
@@ -692,7 +695,7 @@ class _GlassModalSheetState extends State<GlassModalSheet>
 
   @override
   Widget build(BuildContext context) {
-    final isDark = CupertinoTheme.brightnessOf(context) == Brightness.dark;
+    final isDark = GlassTheme.brightnessOf(context) == Brightness.dark;
     final effectiveExpandedColor = widget.expandedColor ??
         (isDark ? const Color(0xFF1C1C1E) : Colors.white);
     final effectiveQuality = GlassThemeHelpers.resolveQuality(
@@ -736,8 +739,8 @@ class _GlassModalSheetState extends State<GlassModalSheet>
     // persists correctly without an external key.
     final focusBridge = Focus(
       onFocusChange: (hasFocus) {
-        if (hasFocus && _currentState != SheetState.full) {
-          _snapToState(SheetState.full);
+        if (hasFocus && _currentState != GlassSheetState.full) {
+          _snapToState(GlassSheetState.full);
         }
       },
       child: widget.child,
@@ -747,8 +750,10 @@ class _GlassModalSheetState extends State<GlassModalSheet>
       animation:
           Listenable.merge([_animationController, _saturationController]),
       builder: (context, _) {
-        final fullPos = _geometry.positionForState(SheetState.full, mqHeight);
-        final halfPos = _geometry.positionForState(SheetState.half, mqHeight);
+        final fullPos =
+            _geometry.positionForState(GlassSheetState.full, mqHeight);
+        final halfPos =
+            _geometry.positionForState(GlassSheetState.half, mqHeight);
         final minPos = _geometry.positionForState(_geometry.minState, mqHeight);
 
         double pos = _animationController.value;
@@ -830,8 +835,8 @@ class _GlassModalSheetState extends State<GlassModalSheet>
           enableTopFade: widget.enableTopFade,
           topFadeHeight: widget.topFadeHeight,
           onFocusGained: () {
-            if (_currentState != SheetState.full) {
-              _snapToState(SheetState.full);
+            if (_currentState != GlassSheetState.full) {
+              _snapToState(GlassSheetState.full);
             }
           },
           suppressInteractionOnChildren: widget.suppressInteractionOnChildren,

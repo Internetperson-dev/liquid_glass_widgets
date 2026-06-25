@@ -292,9 +292,13 @@ class GlassThemeHelpers {
   /// corner radius, handling Dynamic Island, Notch iPhones, and Android devices
   /// without hardcoding specific model names.
   static double resolveAdaptiveRadius(BuildContext context) {
-    final mq = MediaQuery.of(context);
-    final bottom = mq.viewPadding.bottom;
-    final top = mq.viewPadding.top;
+    // D2: Use scoped MediaQuery accessors instead of MediaQuery.of(context).
+    // MediaQuery.of() subscribes to ALL MediaQuery changes (keyboard, status bar,
+    // orientation, text scale, etc.) — causing every glass widget to rebuild when
+    // the keyboard appears/dismisses. We only need viewPadding and screen height.
+    final viewPadding = MediaQuery.viewPaddingOf(context);
+    final bottom = viewPadding.bottom;
+    final top = viewPadding.top;
     final theme = GlassThemeData.of(context);
     final themeRadius = theme.borderRadiusFor(context);
 
@@ -302,7 +306,7 @@ class GlassThemeHelpers {
     if (themeRadius != null) return themeRadius;
 
     final platform = defaultTargetPlatform;
-    final height = mq.size.height;
+    final height = MediaQuery.sizeOf(context).height;
     final isIOS = platform == TargetPlatform.iOS;
 
     // 1. Devices with physical home buttons or desktop (no bottom safe area)

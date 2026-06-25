@@ -10,10 +10,10 @@ import 'package:liquid_glass_widgets/liquid_glass_widgets.dart';
 
 import '../../shared/test_helpers.dart';
 
-const _segments = <GlassTab>[
-  GlassTab(label: 'Alpha'),
-  GlassTab(label: 'Beta'),
-  GlassTab(label: 'Gamma')
+const _segments = <GlassSegment>[
+  GlassSegment(label: 'Alpha'),
+  GlassSegment(label: 'Beta'),
+  GlassSegment(label: 'Gamma')
 ];
 
 Widget _buildSegmentedControl({
@@ -225,6 +225,122 @@ void main() {
             indicatorPinchStrength: 0.4,
             indicatorExpansion:
                 const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+          ),
+        ),
+      ));
+      await tester.pumpAndSettle();
+      expect(tester.takeException(), isNull);
+    });
+  });
+
+  // ── GlassSegment — new concrete class fields (v0.19.0) ───────────────────
+
+  group('GlassSegment.enabled', () {
+    testWidgets('disabled segment ignores tap — onSegmentSelected not called',
+        (tester) async {
+      int? selected;
+      await tester.pumpWidget(createTestApp(
+        child: SizedBox(
+          width: 300,
+          height: 50,
+          child: GlassSegmentedControl(
+            segments: const [
+              GlassSegment(label: 'Active'),
+              GlassSegment(label: 'Disabled', enabled: false),
+            ],
+            selectedIndex: 0,
+            onSegmentSelected: (i) => selected = i,
+          ),
+        ),
+      ));
+      await tester.pumpAndSettle();
+
+      // Tap the disabled segment (index 1).
+      await tester.tap(find.text('Disabled'));
+      await tester.pumpAndSettle();
+
+      expect(selected, isNull,
+          reason: 'Disabled segment must not fire onSegmentSelected');
+    });
+
+    testWidgets('enabled segment responds to tap normally', (tester) async {
+      int? selected;
+      await tester.pumpWidget(createTestApp(
+        child: SizedBox(
+          width: 300,
+          height: 50,
+          child: GlassSegmentedControl(
+            segments: const [
+              GlassSegment(label: 'First'),
+              GlassSegment(label: 'Second'),
+            ],
+            selectedIndex: 0,
+            onSegmentSelected: (i) => selected = i,
+          ),
+        ),
+      ));
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.text('Second'));
+      await tester.pumpAndSettle();
+
+      expect(selected, 1);
+    });
+
+    testWidgets('disabled segment renders without error', (tester) async {
+      await tester.pumpWidget(createTestApp(
+        child: SizedBox(
+          width: 300,
+          height: 50,
+          child: GlassSegmentedControl(
+            segments: const [
+              GlassSegment(label: 'A'),
+              GlassSegment(label: 'B', enabled: false),
+              GlassSegment(label: 'C'),
+            ],
+            selectedIndex: 0,
+            onSegmentSelected: (_) {},
+          ),
+        ),
+      ));
+      await tester.pumpAndSettle();
+      expect(tester.takeException(), isNull);
+    });
+  });
+
+  group('GlassSegment.tooltip', () {
+    testWidgets('GlassSegment accepts tooltip without error', (tester) async {
+      await tester.pumpWidget(createTestApp(
+        child: SizedBox(
+          width: 300,
+          height: 50,
+          child: GlassSegmentedControl(
+            segments: const [
+              GlassSegment(label: 'One', tooltip: 'First option'),
+              GlassSegment(label: 'Two', tooltip: 'Second option'),
+            ],
+            selectedIndex: 0,
+            onSegmentSelected: (_) {},
+          ),
+        ),
+      ));
+      await tester.pumpAndSettle();
+      expect(tester.takeException(), isNull);
+    });
+
+    testWidgets('GlassSegment with null tooltip renders normally',
+        (tester) async {
+      await tester.pumpWidget(createTestApp(
+        child: SizedBox(
+          width: 300,
+          height: 50,
+          child: GlassSegmentedControl(
+            segments: const [
+              GlassSegment(label: 'No tooltip'),
+              GlassSegment(label: 'Also no tooltip'),
+            ],
+            selectedIndex: 0,
+            onSegmentSelected: (_) {},
           ),
         ),
       ));

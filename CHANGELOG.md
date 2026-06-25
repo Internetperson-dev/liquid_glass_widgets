@@ -1,3 +1,93 @@
+# 0.19.0
+
+## 💥 Breaking: Pre-v1.0 Public API Cleanup
+
+A pre-release naming audit to establish consistent, idiomatic conventions before v1.0 locks the API.
+
+### Renames
+
+| Old | New | Reason |
+|---|---|---|
+| `GlassBottomBarExtraButton` | `GlassTabBarExtraButton` | Tracks parent rename `GlassBottomBar` → `GlassTabBar` |
+| `GlassGroupItem` | `GlassButtonGroupItem` | Mirrors Flutter's `DropdownMenuItem` pattern |
+| `SheetState` | `GlassSheetState` | Prevents collision with Material 3 sheet infrastructure |
+| `SheetMode` | `GlassSheetMode` | Same — too generic as a bare name |
+| `FillTransition` | `GlassFillTransition` | Too generic as a bare name |
+| `ExtraButtonPosition` | `GlassExtraButtonPosition` | Ambiguous without prefix |
+
+> **Migration:** A `@Deprecated` typedef for `GlassBottomBarExtraButton` is provided. All other old names will produce compile errors — migration is mechanical find-and-replace.
+
+### GlassSegment — new concrete class
+
+`GlassSegment` was previously a `typedef` alias for `GlassTab`. It is now a proper class with a focused API for `GlassSegmentedControl`:
+
+```dart
+// GlassSegment — for GlassSegmentedControl only
+GlassSegment({ Widget? icon, String? label, String? tooltip, String? semanticLabel, bool enabled = true })
+
+// GlassTab — for GlassTabBar.bottom() and GlassTabBar.searchable()
+GlassTab({ Widget? icon, Widget? activeIcon, String? label, Color? glowColor, double? thickness })
+```
+
+Fields like `activeIcon`, `glowColor`, and `thickness` are navigation-specific and only exist on `GlassTab`. `GlassSegment` adds `tooltip` and `enabled` (with built-in disabled rendering at 38% opacity).
+
+### Barrel hygiene
+
+Internal types (`SheetSnapshot`, `SheetGeometry`, `GesturePhase`, `GestureArena`, `FrozenState`) are no longer accessible from the package barrel. These were implementation details that leaked through `part` file exports.
+
+## ⚡ Performance
+
+- **Shader:** `interactive_indicator.frag` — replaced `pow()` calls with multiply chains; collapsed duplicate rim pass; zero transcendental functions in highlight path.
+- **Shader:** `liquid_glass_final_render.frag` — `⁶√x` computed via sqrt cascade (3 SFU vs 2 transcendentals); `sceneSDF` samples reduced from 5 → 4.
+- **Dart:** `resolveAdaptiveRadius` scoped to `MediaQuery.viewPaddingOf` + `MediaQuery.sizeOf` — glass widgets no longer rebuild on keyboard or unrelated `MediaQueryData` changes.
+- **Dart:** Searchable tab bar and `GlassSegmentedControl` spring animations now use `ListenableBuilder` scoped to the indicator subtree. Verified on-device: zero `State.build()` calls during 120Hz spring animation.
+
+## 🐛 Fix
+
+- **`LiquidGlassWidgets.initialize()`** now pre-warms all four shaders — `liquid_glass_geometry_blended.frag` and `liquid_glass_final_render.frag` were previously lazy-loaded, causing first-frame jank.
+- **`GlassSegment.enabled = false` now blocks tap/tapDown** — disabled segments rendered at 38% opacity but still fired `onSegmentSelected` in both fixed-width and scrollable modes. Tap and `onTapDown` handlers now early-return when the target segment is disabled.
+
+
+---
+
+# 0.18.6
+
+## 🐛 Fix: Glass widgets now honour app `ThemeMode`, not OS dark mode
+
+Resolves a class of UI inconsistency where glass widgets incorrectly read the **device/OS** brightness instead of the **app**'s brightness. The most visible symptom was `GlassBottomTabBar` shadows disappearing when the device was in Dark Mode but the app was pinned to Light Mode via `MaterialApp(themeMode: ThemeMode.light)`.
+
+### Root cause
+
+Every glass widget that needed to decide between light/dark colours or shadow visibility called either `CupertinoTheme.of(context).brightness` or `MediaQuery.platformBrightnessOf(context)` directly. Both of these APIs fall back to the OS/device setting and are blind to `MaterialApp.themeMode`.
+
+### Fix: Centralised brightness cascade
+
+A new `GlassTheme.brightnessOf(context)` authority now governs all brightness decisions in the library. It resolves via a four-level cascade:
+
+1. **`GlassThemeData.brightness`** — new field; an explicit developer override pinned in the `GlassTheme` widget tree (highest priority).
+2. **`CupertinoThemeData.brightness`** — explicit Cupertino pin (non-null only; intentional opt-in).
+3. **`Theme.maybeBrightnessOf(context)`** — Material `ThemeMode.light`/`.dark`/`.system`, honouring `MaterialApp.themeMode`.
+4. **`MediaQuery.platformBrightnessOf(context)`** — OS/device setting (safe fallback).
+
+### Changes
+
+- **New:** `lib/utils/glass_brightness.dart` — `resolveGlassBrightness(context)` utility (package-private).
+- **New field:** `GlassThemeData.brightness` — explicit brightness override for fine-grained glass-subtree control. Accepted by both the default and `GlassThemeData.simple()` constructors.
+- **New method:** `GlassTheme.brightnessOf(context)` — the single, mandatory brightness authority for the entire library.
+- **Fixed:** Shadow suppression in `GlassBottomTabBar`, `GlassSearchableBottomBar`, `AdaptiveLiquidGlassLayer`, and `AdaptiveGlass` (`_FrostedFallback`).
+- **Fixed:** Shader `backdropLuma` proxy in `GlassEffect` (controls glass strength in the GPU path).
+- **Fixed:** Light/dark colour selection in 20+ widget files across `interactive/`, `containers/`, `input/`, `overlays/`, and `surfaces/` layers.
+
+### Tests
+
+Three new test files cover every level of the cascade:
+
+- `test/utils/glass_brightness_test.dart` — unit tests for `resolveGlassBrightness`.
+- `test/theme/glass_theme_brightness_test.dart` — `GlassTheme.brightnessOf` integration tests including the canonical regression scenario.
+- `test/theme/glass_theme_data_brightness_test.dart` — `GlassThemeData.brightness` override field, `copyWith`, equality, and backward-compat tests.
+
+---
+
 # 0.18.5
 
 ## 🔧 Corrected minimum SDK constraint — Flutter ≥ 3.41.0
@@ -14,6 +104,7 @@
 ---
 
 # 0.18.3
+
 
 ## ✨ Per-state label text style on bottom bars — `selectedLabelStyle` / `unselectedLabelStyle`
 

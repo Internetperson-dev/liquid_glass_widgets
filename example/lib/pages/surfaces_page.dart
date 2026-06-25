@@ -240,7 +240,7 @@ class _BottomBarDemoPage extends StatefulWidget {
 class _BottomBarDemoPageState extends State<_BottomBarDemoPage> {
   int _selectedIndex = 0;
 
-  static const _tabs = [
+  static const _tabs = <GlassTab>[
     GlassTab(
       label: 'Home',
       icon: Icon(CupertinoIcons.house),
@@ -359,7 +359,7 @@ class _SearchableBarDemoPageState extends State<_SearchableBarDemoPage> {
   final ScrollController _scrollController = ScrollController();
   bool _isMiniMode = false;
 
-  static const _tabs = [
+  static const _tabs = <GlassTab>[
     GlassTab(
       label: 'Home',
       icon: Icon(CupertinoIcons.house),
@@ -763,9 +763,9 @@ class _TabBarDemoState extends State<_TabBarDemo> {
       children: [
         GlassSegmentedControl(
           segments: [
-            GlassTab(label: 'Photos'),
-            GlassTab(label: 'Albums'),
-            GlassTab(label: 'Shared'),
+            GlassSegment(label: 'Photos'),
+            GlassSegment(label: 'Albums'),
+            GlassSegment(label: 'Shared'),
           ],
           selectedIndex: _selectedIndex,
           onSegmentSelected: (index) => setState(() => _selectedIndex = index),
@@ -829,9 +829,9 @@ class _TabBarLabelExampleState extends State<_TabBarLabelExample> {
   Widget build(BuildContext context) {
     return GlassSegmentedControl(
       segments: [
-        GlassTab(label: 'Timeline'),
-        GlassTab(label: 'Mentions'),
-        GlassTab(label: 'Messages'),
+        GlassSegment(label: 'Timeline'),
+        GlassSegment(label: 'Mentions'),
+        GlassSegment(label: 'Messages'),
       ],
       selectedIndex: _selectedIndex,
       onSegmentSelected: (index) => setState(() => _selectedIndex = index),
@@ -853,10 +853,10 @@ class _TabBarIconExampleState extends State<_TabBarIconExample> {
   Widget build(BuildContext context) {
     return GlassSegmentedControl(
       segments: [
-        GlassTab(icon: Icon(Icons.home)),
-        GlassTab(icon: Icon(Icons.search)),
-        GlassTab(icon: Icon(Icons.notifications)),
-        GlassTab(icon: Icon(Icons.settings)),
+        GlassSegment(icon: Icon(Icons.home)),
+        GlassSegment(icon: Icon(Icons.search)),
+        GlassSegment(icon: Icon(Icons.notifications)),
+        GlassSegment(icon: Icon(Icons.settings)),
       ],
       selectedIndex: _selectedIndex,
       onSegmentSelected: (index) => setState(() => _selectedIndex = index),
@@ -880,7 +880,7 @@ class _TabBarScrollableExampleState extends State<_TabBarScrollableExample> {
     return GlassSegmentedControl.scrollable(
       segments: List.generate(
         10,
-        (i) => GlassTab(label: 'Category ${i + 1}'),
+        (i) => GlassSegment(label: 'Category ${i + 1}'),
       ),
       selectedIndex: _selectedIndex,
       onSegmentSelected: (index) => setState(() => _selectedIndex = index),

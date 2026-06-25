@@ -11,9 +11,9 @@ void main() {
         createTestApp(
           child: GlassSegmentedControl(
             segments: [
-              GlassTab(label: 'One'),
-              GlassTab(label: 'Two'),
-              GlassTab(label: 'Three')
+              GlassSegment(label: 'One'),
+              GlassSegment(label: 'Two'),
+              GlassSegment(label: 'Three')
             ],
             selectedIndex: 0,
             onSegmentSelected: (_) {},
@@ -29,10 +29,10 @@ void main() {
     });
 
     testWidgets('displays all segments', (tester) async {
-      const segments = <GlassTab>[
-        GlassTab(label: 'Daily'),
-        GlassTab(label: 'Weekly'),
-        GlassTab(label: 'Monthly')
+      const segments = <GlassSegment>[
+        GlassSegment(label: 'Daily'),
+        GlassSegment(label: 'Weekly'),
+        GlassSegment(label: 'Monthly')
       ];
 
       await tester.pumpWidget(
@@ -59,9 +59,9 @@ void main() {
         createTestApp(
           child: GlassSegmentedControl(
             segments: [
-              GlassTab(label: 'One'),
-              GlassTab(label: 'Two'),
-              GlassTab(label: 'Three')
+              GlassSegment(label: 'One'),
+              GlassSegment(label: 'Two'),
+              GlassSegment(label: 'Three')
             ],
             selectedIndex: selectedIndex,
             onSegmentSelected: (index) => selectedIndex = index,
@@ -81,9 +81,9 @@ void main() {
         createTestApp(
           child: GlassSegmentedControl(
             segments: [
-              GlassTab(label: 'Option A'),
-              GlassTab(label: 'Option B'),
-              GlassTab(label: 'Option C')
+              GlassSegment(label: 'Option A'),
+              GlassSegment(label: 'Option B'),
+              GlassSegment(label: 'Option C')
             ],
             selectedIndex: 1,
             onSegmentSelected: (_) {},
@@ -101,7 +101,7 @@ void main() {
       await tester.pumpWidget(
         createTestApp(
           child: GlassSegmentedControl(
-            segments: [GlassTab(label: 'One'), GlassTab(label: 'Two')],
+            segments: [GlassSegment(label: 'One'), GlassSegment(label: 'Two')],
             selectedIndex: 0,
             onSegmentSelected: (_) {},
             height: customHeight,
@@ -117,7 +117,7 @@ void main() {
       await tester.pumpWidget(
         createTestApp(
           child: GlassSegmentedControl(
-            segments: [GlassTab(label: 'One'), GlassTab(label: 'Two')],
+            segments: [GlassSegment(label: 'One'), GlassSegment(label: 'Two')],
             selectedIndex: 0,
             onSegmentSelected: (_) {},
             useOwnLayer: true,
@@ -141,7 +141,7 @@ void main() {
 
     test('defaults are correct', () {
       final control = GlassSegmentedControl(
-        segments: [GlassTab(label: 'One'), GlassTab(label: 'Two')],
+        segments: [GlassSegment(label: 'One'), GlassSegment(label: 'Two')],
         selectedIndex: 0,
         onSegmentSelected: (_) {},
       );
@@ -155,7 +155,7 @@ void main() {
     test('asserts minimum 2 segments', () {
       expect(
         () => GlassSegmentedControl(
-          segments: [GlassTab(label: 'One')],
+          segments: [GlassSegment(label: 'One')],
           selectedIndex: 0,
           onSegmentSelected: (_) {},
         ),
@@ -166,7 +166,7 @@ void main() {
     test('asserts selectedIndex within bounds', () {
       expect(
         () => GlassSegmentedControl(
-          segments: [GlassTab(label: 'One'), GlassTab(label: 'Two')],
+          segments: [GlassSegment(label: 'One'), GlassSegment(label: 'Two')],
           selectedIndex: 5,
           onSegmentSelected: (_) {},
         ),
@@ -184,7 +184,7 @@ void main() {
       await tester.pumpWidget(
         createTestApp(
           child: GlassSegmentedControl(
-            segments: [GlassTab(label: 'A'), GlassTab(label: 'B')],
+            segments: [GlassSegment(label: 'A'), GlassSegment(label: 'B')],
             selectedIndex: 0,
             onSegmentSelected: (_) {},
           ),
@@ -199,9 +199,9 @@ void main() {
         createTestApp(
           child: GlassSegmentedControl(
             segments: [
-              GlassTab(label: 'X'),
-              GlassTab(label: 'Y'),
-              GlassTab(label: 'Z')
+              GlassSegment(label: 'X'),
+              GlassSegment(label: 'Y'),
+              GlassSegment(label: 'Z')
             ],
             selectedIndex: 0,
             onSegmentSelected: (i) => tapped = i,
@@ -220,7 +220,7 @@ void main() {
       await tester.pumpWidget(
         createTestApp(
           child: GlassSegmentedControl(
-            segments: [GlassTab(label: 'A'), GlassTab(label: 'B')],
+            segments: [GlassSegment(label: 'A'), GlassSegment(label: 'B')],
             selectedIndex: 0,
             onSegmentSelected: (_) => callCount++,
           ),
@@ -244,9 +244,9 @@ void main() {
             width: 300,
             child: GlassSegmentedControl(
               segments: [
-                GlassTab(label: 'P'),
-                GlassTab(label: 'Q'),
-                GlassTab(label: 'R')
+                GlassSegment(label: 'P'),
+                GlassSegment(label: 'Q'),
+                GlassSegment(label: 'R')
               ],
               selectedIndex: 0,
               onSegmentSelected: (_) {},
@@ -275,9 +275,9 @@ void main() {
             width: 300,
             child: GlassSegmentedControl(
               segments: [
-                GlassTab(label: 'P'),
-                GlassTab(label: 'Q'),
-                GlassTab(label: 'R')
+                GlassSegment(label: 'P'),
+                GlassSegment(label: 'Q'),
+                GlassSegment(label: 'R')
               ],
               selectedIndex: 1,
               onSegmentSelected: (_) {},
@@ -307,7 +307,7 @@ void main() {
       await tester.pumpWidget(
         createTestApp(
           child: GlassSegmentedControl(
-            segments: [GlassTab(label: 'A'), GlassTab(label: 'B')],
+            segments: [GlassSegment(label: 'A'), GlassSegment(label: 'B')],
             selectedIndex: 0,
             onSegmentSelected: (_) {},
             selectedTextStyle: const TextStyle(
@@ -325,7 +325,7 @@ void main() {
       await tester.pumpWidget(
         createTestApp(
           child: GlassSegmentedControl(
-            segments: [GlassTab(label: 'A'), GlassTab(label: 'B')],
+            segments: [GlassSegment(label: 'A'), GlassSegment(label: 'B')],
             selectedIndex: 0,
             onSegmentSelected: (_) {},
             unselectedTextStyle: const TextStyle(
@@ -343,7 +343,7 @@ void main() {
       await tester.pumpWidget(
         createTestApp(
           child: GlassSegmentedControl(
-            segments: [GlassTab(label: 'A'), GlassTab(label: 'B')],
+            segments: [GlassSegment(label: 'A'), GlassSegment(label: 'B')],
             selectedIndex: 0,
             onSegmentSelected: (_) {},
             backgroundColor: Colors.purple.withValues(alpha: 0.2),
@@ -357,7 +357,7 @@ void main() {
       await tester.pumpWidget(
         createTestApp(
           child: GlassSegmentedControl(
-            segments: [GlassTab(label: 'A'), GlassTab(label: 'B')],
+            segments: [GlassSegment(label: 'A'), GlassSegment(label: 'B')],
             selectedIndex: 0,
             onSegmentSelected: (_) {},
             indicatorColor: Colors.green.withValues(alpha: 0.4),
@@ -377,7 +377,7 @@ void main() {
       await tester.pumpWidget(
         createTestApp(
           child: GlassSegmentedControl(
-            segments: [GlassTab(label: 'A'), GlassTab(label: 'B')],
+            segments: [GlassSegment(label: 'A'), GlassSegment(label: 'B')],
             selectedIndex: 0,
             onSegmentSelected: (_) {},
             quality: GlassQuality.standard,
@@ -391,7 +391,7 @@ void main() {
       await tester.pumpWidget(
         createTestApp(
           child: GlassSegmentedControl(
-            segments: [GlassTab(label: 'A'), GlassTab(label: 'B')],
+            segments: [GlassSegment(label: 'A'), GlassSegment(label: 'B')],
             selectedIndex: 0,
             onSegmentSelected: (_) {},
             useOwnLayer: true,
@@ -418,9 +418,9 @@ void main() {
               children: [
                 GlassSegmentedControl(
                   segments: [
-                    GlassTab(label: 'A'),
-                    GlassTab(label: 'B'),
-                    GlassTab(label: 'C')
+                    GlassSegment(label: 'A'),
+                    GlassSegment(label: 'B'),
+                    GlassSegment(label: 'C')
                   ],
                   selectedIndex: index,
                   onSegmentSelected: (i) => setState(() => index = i),
@@ -441,7 +441,7 @@ void main() {
     });
 
     testWidgets('segments count change updates alignment', (tester) async {
-      var segments = [GlassTab(label: 'A'), GlassTab(label: 'B')];
+      var segments = [GlassSegment(label: 'A'), GlassSegment(label: 'B')];
       var selectedIndex = 0;
 
       await tester.pumpWidget(
@@ -457,9 +457,9 @@ void main() {
                 ElevatedButton(
                   onPressed: () => setState(() {
                     segments = [
-                      GlassTab(label: 'A'),
-                      GlassTab(label: 'B'),
-                      GlassTab(label: 'C')
+                      GlassSegment(label: 'A'),
+                      GlassSegment(label: 'B'),
+                      GlassSegment(label: 'C')
                     ];
                     selectedIndex = 0;
                   }),
@@ -491,9 +491,9 @@ void main() {
             width: 300,
             child: GlassSegmentedControl(
               segments: [
-                GlassTab(label: 'A'),
-                GlassTab(label: 'B'),
-                GlassTab(label: 'C')
+                GlassSegment(label: 'A'),
+                GlassSegment(label: 'B'),
+                GlassSegment(label: 'C')
               ],
               selectedIndex: selected,
               onSegmentSelected: (i) => selected = i,
@@ -523,9 +523,9 @@ void main() {
             width: 300,
             child: GlassSegmentedControl(
               segments: [
-                GlassTab(label: 'X'),
-                GlassTab(label: 'Y'),
-                GlassTab(label: 'Z')
+                GlassSegment(label: 'X'),
+                GlassSegment(label: 'Y'),
+                GlassSegment(label: 'Z')
               ],
               selectedIndex: 0,
               onSegmentSelected: (i) => fired = i,
@@ -553,7 +553,7 @@ void main() {
             child: SizedBox(
               width: 300,
               child: GlassSegmentedControl(
-                segments: [GlassTab(label: 'A'), GlassTab(label: 'B')],
+                segments: [GlassSegment(label: 'A'), GlassSegment(label: 'B')],
                 selectedIndex: 0,
                 onSegmentSelected: (_) {},
               ),

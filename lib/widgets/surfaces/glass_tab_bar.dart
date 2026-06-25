@@ -10,7 +10,7 @@ import '../shared/inherited_liquid_glass.dart';
 import 'glass_bottom_bar.dart'
     show
         GlassBottomBar,
-        GlassBottomBarExtraButton,
+        GlassTabBarExtraButton,
         GlassBottomBarTab,
         GlassTabPillAnchor,
         MaskingQuality;
@@ -140,7 +140,7 @@ class GlassTabBar extends StatefulWidget {
     required int selectedIndex,
     required ValueChanged<int> onTabSelected,
     Key? key,
-    GlassBottomBarExtraButton? extraButton,
+    GlassTabBarExtraButton? extraButton,
     double spacing = 8,
     double horizontalPadding = 20,
     double verticalPadding = 20,
@@ -253,7 +253,7 @@ class GlassTabBar extends StatefulWidget {
     Key? key,
     SearchableBottomBarController? controller,
     bool isSearchActive = false,
-    GlassBottomBarExtraButton? extraButton,
+    GlassTabBarExtraButton? extraButton,
     double spacing = 8,
     double horizontalPadding = 20,
     double verticalPadding = 20,
@@ -599,7 +599,7 @@ class GlassTabBar extends StatefulWidget {
   final double? indicatorBorderRadius;
 
   /// Optional extra action button (bottom/searchable only).
-  final GlassBottomBarExtraButton? extraButton;
+  final GlassTabBarExtraButton? extraButton;
 
   /// Which physical interaction effects are active. Defaults to [GlassInteractionBehavior.full].
   final GlassInteractionBehavior interactionBehavior;
@@ -820,19 +820,138 @@ class _GlassTabBarState extends State<GlassTabBar> {
 }
 
 // =============================================================================
-// GlassTab — unified tab configuration type for ALL GlassTabBar constructors
+// GlassSegment — configuration for a single segment in GlassSegmentedControl
 // =============================================================================
 
-/// A semantic alias for [GlassTab] when used within a [GlassSegmentedControl].
-typedef GlassSegment = GlassTab;
+/// Configuration for a single segment in [GlassSegmentedControl].
+///
+/// [GlassSegment] is the item type for [GlassSegmentedControl] — the iOS 26
+/// `UISegmentedControl` equivalent. It intentionally carries **only** fields
+/// that make sense for a segmented control item:
+///
+/// - [label] — the text label
+/// - [icon] — the leading icon (before the label)
+/// - [tooltip] — tooltip shown on long-press
+/// - [semanticLabel] — overrides the accessibility announcement
+/// - [enabled] — whether this segment can be selected
+///
+/// ## Why not [GlassTab]?
+///
+/// [GlassTab] is the navigation-tab type for [GlassTabBar.bottom] and
+/// [GlassTabBar.searchable]. It carries fields like [GlassTab.glowColor],
+/// [GlassTab.activeIcon], and [GlassTab.thickness] that are navigation-specific
+/// and have no effect in a segmented control. [GlassSegment] is the correct,
+/// minimal API for [GlassSegmentedControl].
+///
+/// ## Usage
+///
+/// ```dart
+/// GlassSegmentedControl(
+///   segments: [
+///     GlassSegment(label: 'All'),
+///     GlassSegment(label: 'Photos', icon: Icon(CupertinoIcons.photo)),
+///     GlassSegment(label: 'Videos', icon: Icon(CupertinoIcons.video_camera)),
+///   ],
+///   selectedIndex: _index,
+///   onSegmentSelected: (i) => setState(() => _index = i),
+/// )
+/// ```
+///
+/// ## Icon-only segments
+///
+/// ```dart
+/// GlassSegment(icon: Icon(CupertinoIcons.list_bullet))
+/// GlassSegment(icon: Icon(CupertinoIcons.square_grid_2x2))
+/// ```
+///
+/// ## Disabled segment
+///
+/// ```dart
+/// GlassSegment(label: 'Pro Only', enabled: false)
+/// ```
+class GlassSegment {
+  /// Creates a segment configuration.
+  ///
+  /// At least one of [icon] or [label] must be provided.
+  const GlassSegment({
+    this.icon,
+    this.label,
+    this.tooltip,
+    this.semanticLabel,
+    this.enabled = true,
+  }) : assert(
+          icon != null || label != null,
+          'GlassSegment must have either an icon or a label.',
+        );
+
+  /// Icon widget to display before the label (or alone, if [label] is null).
+  ///
+  /// Standard [Icon] widgets automatically pick up the correct color and size
+  /// from the parent [IconTheme]. Typically a [CupertinoIcons] icon.
+  final Widget? icon;
+
+  /// Text label for this segment.
+  ///
+  /// If null, [icon] is used alone. If both are provided, the icon is shown
+  /// above the label (same layout as iOS `UISegmentedControl` with images).
+  final String? label;
+
+  /// Tooltip shown on long-press (optional).
+  ///
+  /// Useful for icon-only segments where the meaning may not be obvious.
+  final String? tooltip;
+
+  /// Overrides the default accessibility announcement.
+  ///
+  /// If null, falls back to [label] (or an empty string for icon-only segments).
+  final String? semanticLabel;
+
+  /// Whether this segment can be selected.
+  ///
+  /// When `false`, the segment renders at reduced opacity and ignores taps.
+  /// Defaults to `true`.
+  final bool enabled;
+}
+
+// =============================================================================
+// GlassTab — unified tab configuration type for GlassTabBar
+// =============================================================================
 
 /// Configuration for a tab in [GlassTabBar] (all constructors).
 ///
-/// [GlassTab] (and its alias [GlassSegment]) is the single tab type across
-/// the unified API:
-/// - [GlassSegmentedControl] — use [label] and/or [icon]
-/// - [GlassTabBar.bottom] — use [icon], [activeIcon], [label], [glowColor]
-/// - [GlassTabBar.searchable] — same as `.bottom()`
+/// [GlassTab] is the item type for [GlassTabBar.bottom] and
+/// [GlassTabBar.searchable] — the iOS 26 `UITab` / `UITabBarItem` equivalent.
+///
+/// For [GlassSegmentedControl], use [GlassSegment] instead. [GlassSegment] is
+/// a focused type that only carries fields relevant to a segmented control.
+///
+/// ## Key fields
+///
+/// - [icon] — shown in unselected state (and selected state if [activeIcon] is null)
+/// - [activeIcon] — shown in selected state (optional)
+/// - [label] — text label
+/// - [glowColor] — per-tab glow colour for the selected indicator
+/// - [thickness] — icon shadow halo intensity
+///
+/// ## Usage
+///
+/// ```dart
+/// GlassTabBar.bottom(
+///   tabs: [
+///     GlassTab(
+///       icon: Icon(CupertinoIcons.home),
+///       activeIcon: Icon(CupertinoIcons.house_fill),
+///       label: 'Home',
+///       glowColor: Colors.blue,
+///     ),
+///     GlassTab(
+///       icon: Icon(CupertinoIcons.search),
+///       label: 'Search',
+///     ),
+///   ],
+///   ...
+/// )
+/// ```
 ///
 /// ## Migration from [GlassBottomBarTab]
 ///

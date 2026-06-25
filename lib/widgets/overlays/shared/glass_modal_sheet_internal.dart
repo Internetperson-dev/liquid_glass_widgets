@@ -26,7 +26,7 @@ class _SheetLayout extends StatelessWidget {
   final PointerUpEventListener onPointerUp;
   final PointerCancelEventListener onPointerCancel;
   final ScrollController scrollController;
-  final ValueNotifier<SheetState> currentStateNotifier;
+  final ValueNotifier<GlassSheetState> currentStateNotifier;
   final double expandProgressValue;
   final Widget child;
   final bool showDragIndicator;
@@ -248,7 +248,7 @@ class _SheetLayout extends StatelessWidget {
                             Positioned.fill(
                               child: Builder(builder: (innerContext) {
                                 final isDark =
-                                    CupertinoTheme.brightnessOf(innerContext) ==
+                                    GlassTheme.brightnessOf(innerContext) ==
                                         Brightness.dark;
                                 return GlassGlow(
                                   glowColor: (enableInteractionGlow &&
@@ -365,7 +365,7 @@ class _GlassDragIndicator extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final isDark = CupertinoTheme.brightnessOf(context) == Brightness.dark;
+    final isDark = GlassTheme.brightnessOf(context) == Brightness.dark;
     // iOS 26: white at 35% in dark mode, black at 20% in light mode
     final defaultColor =
         isDark ? const Color(0x59FFFFFF) : const Color(0x33000000);
@@ -467,7 +467,7 @@ class ScrollControllerProvider extends InheritedWidget {
 /// Information about the current state of a [GlassModalSheet].
 class SheetStateInfo {
   /// The current snap state.
-  final SheetState state;
+  final GlassSheetState state;
 
   /// Expansion progress from 0.0 (hidden/peek) to 1.0 (full).
   final double progress;
@@ -524,7 +524,7 @@ class GlassModalSheetScaffold extends StatelessWidget {
   final double? fullSize;
 
   /// Initial state when the scaffold is first displayed.
-  final SheetState initialState;
+  final GlassSheetState initialState;
 
   /// Height in the 'peek' state. Default: 90.0.
   final double peekSize;
@@ -564,7 +564,7 @@ class GlassModalSheetScaffold extends StatelessWidget {
   final bool platformViewBackdrop;
 
   /// Color/Saturation transition mode when expanding to full.
-  final FillTransition fillTransition;
+  final GlassFillTransition fillTransition;
 
   /// Scale factor applied during interaction for tactile feedback. Default: 1.01.
   final double interactionScale;
@@ -608,10 +608,10 @@ class GlassModalSheetScaffold extends StatelessWidget {
   final GlassModalSheetController? controller;
 
   /// Callback triggered when the sheet snaps to a new state.
-  final ValueChanged<SheetState>? onStateChanged;
+  final ValueChanged<GlassSheetState>? onStateChanged;
 
-  /// Interaction mode (dismissible vs persistent). Default: [SheetMode.dismissible].
-  final SheetMode mode;
+  /// Interaction mode (dismissible vs persistent). Default: [GlassSheetMode.dismissible].
+  final GlassSheetMode mode;
 
   /// Whether to show the iOS-style drag handle at the top. Default: true.
   final bool showDragIndicator;
@@ -661,7 +661,7 @@ class GlassModalSheetScaffold extends StatelessWidget {
     required this.sheet,
     this.halfSize = 0.45,
     this.fullSize,
-    this.initialState = SheetState.half,
+    this.initialState = GlassSheetState.half,
     this.topBorderRadius,
     this.bottomBorderRadius,
     this.fullTopBorderRadius,
@@ -673,7 +673,7 @@ class GlassModalSheetScaffold extends StatelessWidget {
     this.expandedColor,
     this.controller,
     this.onStateChanged,
-    this.mode = SheetMode.dismissible,
+    this.mode = GlassSheetMode.dismissible,
     this.peekSize = 90.0,
     this.quality = GlassQuality.standard,
     this.platformViewBackdrop = false,
@@ -687,7 +687,7 @@ class GlassModalSheetScaffold extends StatelessWidget {
     this.resistance = 0.08,
     this.snapThreshold = 0.4,
     this.velocityThreshold = 700.0,
-    this.fillTransition = FillTransition.gradual,
+    this.fillTransition = GlassFillTransition.gradual,
     this.showDragIndicator = true,
     this.dragIndicatorColor,
     this.dragIndicatorWidth = 36,
@@ -713,11 +713,11 @@ class GlassModalSheetScaffold extends StatelessWidget {
       clipBehavior: Clip.none,
       children: [
         Positioned.fill(
-          child: mode == SheetMode.dismissible
+          child: mode == GlassSheetMode.dismissible
               ? GestureDetector(
                   behavior: HitTestBehavior.opaque,
                   onTap: () {
-                    controller?.snapToState(SheetState.hidden);
+                    controller?.snapToState(GlassSheetState.hidden);
                   },
                   child: RepaintBoundary(child: body),
                 )

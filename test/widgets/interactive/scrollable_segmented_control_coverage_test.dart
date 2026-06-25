@@ -14,7 +14,7 @@ void main() {
               builder: (context, setState) {
                 return GlassSegmentedControl.scrollable(
                   segments:
-                      List.generate(20, (i) => GlassTab(label: 'Item $i')),
+                      List.generate(20, (i) => GlassSegment(label: 'Item $i')),
                   selectedIndex: selectedIndex,
                   onSegmentSelected: (i) {
                     setState(() => selectedIndex = i);

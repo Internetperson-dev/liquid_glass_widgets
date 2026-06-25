@@ -92,7 +92,7 @@ import 'shared/tab_bar_bottom_layout.dart';
 ///   tabs: [...],
 ///   selectedIndex: _selectedIndex,
 ///   onTabSelected: (index) => setState(() => _selectedIndex = index),
-///   extraButton: GlassBottomBarExtraButton(
+///   extraButton: GlassTabBarExtraButton(
 ///     icon: CupertinoIcons.add,
 ///     label: 'Create',
 ///     onTap: () => _showCreateDialog(),
@@ -169,18 +169,18 @@ enum MaskingQuality {
 ///
 /// [GlassBottomBar] is a zero-logic shim that will be removed in v1.0.
 /// Migrate by replacing `GlassBottomBar(` with `GlassTabBar.bottom(` and
-/// `GlassBottomBarTab(` with `GlassTab(`. All parameters are identical.
+/// `GlassBottomBarTab(` with `GlassSegment(`. All parameters are identical.
 ///
 /// ```dart
 /// // BEFORE
 /// GlassBottomBar(tabs: [GlassBottomBarTab(icon: Icon(Icons.home), label: 'Home')], ...)
 /// // AFTER
-/// GlassTabBar.bottom(tabs: [GlassTab(icon: Icon(Icons.home), label: 'Home')], ...)
+/// GlassTabBar.bottom(tabs: [GlassSegment(icon: Icon(Icons.home), label: 'Home')], ...)
 /// ```
 @Deprecated('Use GlassTabBar.bottom() instead. '
     'GlassBottomBar will be removed in v1.0. '
     'Migration: replace GlassBottomBar( with GlassTabBar.bottom( '
-    'and GlassBottomBarTab( with GlassTab(.')
+    'and GlassBottomBarTab( with GlassSegment(.')
 class GlassBottomBar extends StatelessWidget {
   /// Creates a glass bottom navigation bar.
   const GlassBottomBar({
@@ -413,7 +413,7 @@ class GlassBottomBar extends StatelessWidget {
   ///
   /// Typically used for a primary action like "Create", "Add", or "Compose".
   /// The button is rendered as a [GlassButton] and inherits the glass settings.
-  final GlassBottomBarExtraButton? extraButton;
+  final GlassTabBarExtraButton? extraButton;
 
   // ===========================================================================
   // Layout Properties
@@ -693,14 +693,14 @@ class GlassBottomBar extends StatelessWidget {
 ///   icon: SvgPicture.asset('assets/settings.svg', colorFilter: ...),
 /// )
 /// ```
-/// **Deprecated:** Use [GlassTab] instead.
+/// **Deprecated:** Use [GlassSegment] instead.
 ///
 /// [GlassBottomBarTab] is a zero-logic typedef shim.
 /// Replace `GlassBottomBarTab(icon: ..., label: ..., glowColor: ...)` with
-/// `GlassTab(icon: ..., label: ..., glowColor: ...)`.
-@Deprecated('Use GlassTab instead. '
+/// `GlassSegment(icon: ..., label: ..., glowColor: ...)`.
+@Deprecated('Use GlassSegment instead. '
     'GlassBottomBarTab will be removed in v1.0. '
-    'Migration: replace GlassBottomBarTab( with GlassTab(.')
+    'Migration: replace GlassBottomBarTab( with GlassSegment(.')
 class GlassBottomBarTab {
   /// Creates a bottom bar tab configuration.
   const GlassBottomBarTab({
@@ -745,12 +745,12 @@ class GlassBottomBarTab {
   final double? thickness;
 }
 
-/// Where a [GlassBottomBarExtraButton] appears relative to the search pill
+/// Where a [GlassTabBarExtraButton] appears relative to the search pill
 /// in a [GlassSearchableBottomBar].
 ///
 /// Has no effect in [GlassBottomBar], where the extra button always sits
 /// between the tab content and the right edge.
-enum ExtraButtonPosition {
+enum GlassExtraButtonPosition {
   /// Place the button **before** the search pill — between the tab pill and
   /// the search pill. This is the default and matches the classic iOS
   /// "compose" button position seen in Mail and Messages.
@@ -790,15 +790,15 @@ enum GlassTabPillAnchor {
 ///
 /// The extra button is rendered as a [GlassButton] and typically used for
 /// primary actions like creating new content.
-class GlassBottomBarExtraButton {
+class GlassTabBarExtraButton {
   /// Creates an extra button configuration.
-  const GlassBottomBarExtraButton({
+  const GlassTabBarExtraButton({
     required this.icon,
     required this.onTap,
     required this.label,
     this.iconColor,
     this.size = 64,
-    this.position = ExtraButtonPosition.beforeSearch,
+    this.position = GlassExtraButtonPosition.beforeSearch,
     this.collapseOnSearchFocus = true,
   });
 
@@ -824,14 +824,14 @@ class GlassBottomBarExtraButton {
   /// Where this button is placed relative to the search pill in a
   /// [GlassSearchableBottomBar].
   ///
-  /// - [ExtraButtonPosition.beforeSearch] (default) — between the tab pill
+  /// - [GlassExtraButtonPosition.beforeSearch] (default) — between the tab pill
   ///   and the search pill. Classic iOS pattern (Mail compose button).
-  /// - [ExtraButtonPosition.afterSearch] — pinned to the right edge, after
+  /// - [GlassExtraButtonPosition.afterSearch] — pinned to the right edge, after
   ///   the search pill. The search pill's spring calculations automatically
   ///   reserve space so no RenderFlex overflow occurs during transitions.
   ///
   /// Has no effect in [GlassBottomBar].
-  final ExtraButtonPosition position;
+  final GlassExtraButtonPosition position;
 
   /// Whether this button collapses (hides + frees layout space) when the
   /// search field is focused (i.e. the keyboard is visible).
@@ -848,6 +848,20 @@ class GlassBottomBarExtraButton {
   /// Has no effect in [GlassBottomBar].
   final bool collapseOnSearchFocus;
 }
+
+/// Deprecated alias for [GlassTabBarExtraButton].
+///
+/// **Deprecated:** Use [GlassTabBarExtraButton] instead.
+///
+/// This typedef will be removed in v1.0 alongside [GlassBottomBar] and
+/// [GlassSearchableBottomBar]. Migrate by replacing
+/// `GlassBottomBarExtraButton(` with `GlassTabBarExtraButton(`.
+@Deprecated(
+  'Use GlassTabBarExtraButton instead. '
+  'GlassBottomBarExtraButton will be removed in v1.0. '
+  'Migrate: replace GlassBottomBarExtraButton( with GlassTabBarExtraButton(.',
+)
+typedef GlassBottomBarExtraButton = GlassTabBarExtraButton;
 
 // TabIndicator and TabIndicatorState live in shared/tab_bar_bottom_internal.dart.
 // JellyClipper is defined below — kept here because bottom_bar_internal.dart

@@ -84,7 +84,7 @@ void main() {
               onPressed: () {
                 GlassModalSheet.show(
                   context: ctx,
-                  mode: SheetMode.persistent,
+                  mode: GlassSheetMode.persistent,
                   barrierColor: Colors.transparent,
                   builder: (c) => const SizedBox(height: 200),
                 );
@@ -114,7 +114,7 @@ void main() {
                 GlassModalSheet.show(
                   context: ctx,
                   onStateChanged: (state) {
-                    if (state == SheetState.hidden) callbackFired = true;
+                    if (state == GlassSheetState.hidden) callbackFired = true;
                   },
                   builder: (c) => const SizedBox(height: 200),
                 );

@@ -606,7 +606,7 @@ class _HomePageState extends State<HomePage> {
           lightAngle: defaultLightAngle,
           glassColor: defaultGlassColor,
         ),
-        extraButton: GlassBottomBarExtraButton(
+        extraButton: GlassTabBarExtraButton(
           icon: Icon(Icons.support_agent),
           onTap: () {
             Navigator.push(

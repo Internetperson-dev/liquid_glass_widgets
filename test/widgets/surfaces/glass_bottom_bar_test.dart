@@ -102,7 +102,7 @@ void main() {
             tabs: testTabs,
             selectedIndex: 0,
             onTabSelected: (_) {},
-            extraButton: GlassBottomBarExtraButton(
+            extraButton: GlassTabBarExtraButton(
               icon: Icon(CupertinoIcons.add),
               label: 'Add',
               onTap: () {},
@@ -123,7 +123,7 @@ void main() {
             tabs: testTabs,
             selectedIndex: 0,
             onTabSelected: (_) {},
-            extraButton: GlassBottomBarExtraButton(
+            extraButton: GlassTabBarExtraButton(
               icon: Icon(CupertinoIcons.add),
               label: 'Add',
               onTap: () => tapped = true,
@@ -190,9 +190,9 @@ void main() {
     });
   });
 
-  group('GlassBottomBarExtraButton', () {
+  group('GlassTabBarExtraButton', () {
     test('can be instantiated', () {
-      final button = GlassBottomBarExtraButton(
+      final button = GlassTabBarExtraButton(
         icon: Icon(CupertinoIcons.add),
         label: 'Add',
         onTap: () {},
@@ -204,7 +204,7 @@ void main() {
     });
 
     test('collapseOnSearchFocus defaults to true', () {
-      final button = GlassBottomBarExtraButton(
+      final button = GlassTabBarExtraButton(
         icon: Icon(CupertinoIcons.add),
         label: 'Create',
         onTap: () {},
@@ -213,26 +213,26 @@ void main() {
     });
 
     test('position defaults to beforeSearch', () {
-      final button = GlassBottomBarExtraButton(
+      final button = GlassTabBarExtraButton(
         icon: Icon(CupertinoIcons.add),
         label: 'Create',
         onTap: () {},
       );
-      expect(button.position, ExtraButtonPosition.beforeSearch);
+      expect(button.position, GlassExtraButtonPosition.beforeSearch);
     });
 
     test('afterSearch position works', () {
-      final button = GlassBottomBarExtraButton(
+      final button = GlassTabBarExtraButton(
         icon: Icon(CupertinoIcons.add),
         label: 'Create',
         onTap: () {},
-        position: ExtraButtonPosition.afterSearch,
+        position: GlassExtraButtonPosition.afterSearch,
       );
-      expect(button.position, ExtraButtonPosition.afterSearch);
+      expect(button.position, GlassExtraButtonPosition.afterSearch);
     });
 
     test('custom size is respected', () {
-      final button = GlassBottomBarExtraButton(
+      final button = GlassTabBarExtraButton(
         icon: Icon(CupertinoIcons.add),
         label: 'Create',
         onTap: () {},
@@ -242,7 +242,7 @@ void main() {
     });
 
     test('custom iconColor is respected', () {
-      final button = GlassBottomBarExtraButton(
+      final button = GlassTabBarExtraButton(
         icon: Icon(CupertinoIcons.add),
         label: 'Create',
         onTap: () {},
@@ -264,15 +264,15 @@ void main() {
   });
 
   // ──────────────────────────────────────────────────────────────────────────
-  // ExtraButtonPosition enum
+  // GlassExtraButtonPosition enum
   // ──────────────────────────────────────────────────────────────────────────
 
-  group('ExtraButtonPosition', () {
+  group('GlassExtraButtonPosition', () {
     test('has beforeSearch and afterSearch values', () {
-      expect(ExtraButtonPosition.values,
-          contains(ExtraButtonPosition.beforeSearch));
-      expect(ExtraButtonPosition.values,
-          contains(ExtraButtonPosition.afterSearch));
+      expect(GlassExtraButtonPosition.values,
+          contains(GlassExtraButtonPosition.beforeSearch));
+      expect(GlassExtraButtonPosition.values,
+          contains(GlassExtraButtonPosition.afterSearch));
     });
   });
 
@@ -448,11 +448,11 @@ void main() {
             selectedIndex: 0,
             onTabSelected: (_) {},
             maskingQuality: MaskingQuality.off,
-            extraButton: GlassBottomBarExtraButton(
+            extraButton: GlassTabBarExtraButton(
               icon: const Icon(CupertinoIcons.add),
               label: 'Create',
               onTap: () {},
-              position: ExtraButtonPosition.afterSearch,
+              position: GlassExtraButtonPosition.afterSearch,
             ),
           ),
         ),

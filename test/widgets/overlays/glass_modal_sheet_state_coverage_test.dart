@@ -7,8 +7,8 @@ import 'package:liquid_glass_widgets/liquid_glass_widgets.dart';
 
 Widget _makeSheet({
   GlassModalSheetController? controller,
-  void Function(SheetState)? onStateChanged,
-  SheetMode mode = SheetMode.persistent,
+  void Function(GlassSheetState)? onStateChanged,
+  GlassSheetMode mode = GlassSheetMode.persistent,
   double halfSize = 0.45,
   Widget? sheetChild,
 }) =>
@@ -40,7 +40,7 @@ void main() {
       final ctrl = GlassModalSheetController();
       await tester.pumpWidget(_makeSheet(controller: ctrl));
       await tester.pumpAndSettle();
-      expect(ctrl.currentState, isA<SheetState>());
+      expect(ctrl.currentState, isA<GlassSheetState>());
     });
 
     testWidgets('detach on dispose: snapToState is no-op', (tester) async {
@@ -49,7 +49,7 @@ void main() {
       await tester.pumpAndSettle();
       await tester.pumpWidget(const SizedBox()); // triggers dispose
       await tester.pump();
-      expect(() => ctrl.snapToState(SheetState.full), returnsNormally);
+      expect(() => ctrl.snapToState(GlassSheetState.full), returnsNormally);
     });
 
     testWidgets('swapping controller detaches old and attaches new',
@@ -58,60 +58,60 @@ void main() {
       final ctrl2 = GlassModalSheetController();
       await tester.pumpWidget(_makeSheet(controller: ctrl1));
       await tester.pumpAndSettle();
-      expect(ctrl1.currentState, isA<SheetState>());
+      expect(ctrl1.currentState, isA<GlassSheetState>());
 
       await tester.pumpWidget(_makeSheet(controller: ctrl2));
       await tester.pumpAndSettle();
       // Old controller detached — returns default
-      expect(ctrl1.currentState, SheetState.hidden);
+      expect(ctrl1.currentState, GlassSheetState.hidden);
       // New controller attached
-      expect(ctrl2.currentState, isA<SheetState>());
+      expect(ctrl2.currentState, isA<GlassSheetState>());
     });
   });
 
   group('GlassModalSheetController — state transitions', () {
     testWidgets('snapToState(full) transitions to full', (tester) async {
       final ctrl = GlassModalSheetController();
-      final states = <SheetState>[];
+      final states = <GlassSheetState>[];
       await tester.pumpWidget(_makeSheet(
         controller: ctrl,
         onStateChanged: states.add,
       ));
       await tester.pumpAndSettle();
-      ctrl.snapToState(SheetState.full);
+      ctrl.snapToState(GlassSheetState.full);
       await tester.pumpAndSettle();
-      expect(ctrl.currentState, SheetState.full);
+      expect(ctrl.currentState, GlassSheetState.full);
     });
 
     testWidgets('snapToState(half) transitions to half', (tester) async {
       final ctrl = GlassModalSheetController();
-      final states = <SheetState>[];
+      final states = <GlassSheetState>[];
       await tester.pumpWidget(_makeSheet(
         controller: ctrl,
-        mode: SheetMode.persistent,
+        mode: GlassSheetMode.persistent,
         onStateChanged: states.add,
       ));
       await tester.pumpAndSettle();
-      ctrl.snapToState(SheetState.half);
+      ctrl.snapToState(GlassSheetState.half);
       await tester.pumpAndSettle();
-      expect(ctrl.currentState, SheetState.half);
+      expect(ctrl.currentState, GlassSheetState.half);
     });
 
     testWidgets('snapToState(hidden) in dismissible mode hides sheet',
         (tester) async {
       final ctrl = GlassModalSheetController();
-      final states = <SheetState>[];
+      final states = <GlassSheetState>[];
       await tester.pumpWidget(_makeSheet(
         controller: ctrl,
-        mode: SheetMode.dismissible,
+        mode: GlassSheetMode.dismissible,
         onStateChanged: states.add,
       ));
       await tester.pumpAndSettle();
-      ctrl.snapToState(SheetState.full);
+      ctrl.snapToState(GlassSheetState.full);
       await tester.pumpAndSettle();
-      ctrl.snapToState(SheetState.hidden);
+      ctrl.snapToState(GlassSheetState.hidden);
       await tester.pumpAndSettle();
-      expect(ctrl.currentState, SheetState.hidden);
+      expect(ctrl.currentState, GlassSheetState.hidden);
     });
 
     testWidgets('snapToState(hidden) in persistent mode clamps to peek',
@@ -119,15 +119,15 @@ void main() {
       final ctrl = GlassModalSheetController();
       await tester.pumpWidget(_makeSheet(
         controller: ctrl,
-        mode: SheetMode.persistent,
+        mode: GlassSheetMode.persistent,
       ));
       await tester.pumpAndSettle();
-      ctrl.snapToState(SheetState.full);
+      ctrl.snapToState(GlassSheetState.full);
       await tester.pumpAndSettle();
-      ctrl.snapToState(SheetState.hidden); // clamps to peek
+      ctrl.snapToState(GlassSheetState.hidden); // clamps to peek
       await tester.pumpAndSettle();
       // Persistent: minimum is peek, not hidden
-      expect(ctrl.currentState, isNot(SheetState.hidden));
+      expect(ctrl.currentState, isNot(GlassSheetState.hidden));
     });
 
     testWidgets('snapToState with animate=false does instant jump',
@@ -135,9 +135,9 @@ void main() {
       final ctrl = GlassModalSheetController();
       await tester.pumpWidget(_makeSheet(controller: ctrl));
       await tester.pumpAndSettle();
-      ctrl.snapToState(SheetState.full, animate: false);
+      ctrl.snapToState(GlassSheetState.full, animate: false);
       await tester.pump();
-      expect(ctrl.currentState, SheetState.full);
+      expect(ctrl.currentState, GlassSheetState.full);
     });
 
     testWidgets('value setter jumps to exact position', (tester) async {
@@ -182,18 +182,18 @@ void main() {
   group('GlassModalSheet — onStateChanged callback', () {
     testWidgets('fires on each transition', (tester) async {
       final ctrl = GlassModalSheetController();
-      final states = <SheetState>[];
+      final states = <GlassSheetState>[];
       await tester.pumpWidget(_makeSheet(
         controller: ctrl,
         onStateChanged: states.add,
       ));
       await tester.pumpAndSettle();
-      ctrl.snapToState(SheetState.full);
+      ctrl.snapToState(GlassSheetState.full);
       await tester.pumpAndSettle();
-      ctrl.snapToState(SheetState.half);
+      ctrl.snapToState(GlassSheetState.half);
       await tester.pumpAndSettle();
-      expect(states, contains(SheetState.full));
-      expect(states, contains(SheetState.half));
+      expect(states, contains(GlassSheetState.full));
+      expect(states, contains(GlassSheetState.half));
     });
   });
 
@@ -219,17 +219,17 @@ void main() {
       final ctrl = GlassModalSheetController();
       await tester.pumpWidget(_makeSheet(
         controller: ctrl,
-        mode: SheetMode.persistent,
+        mode: GlassSheetMode.persistent,
       ));
       await tester.pumpAndSettle();
       // Expand to full
-      ctrl.snapToState(SheetState.full, animate: false);
+      ctrl.snapToState(GlassSheetState.full, animate: false);
       await tester.pump();
-      expect(ctrl.currentState, SheetState.full);
+      expect(ctrl.currentState, GlassSheetState.full);
       // Collapse back
-      ctrl.snapToState(SheetState.half, animate: false);
+      ctrl.snapToState(GlassSheetState.half, animate: false);
       await tester.pump();
-      expect(ctrl.currentState, SheetState.half);
+      expect(ctrl.currentState, GlassSheetState.half);
     });
   });
 
@@ -238,24 +238,24 @@ void main() {
       final ctrl = GlassModalSheetController();
       await tester.pumpWidget(_makeSheet(
         controller: ctrl,
-        mode: SheetMode.dismissible,
+        mode: GlassSheetMode.dismissible,
       ));
       await tester.pumpAndSettle();
-      ctrl.snapToState(SheetState.hidden);
+      ctrl.snapToState(GlassSheetState.hidden);
       await tester.pumpAndSettle();
-      expect(ctrl.currentState, SheetState.hidden);
+      expect(ctrl.currentState, GlassSheetState.hidden);
     });
 
     testWidgets('persistent mode: hidden clamps to peek', (tester) async {
       final ctrl = GlassModalSheetController();
       await tester.pumpWidget(_makeSheet(
         controller: ctrl,
-        mode: SheetMode.persistent,
+        mode: GlassSheetMode.persistent,
       ));
       await tester.pumpAndSettle();
-      ctrl.snapToState(SheetState.hidden);
+      ctrl.snapToState(GlassSheetState.hidden);
       await tester.pumpAndSettle();
-      expect(ctrl.currentState, isNot(SheetState.hidden));
+      expect(ctrl.currentState, isNot(GlassSheetState.hidden));
     });
   });
 
@@ -265,9 +265,9 @@ void main() {
       final ctrl = GlassModalSheetController();
       await tester.pumpWidget(_makeSheet(controller: ctrl));
       await tester.pumpAndSettle();
-      ctrl.snapToState(SheetState.full, velocity: 1500);
+      ctrl.snapToState(GlassSheetState.full, velocity: 1500);
       await tester.pumpAndSettle();
-      expect(ctrl.currentState, SheetState.full);
+      expect(ctrl.currentState, GlassSheetState.full);
     });
   });
 

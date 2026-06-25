@@ -98,7 +98,17 @@ export 'widgets/overlays/glass_dialog.dart';
 export 'widgets/overlays/glass_menu.dart';
 export 'widgets/overlays/glass_menu_item.dart';
 export 'widgets/overlays/glass_sheet.dart';
-export 'widgets/overlays/glass_modal_sheet.dart';
+export 'widgets/overlays/glass_modal_sheet.dart'
+    show
+        GlassModalSheet,
+        GlassSheetState,
+        GlassSheetMode,
+        GlassFillTransition,
+        GlassModalSheetController,
+        GlassModalSheetScaffold, // used directly for maps-style hit-through layouts
+        GlassModalSheetStateProvider, // read sheet state from descendants
+        SheetStateInfo, // value type from GlassModalSheetStateProvider.of()
+        ScrollControllerProvider; // access scroll controller from sheet content
 export 'widgets/overlays/glass_toast.dart';
 export 'widgets/overlays/glass_popover.dart';
 // Widgets - Surfaces

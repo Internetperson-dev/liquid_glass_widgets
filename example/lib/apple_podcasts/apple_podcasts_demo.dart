@@ -284,7 +284,7 @@ class _ApplePodcastsHomeScreenState extends State<ApplePodcastsHomeScreen> {
     final isDark = CupertinoTheme.brightnessOf(context) == Brightness.dark;
     GlassModalSheet.show(
       context: context,
-      initialState: SheetState.full,
+      initialState: GlassSheetState.full,
       halfSize: 0,
       settings: LiquidGlassSettings(
         glassColor: isDark ? const Color(0xAA1C1C1E) : const Color(0xAAF2F2F7),
@@ -1234,10 +1234,10 @@ class _NowPlayingViewState extends State<NowPlayingView> {
           const SizedBox(height: 30),
           GlassSegmentedControl(
             segments: [
-              GlassTab(label: '0.5x'),
-              GlassTab(label: '1x'),
-              GlassTab(label: '1.5x'),
-              GlassTab(label: '2x')
+              GlassSegment(label: '0.5x'),
+              GlassSegment(label: '1x'),
+              GlassSegment(label: '1.5x'),
+              GlassSegment(label: '2x')
             ],
             selectedIndex: _speedIndex,
             onSegmentSelected: (i) => setState(() => _speedIndex = i),

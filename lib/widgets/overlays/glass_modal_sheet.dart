@@ -1,7 +1,6 @@
 import 'dart:async';
 import 'dart:ui';
 
-import 'package:flutter/cupertino.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/physics.dart';
@@ -9,6 +8,7 @@ import 'package:flutter/services.dart';
 
 import '../../src/renderer/liquid_glass_renderer.dart';
 import '../../theme/glass_theme_helpers.dart';
+import '../../theme/glass_theme.dart';
 import '../../types/glass_quality.dart';
 import '../shared/adaptive_glass.dart';
 import '../../src/renderer/internal/interaction_notification.dart';
@@ -51,7 +51,7 @@ class GlassModalSheet extends StatefulWidget {
   final EdgeInsetsGeometry? padding;
 
   /// Initial state when the sheet is first shown.
-  final SheetState initialState;
+  final GlassSheetState initialState;
 
   // ===========================================================================
   // Appearance Properties
@@ -96,7 +96,7 @@ class GlassModalSheet extends StatefulWidget {
   final double? peekWidth;
 
   /// Color/Saturation transition mode when expanding to full state.
-  final FillTransition fillTransition;
+  final GlassFillTransition fillTransition;
 
   /// Threshold (0.0 - 1.0) at which the sheet starts turning into a solid color.
   final double fillThreshold;
@@ -159,15 +159,15 @@ class GlassModalSheet extends StatefulWidget {
   final GlassModalSheetController? controller;
 
   /// Callback triggered when the sheet snaps to a new state.
-  final ValueChanged<SheetState>? onStateChanged;
+  final ValueChanged<GlassSheetState>? onStateChanged;
 
   /// Interaction mode (dismissible vs persistent).
-  final SheetMode mode;
+  final GlassSheetMode mode;
 
   /// Whether the 'peek' state is enabled.
   ///
-  /// If null, it defaults to false for [SheetMode.dismissible] and true for
-  /// [SheetMode.persistent].
+  /// If null, it defaults to false for [GlassSheetMode.dismissible] and true for
+  /// [GlassSheetMode.persistent].
   final bool? enablePeek;
 
   // ===========================================================================
@@ -203,7 +203,7 @@ class GlassModalSheet extends StatefulWidget {
     required this.child,
     this.halfSize = 0.45,
     this.fullSize,
-    this.initialState = SheetState.half,
+    this.initialState = GlassSheetState.half,
     this.topBorderRadius = 56,
     this.bottomBorderRadius,
     this.fullTopBorderRadius = 46,
@@ -227,9 +227,9 @@ class GlassModalSheet extends StatefulWidget {
     this.expandedColor,
     this.controller,
     this.onStateChanged,
-    this.mode = SheetMode.dismissible,
+    this.mode = GlassSheetMode.dismissible,
     this.peekSize = 90.0,
-    this.fillTransition = FillTransition.instant,
+    this.fillTransition = GlassFillTransition.instant,
     this.showDragIndicator = true,
     this.dragIndicatorColor,
     this.dragIndicatorWidth = 36,
@@ -255,12 +255,12 @@ class GlassModalSheet extends StatefulWidget {
     required WidgetBuilder builder,
     double halfSize = 0.45,
     double? fullSize,
-    SheetState initialState = SheetState.half,
+    GlassSheetState initialState = GlassSheetState.half,
     double fillThreshold = 0.60,
     LiquidGlassSettings? settings,
     Color? expandedColor,
-    ValueChanged<SheetState>? onStateChanged,
-    SheetMode mode = SheetMode.dismissible,
+    ValueChanged<GlassSheetState>? onStateChanged,
+    GlassSheetMode mode = GlassSheetMode.dismissible,
     double peekSize = 90.0,
     GlassQuality? quality,
     bool platformViewBackdrop = false,
@@ -275,7 +275,7 @@ class GlassModalSheet extends StatefulWidget {
     LiquidGlassSettings? fullSettings,
     double stretch = 0.5,
     GlassModalSheetController? controller,
-    FillTransition fillTransition = FillTransition.instant,
+    GlassFillTransition fillTransition = GlassFillTransition.instant,
     bool showDragIndicator = true,
     Color? dragIndicatorColor,
     double dragIndicatorWidth = 36,
@@ -304,7 +304,8 @@ class GlassModalSheet extends StatefulWidget {
     double? peekBottomRadius,
   }) {
     assert(() {
-      if (mode == SheetMode.persistent && barrierColor == Colors.transparent) {
+      if (mode == GlassSheetMode.persistent &&
+          barrierColor == Colors.transparent) {
         debugPrint(
           '[GlassModalSheet] WARNING: show() with persistent mode and '
           'transparent barrier does NOT provide true hit-through interaction. '
@@ -382,7 +383,7 @@ class GlassModalSheet extends StatefulWidget {
           peekBottomRadius: peekBottomRadius,
           onStateChanged: (state) {
             onStateChanged?.call(state);
-            if (state == SheetState.hidden && !isClosing) {
+            if (state == GlassSheetState.hidden && !isClosing) {
               isClosing = true;
               Navigator.of(context).pop();
             }

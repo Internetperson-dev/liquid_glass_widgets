@@ -20,11 +20,12 @@ import 'package:flutter/cupertino.dart';
 
 import '../../../src/renderer/liquid_glass_renderer.dart';
 import '../../../src/types/glass_interaction_behavior.dart';
+import '../../../theme/glass_theme.dart';
 import '../../../types/glass_quality.dart';
 import '../../../utils/draggable_indicator_physics.dart';
 import '../../../utils/glass_spring.dart';
 import '../../shared/animated_glass_indicator.dart';
-import '../../surfaces/glass_tab_bar.dart' show GlassTab;
+import '../../surfaces/glass_tab_bar.dart' show GlassSegment;
 
 // =============================================================================
 // Widget
@@ -55,9 +56,9 @@ class SegmentedControlContent extends StatefulWidget {
     super.key,
   });
 
-  /// List of segments to display. Each [GlassTab] may have a label, an icon,
+  /// List of segments to display. Each [GlassSegment] may have a label, an icon,
   /// or both. Minimum 2 segments required.
-  final List<GlassTab> segments;
+  final List<GlassSegment> segments;
   final int selectedIndex;
   final ValueChanged<int> onSegmentSelected;
   final TextStyle? selectedTextStyle;
@@ -194,6 +195,7 @@ class SegmentedControlContentState extends State<SegmentedControlContent> {
   }
 
   void _onSegmentTap(int index) {
+    if (!widget.segments[index].enabled) return;
     if (index != widget.selectedIndex) {
       widget.onSegmentSelected(index);
     }
@@ -204,7 +206,7 @@ class SegmentedControlContentState extends State<SegmentedControlContent> {
   @override
   Widget build(BuildContext context) {
     final indicatorColor = widget.indicatorColor ??
-        (CupertinoTheme.brightnessOf(context) == Brightness.light
+        (GlassTheme.brightnessOf(context) == Brightness.light
             ? CupertinoColors.black.withValues(alpha: 0.08)
             : CupertinoColors.white.withValues(alpha: 0.2));
     final targetAlignment = _computeXAlignmentForSegment(widget.selectedIndex);
@@ -324,6 +326,7 @@ class SegmentedControlContentState extends State<SegmentedControlContent> {
                         child: GestureDetector(
                           onTap: () => _onSegmentTap(i),
                           onTapDown: (_) {
+                            if (!widget.segments[i].enabled) return;
                             if (i != widget.selectedIndex) {
                               widget.onSegmentSelected(i);
                             }
@@ -332,13 +335,22 @@ class SegmentedControlContentState extends State<SegmentedControlContent> {
                           child: Semantics(
                             button: true,
                             selected: widget.selectedIndex == i,
-                            label: widget.segments[i].label ?? '',
+                            label: widget.segments[i].semanticLabel ??
+                                widget.segments[i].label ??
+                                '',
                             child: Center(
-                              child: _buildSegmentContent(
-                                widget.segments[i],
-                                isSelected: widget.selectedIndex == i,
-                                selectedStyle: selectedTextStyle,
-                                unselectedStyle: unselectedTextStyle,
+                              child: IgnorePointer(
+                                ignoring: !widget.segments[i].enabled,
+                                child: Opacity(
+                                  opacity:
+                                      widget.segments[i].enabled ? 1.0 : 0.38,
+                                  child: _buildSegmentContent(
+                                    widget.segments[i],
+                                    isSelected: widget.selectedIndex == i,
+                                    selectedStyle: selectedTextStyle,
+                                    unselectedStyle: unselectedTextStyle,
+                                  ),
+                                ),
                               ),
                             ),
                           ),
@@ -370,7 +382,7 @@ class SegmentedControlContentState extends State<SegmentedControlContent> {
 
   /// Builds the content for a single segment — label only, icon only, or both.
   Widget _buildSegmentContent(
-    GlassTab tab, {
+    GlassSegment tab, {
     required bool isSelected,
     required TextStyle selectedStyle,
     required TextStyle unselectedStyle,

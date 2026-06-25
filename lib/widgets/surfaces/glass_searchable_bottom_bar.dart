@@ -6,7 +6,7 @@ import '../../src/types/glass_interaction_behavior.dart';
 import '../../types/glass_quality.dart';
 import 'glass_bottom_bar.dart'
     show
-        GlassBottomBarExtraButton,
+        GlassTabBarExtraButton,
         GlassBottomBarTab,
         GlassTabPillAnchor,
         MaskingQuality;
@@ -42,7 +42,7 @@ export 'shared/glass_search_bar_config.dart';
 ///
 /// [GlassSearchableBottomBar] is a zero-logic shim that will be removed in v1.0.
 /// Migrate by replacing `GlassSearchableBottomBar(` with `GlassTabBar.searchable(`.
-/// All parameters are identical. Replace any `GlassBottomBarTab(` with `GlassTab(`.
+/// All parameters are identical. Replace any `GlassBottomBarTab(` with `GlassSegment(`.
 ///
 /// ```dart
 /// // BEFORE
@@ -187,7 +187,7 @@ class GlassSearchableBottomBar extends StatelessWidget {
 
   // ── Extra button (optional) ──────────────────────────────────────────────────
   /// Optional extra action button shown between the tab pill and the search pill.
-  final GlassBottomBarExtraButton? extraButton;
+  final GlassTabBarExtraButton? extraButton;
 
   // ── Layout ───────────────────────────────────────────────────────────────────
   /// Spacing between adjacent pills. Defaults to 8.

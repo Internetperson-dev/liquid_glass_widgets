@@ -737,9 +737,9 @@ class _ComparisonPageState extends State<_ComparisonPage> {
               indicatorSettings: _kGlass,
               quality: GlassQuality.premium,
               segments: [
-                GlassTab(label: 'Day'),
-                GlassTab(label: 'Week'),
-                GlassTab(label: 'Month')
+                GlassSegment(label: 'Day'),
+                GlassSegment(label: 'Week'),
+                GlassSegment(label: 'Month')
               ],
               selectedIndex: _segIndex,
               onSegmentSelected: (i) => setState(() => _segIndex = i),
@@ -750,9 +750,9 @@ class _ComparisonPageState extends State<_ComparisonPage> {
               indicatorSettings: _kGlassPill, // animated pill indicator
               quality: GlassQuality.standard,
               segments: [
-                GlassTab(label: 'Day'),
-                GlassTab(label: 'Week'),
-                GlassTab(label: 'Month')
+                GlassSegment(label: 'Day'),
+                GlassSegment(label: 'Week'),
+                GlassSegment(label: 'Month')
               ],
               selectedIndex: _segIndex,
               onSegmentSelected: (i) => setState(() => _segIndex = i),
@@ -836,9 +836,9 @@ class _ComparisonPageState extends State<_ComparisonPage> {
               settings: _kGlass,
               quality: GlassQuality.premium,
               segments: [
-                GlassTab(icon: const Icon(CupertinoIcons.home)),
-                GlassTab(icon: const Icon(CupertinoIcons.search)),
-                GlassTab(icon: const Icon(CupertinoIcons.person)),
+                GlassSegment(icon: const Icon(CupertinoIcons.home)),
+                GlassSegment(icon: const Icon(CupertinoIcons.search)),
+                GlassSegment(icon: const Icon(CupertinoIcons.person)),
               ],
               selectedIndex: _tabIndex,
               onSegmentSelected: (i) => setState(() => _tabIndex = i),
@@ -850,9 +850,9 @@ class _ComparisonPageState extends State<_ComparisonPage> {
                   _kGlassPill, // the pill indicator glass ← tuned here
               quality: GlassQuality.standard,
               segments: [
-                GlassTab(icon: const Icon(CupertinoIcons.home)),
-                GlassTab(icon: const Icon(CupertinoIcons.search)),
-                GlassTab(icon: const Icon(CupertinoIcons.person)),
+                GlassSegment(icon: const Icon(CupertinoIcons.home)),
+                GlassSegment(icon: const Icon(CupertinoIcons.search)),
+                GlassSegment(icon: const Icon(CupertinoIcons.person)),
               ],
               selectedIndex: _tabIndex,
               onSegmentSelected: (i) => setState(() => _tabIndex = i),

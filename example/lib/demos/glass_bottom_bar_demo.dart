@@ -78,7 +78,7 @@ class _GlassBottomBarDemoPageState extends State<GlassBottomBarDemoPage> {
           unselectedIconColor: Colors.white.withValues(alpha: 0.4),
           indicatorColor: Colors.blue.withValues(alpha: 0.2),
           maskingQuality: MaskingQuality.high,
-          extraButton: GlassBottomBarExtraButton(
+          extraButton: GlassTabBarExtraButton(
             icon: const Icon(CupertinoIcons.info),
             label: 'something',
             onTap: () {},

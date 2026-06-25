@@ -1,6 +1,7 @@
 import 'package:flutter/cupertino.dart';
 import '../../src/renderer/liquid_glass_renderer.dart';
 
+import '../../theme/glass_theme.dart';
 import '../../types/glass_button_style.dart';
 import '../../types/glass_quality.dart';
 import '../containers/glass_container.dart';
@@ -8,12 +9,12 @@ import 'glass_button.dart';
 import '../../theme/glass_theme_helpers.dart';
 
 // =============================================================================
-// GlassGroupItem — lightweight data model
+// GlassButtonGroupItem — lightweight data model
 // =============================================================================
 
 /// A lightweight data class representing a single item in a [GlassButtonGroup].
 ///
-/// Unlike [GlassButton], a [GlassGroupItem] carries no widget state — no
+/// Unlike [GlassButton], a [GlassButtonGroupItem] carries no widget state — no
 /// animation controllers, no stretch physics, no glow overlays. The parent
 /// [GlassButtonGroup] provides the glass surface and renders each item as a
 /// simple icon with a press-dim highlight.
@@ -21,15 +22,15 @@ import '../../theme/glass_theme_helpers.dart';
 /// ```dart
 /// GlassButtonGroup.icons(
 ///   items: [
-///     GlassGroupItem(icon: Icon(CupertinoIcons.bold), onTap: () {}),
-///     GlassGroupItem(icon: Icon(CupertinoIcons.italic), onTap: () {}),
-///     GlassGroupItem(icon: Icon(CupertinoIcons.underline), onTap: () {}),
+///     GlassButtonGroupItem(icon: Icon(CupertinoIcons.bold), onTap: () {}),
+///     GlassButtonGroupItem(icon: Icon(CupertinoIcons.italic), onTap: () {}),
+///     GlassButtonGroupItem(icon: Icon(CupertinoIcons.underline), onTap: () {}),
 ///   ],
 /// )
 /// ```
-class GlassGroupItem {
+class GlassButtonGroupItem {
   /// Creates a group item with an icon and tap callback.
-  const GlassGroupItem({
+  const GlassButtonGroupItem({
     required this.icon,
     required this.onTap,
     this.label,
@@ -67,16 +68,16 @@ class GlassGroupItem {
 ///
 /// ### 1. Lightweight items (recommended)
 ///
-/// Use [GlassButtonGroup.icons] with [GlassGroupItem] data objects. Each item
+/// Use [GlassButtonGroup.icons] with [GlassButtonGroupItem] data objects. Each item
 /// is rendered as a minimal icon with tap handling — no animation controllers
 /// or glass shaders per item. The group provides the glass surface.
 ///
 /// ```dart
 /// GlassButtonGroup.icons(
 ///   items: [
-///     GlassGroupItem(icon: Icon(CupertinoIcons.text_alignleft), onTap: () {}),
-///     GlassGroupItem(icon: Icon(CupertinoIcons.trash), onTap: () {}),
-///     GlassGroupItem(icon: Icon(CupertinoIcons.add), onTap: () {}),
+///     GlassButtonGroupItem(icon: Icon(CupertinoIcons.text_alignleft), onTap: () {}),
+///     GlassButtonGroupItem(icon: Icon(CupertinoIcons.trash), onTap: () {}),
+///     GlassButtonGroupItem(icon: Icon(CupertinoIcons.add), onTap: () {}),
 ///   ],
 /// )
 /// ```
@@ -114,7 +115,7 @@ class GlassButtonGroup extends StatelessWidget {
     this.platformViewBackdrop = false,
   }) : items = null;
 
-  /// Creates a group of glass buttons from lightweight [GlassGroupItem]s.
+  /// Creates a group of glass buttons from lightweight [GlassButtonGroupItem]s.
   ///
   /// Each item is rendered as a simple icon with press-dim feedback — no
   /// animation controllers, stretch physics, or glow overlays. The group
@@ -123,7 +124,7 @@ class GlassButtonGroup extends StatelessWidget {
   /// Defaults to `showDividers: false` and `borderRadius: 22.0` for the
   /// unified pill look shown in iOS 26 toolbar groups.
   const GlassButtonGroup.icons({
-    required List<GlassGroupItem> this.items,
+    required List<GlassButtonGroupItem> this.items,
     super.key,
     this.direction = Axis.horizontal,
     this.settings,
@@ -147,7 +148,7 @@ class GlassButtonGroup extends StatelessWidget {
   ///
   /// When non-null, [children] is ignored and items are rendered internally
   /// as lightweight icons with press-dim feedback.
-  final List<GlassGroupItem>? items;
+  final List<GlassButtonGroupItem>? items;
 
   /// Direction to arrange buttons (horizontal or vertical).
   final Axis direction;
@@ -244,7 +245,7 @@ class GlassButtonGroup extends StatelessWidget {
     // Children mode: use GlassContainer for full widget flexibility.
     // ---------------------------------------------------------------------------
     final effectiveBorderColor = borderColor ??
-        (CupertinoTheme.brightnessOf(context) == Brightness.light
+        (GlassTheme.brightnessOf(context) == Brightness.light
             ? CupertinoColors.black.withValues(alpha: 0.12)
             : CupertinoColors.white.withValues(alpha: 0.12));
 
@@ -323,7 +324,7 @@ class GlassButtonGroup extends StatelessWidget {
 // _GlassGroupItemWidget — lightweight per-item tap target
 // =============================================================================
 
-/// Renders a single [GlassGroupItem] as a minimal tap target.
+/// Renders a single [GlassButtonGroupItem] as a minimal tap target.
 ///
 /// The parent [GlassButton.custom] provides all visual press feedback
 /// (stretch, glow, saturation). This widget only handles individual tap
@@ -336,7 +337,7 @@ class _GlassGroupItemWidget extends StatelessWidget {
     required this.padding,
   });
 
-  final GlassGroupItem item;
+  final GlassButtonGroupItem item;
   final Color iconColor;
   final double iconSize;
   final EdgeInsetsGeometry padding;

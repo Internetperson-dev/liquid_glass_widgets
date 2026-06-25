@@ -226,9 +226,9 @@ class _ShowcaseHomeScreenState extends State<ShowcaseHomeScreen> {
       width: 160,
       child: GlassSegmentedControl(
         segments: [
-          GlassTab(label: 'Standard'),
-          GlassTab(label: 'Premium'),
-          GlassTab(label: 'Minimal')
+          GlassSegment(label: 'Standard'),
+          GlassSegment(label: 'Premium'),
+          GlassSegment(label: 'Minimal')
         ],
         selectedIndex: currentIndex >= 0 ? currentIndex : 1,
         onSegmentSelected: (index) {
@@ -651,7 +651,7 @@ class _ShowcaseHomeScreenState extends State<ShowcaseHomeScreen> {
     GlassModalSheet.show(
       context: context,
       quality: widget.currentQuality,
-      initialState: SheetState.peek,
+      initialState: GlassSheetState.peek,
       enablePeek: true,
       peekTopBorderRadius: 46,
       builder: (context) => const BaseScenario(
@@ -731,7 +731,7 @@ class _ShowcaseHomeScreenState extends State<ShowcaseHomeScreen> {
     GlassModalSheet.show(
       context: context,
       quality: widget.currentQuality,
-      fillTransition: FillTransition.gradual,
+      fillTransition: GlassFillTransition.gradual,
       fillThreshold: 0.8,
       builder: (context) => const BaseScenario(
         title: 'Gradual Experience',
@@ -858,9 +858,9 @@ class MapsExperienceScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       body: GlassModalSheetScaffold(
-        mode: SheetMode.persistent,
+        mode: GlassSheetMode.persistent,
         enablePeek: true,
-        initialState: SheetState.peek,
+        initialState: GlassSheetState.peek,
         peekSize: 90,
         halfSize: 0.445,
         horizontalMargin: 5,
@@ -873,7 +873,7 @@ class MapsExperienceScreen extends StatelessWidget {
         topBorderRadius: 40,
         bottomBorderRadius: 54,
         fullTopBorderRadius: 36,
-        fillTransition: FillTransition.instant,
+        fillTransition: GlassFillTransition.instant,
         halfSettings: LiquidGlassSettings(
           blur: 5,
           glassColor: Colors.blueGrey.withValues(alpha: 0.8),

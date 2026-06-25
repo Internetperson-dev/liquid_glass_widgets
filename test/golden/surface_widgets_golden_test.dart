@@ -106,7 +106,7 @@ void main() {
               ],
               selectedIndex: 0,
               onTabSelected: (_) {},
-              extraButton: GlassBottomBarExtraButton(
+              extraButton: GlassTabBarExtraButton(
                 icon: Icon(CupertinoIcons.add),
                 label: 'Add',
                 onTap: () {},

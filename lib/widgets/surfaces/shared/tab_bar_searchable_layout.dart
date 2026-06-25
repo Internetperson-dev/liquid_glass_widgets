@@ -18,11 +18,12 @@ import '../../../types/glass_quality.dart';
 import '../../shared/adaptive_liquid_glass_layer.dart';
 import '../../shared/glass_content_aware_scope.dart';
 import '../../../theme/glass_theme_data.dart';
+import '../../../theme/glass_theme.dart';
 import '../../../theme/glass_theme_helpers.dart';
 import '../glass_bottom_bar.dart'
     show
-        ExtraButtonPosition,
-        GlassBottomBarExtraButton,
+        GlassExtraButtonPosition,
+        GlassTabBarExtraButton,
         GlassBottomBarTab,
         GlassTabPillAnchor,
         MaskingQuality;
@@ -117,7 +118,7 @@ class TabBarSearchableLayout extends StatefulWidget {
   final GlassSearchBarConfig searchConfig;
   final SearchableBottomBarController? controller;
   final bool isSearchActive;
-  final GlassBottomBarExtraButton? extraButton;
+  final GlassTabBarExtraButton? extraButton;
   final double spacing;
   final double horizontalPadding;
   final double verticalPadding;
@@ -182,13 +183,21 @@ class _TabBarSearchableLayoutState extends State<TabBarSearchableLayout>
   bool _ownsController = false;
 
   void _onControllerChanged() => setState(() {});
-  void _onSpringTick() => setState(() {});
+
+  // D1: whitenBoostCtrl still uses setState — it fires at most once per scroll-to-bottom
+  // (200 ms easeOut, not a 120 Hz spring). Full rebuild cost is acceptable here.
+  // The three spring controllers (_tabWCtrl, _searchLeftCtrl, _searchWCtrl) drive
+  // ListenableBuilder widgets directly — no setState on spring ticks.
+  void _onWhitenTick() => setState(() {});
 
   late AnimationController _tabWCtrl;
   late AnimationController _searchLeftCtrl;
   late AnimationController _searchWCtrl;
   late AnimationController _whitenBoostCtrl;
   double _whitenTarget = 0.0;
+
+  // D1: hoisted — avoids allocating a new _MergedListenable on every LayoutBuilder call.
+  late Listenable _searchPillListenable;
 
   @override
   void initState() {
@@ -207,23 +216,28 @@ class _TabBarSearchableLayoutState extends State<TabBarSearchableLayout>
     }
     _controller.addListener(_onControllerChanged);
 
+    // D1: no addListener — these controllers drive ListenableBuilder widgets directly.
+    // Spring ticks rebuild only the single Positioned child they animate, not the
+    // full State.build(). See the Stack children in _buildBar.
     _tabWCtrl = AnimationController(
       vsync: this,
       lowerBound: double.negativeInfinity,
       upperBound: double.infinity,
-    )..addListener(_onSpringTick);
+    );
     _searchLeftCtrl = AnimationController(
       vsync: this,
       lowerBound: double.negativeInfinity,
       upperBound: double.infinity,
-    )..addListener(_onSpringTick);
+    );
     _searchWCtrl = AnimationController(
       vsync: this,
       lowerBound: double.negativeInfinity,
       upperBound: double.infinity,
-    )..addListener(_onSpringTick);
+    );
     _whitenBoostCtrl = AnimationController(vsync: this)
-      ..addListener(_onSpringTick);
+      ..addListener(_onWhitenTick);
+    // D1: create once — the controllers never change after initState.
+    _searchPillListenable = Listenable.merge([_searchLeftCtrl, _searchWCtrl]);
     widget.scrollController?.addListener(_onScrollMaybeWhiten);
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (mounted) _onScrollMaybeWhiten();
@@ -333,8 +347,7 @@ class _TabBarSearchableLayoutState extends State<TabBarSearchableLayout>
     final effectiveGlowSpreadRadius = resolvedGlowColors.glowSpreadRadius;
     final effectiveGlowOpacity = resolvedGlowColors.glowOpacity;
 
-    final bool isLight =
-        CupertinoTheme.brightnessOf(context) == Brightness.light;
+    final bool isLight = GlassTheme.brightnessOf(context) == Brightness.light;
     final effectiveSettings =
         _applyWhiten(widget.settings ?? _defaultGlassSettings, isLight);
     final searching = widget.isSearchActive;
@@ -370,7 +383,7 @@ class _TabBarSearchableLayoutState extends State<TabBarSearchableLayout>
                     keyboardPresent;
 
                 final extraPos = widget.extraButton?.position ??
-                    ExtraButtonPosition.beforeSearch;
+                    GlassExtraButtonPosition.beforeSearch;
                 final extraFullW = widget.extraButton?.size ?? 0.0;
                 final extraCollapsesOnSearch =
                     widget.extraButton?.collapseOnSearchFocus ?? true;
@@ -402,7 +415,7 @@ class _TabBarSearchableLayoutState extends State<TabBarSearchableLayout>
                     searching ? widget.searchBarHeight : widget.barHeight;
                 final extraTargetW = layout.extraTargetW;
                 final extraWLeft = (extraFullW > 0 &&
-                        extraPos == ExtraButtonPosition.beforeSearch)
+                        extraPos == GlassExtraButtonPosition.beforeSearch)
                     ? (extraTargetW + widget.spacing)
                     : 0.0;
                 final doCollapseLayout =
@@ -414,11 +427,11 @@ class _TabBarSearchableLayoutState extends State<TabBarSearchableLayout>
                     targetH -
                     widget.spacing -
                     (extraFullW > 0 &&
-                            extraPos == ExtraButtonPosition.beforeSearch
+                            extraPos == GlassExtraButtonPosition.beforeSearch
                         ? extraFullW + widget.spacing
                         : 0.0) -
                     (extraFullW > 0 &&
-                            extraPos == ExtraButtonPosition.afterSearch
+                            extraPos == GlassExtraButtonPosition.afterSearch
                         ? extraFullW + widget.spacing
                         : 0.0);
 
@@ -474,23 +487,10 @@ class _TabBarSearchableLayoutState extends State<TabBarSearchableLayout>
                   }
                 }
 
-                final curTabW = (_controller.pillsInitialized
-                        ? _tabWCtrl.value
-                        : targetTabW)
-                    .clamp(0.0, totalW);
-
-                final curTabLeft = centeredTab
-                    ? ((maxTabW - curTabW) / 2).clamp(0.0, maxTabW)
-                    : 0.0;
-
-                final curSearchLeft = (_controller.pillsInitialized
-                        ? _searchLeftCtrl.value
-                        : targetSearchLeft)
-                    .clamp(0.0, totalW);
-                final curSearchW = (_controller.pillsInitialized
-                        ? _searchWCtrl.value
-                        : targetSearchW)
-                    .clamp(0.0, totalW);
+                // D1: curTabW, curTabLeft, curSearchLeft, curSearchW are now computed
+                // inside their respective ListenableBuilder builders below, so each
+                // Positioned child reads a fresh controller value on its own tick
+                // without involving the enclosing LayoutBuilder or State.build().
 
                 final floatY = layout.floatY;
                 final totalH = animH + floatY;
@@ -501,158 +501,205 @@ class _TabBarSearchableLayoutState extends State<TabBarSearchableLayout>
                   child: Stack(
                     clipBehavior: Clip.none,
                     children: [
-                      // 1. Search pill
-                      Positioned(
-                        left: curSearchLeft,
-                        bottom: floatY,
-                        width: math.max(0.01, curSearchW),
-                        height: animH,
-                        child: SearchPill(
-                          config: widget.searchConfig,
-                          isActive: searching,
-                          barBorderRadius: widget.barBorderRadius,
-                          quality: effectiveQuality,
-                          platformViewBackdrop: widget.platformViewBackdrop,
-                          enableBackgroundAnimation:
-                              widget.interactionBehavior.hasScale,
-                          backgroundPressScale: widget.pressScale,
-                          interactionGlowColor:
-                              widget.interactionBehavior.hasGlow
-                                  ? effectiveInteractionGlowColor
-                                  : const Color(0x00000000),
-                          interactionGlowRadius: widget.interactionGlowRadius,
-                          interactionGlowBlurRadius: effectiveGlowBlurRadius,
-                          interactionGlowSpreadRadius:
-                              effectiveGlowSpreadRadius,
-                          interactionGlowOpacity: effectiveGlowOpacity,
-                          onFocusChanged: (focused) {
-                            if (focused) {
-                              _controller.onFocusChanged(true);
-                            } else {
-                              _onFocusLost();
-                            }
-                            widget.searchConfig.onSearchFocusChanged
-                                ?.call(focused);
-                          },
-                        ),
+                      // 1. Search pill — D1: rebuilt only when position/width tick.
+                      ListenableBuilder(
+                        listenable: _searchPillListenable,
+                        builder: (context, _) {
+                          final curSearchLeft = (_controller.pillsInitialized
+                                  ? _searchLeftCtrl.value
+                                  : targetSearchLeft)
+                              .clamp(0.0, totalW);
+                          final curSearchW = (_controller.pillsInitialized
+                                  ? _searchWCtrl.value
+                                  : targetSearchW)
+                              .clamp(0.0, totalW);
+                          return Positioned(
+                            left: curSearchLeft,
+                            bottom: floatY,
+                            width: math.max(0.01, curSearchW),
+                            height: animH,
+                            child: SearchPill(
+                              config: widget.searchConfig,
+                              isActive: searching,
+                              barBorderRadius: widget.barBorderRadius,
+                              quality: effectiveQuality,
+                              platformViewBackdrop: widget.platformViewBackdrop,
+                              enableBackgroundAnimation:
+                                  widget.interactionBehavior.hasScale,
+                              backgroundPressScale: widget.pressScale,
+                              interactionGlowColor:
+                                  widget.interactionBehavior.hasGlow
+                                      ? effectiveInteractionGlowColor
+                                      : const Color(0x00000000),
+                              interactionGlowRadius:
+                                  widget.interactionGlowRadius,
+                              interactionGlowBlurRadius:
+                                  effectiveGlowBlurRadius,
+                              interactionGlowSpreadRadius:
+                                  effectiveGlowSpreadRadius,
+                              interactionGlowOpacity: effectiveGlowOpacity,
+                              onFocusChanged: (focused) {
+                                if (focused) {
+                                  _controller.onFocusChanged(true);
+                                } else {
+                                  _onFocusLost();
+                                }
+                                widget.searchConfig.onSearchFocusChanged
+                                    ?.call(focused);
+                              },
+                            ),
+                          );
+                        },
                       ),
 
-                      // 2. Optional extra button
+                      // 2. Optional extra button — D1: left position tracks _searchLeftCtrl.
                       if (widget.extraButton != null)
-                        Positioned(
-                          left: extraPos == ExtraButtonPosition.beforeSearch
-                              ? curSearchLeft - extraWLeft
-                              : null,
-                          right: extraPos == ExtraButtonPosition.afterSearch
-                              ? (dismissVisible ? targetDismissReserve : 0.0)
-                              : null,
-                          bottom: extraCollapsesOnSearch ? 0 : floatY,
-                          width: doCollapseLayout
-                              ? math.min(extraTargetW, animH)
-                              : extraTargetW,
-                          height: animH,
-                          child: AnimatedOpacity(
-                            opacity: (searching && extraCollapsesOnSearch)
-                                ? 0.0
-                                : 1.0,
-                            duration: const Duration(milliseconds: 180),
-                            curve: Curves.easeOut,
-                            child: IgnorePointer(
-                              ignoring: searching && extraCollapsesOnSearch,
-                              child: FittedBox(
-                                fit: BoxFit.scaleDown,
-                                alignment: Alignment.center,
-                                child: BottomBarExtraBtn(
-                                  config: widget.extraButton!,
-                                  quality: effectiveQuality,
-                                  iconColor: widget.extraButton!.iconColor ??
-                                      resolvedUnselectedIconColor,
-                                  enableBlend: widget.enableBlend,
-                                  borderRadius: widget.barBorderRadius ==
-                                          TabBarSearchableLayout
-                                              ._kDefaultBorderRadius
-                                      ? null
-                                      : widget.barBorderRadius,
+                        ListenableBuilder(
+                          listenable: _searchLeftCtrl,
+                          builder: (context, _) {
+                            final curSearchLeft = (_controller.pillsInitialized
+                                    ? _searchLeftCtrl.value
+                                    : targetSearchLeft)
+                                .clamp(0.0, totalW);
+                            return Positioned(
+                              left: extraPos ==
+                                      GlassExtraButtonPosition.beforeSearch
+                                  ? curSearchLeft - extraWLeft
+                                  : null,
+                              right: extraPos ==
+                                      GlassExtraButtonPosition.afterSearch
+                                  ? (dismissVisible
+                                      ? targetDismissReserve
+                                      : 0.0)
+                                  : null,
+                              bottom: extraCollapsesOnSearch ? 0 : floatY,
+                              width: doCollapseLayout
+                                  ? math.min(extraTargetW, animH)
+                                  : extraTargetW,
+                              height: animH,
+                              child: AnimatedOpacity(
+                                opacity: (searching && extraCollapsesOnSearch)
+                                    ? 0.0
+                                    : 1.0,
+                                duration: const Duration(milliseconds: 180),
+                                curve: Curves.easeOut,
+                                child: IgnorePointer(
+                                  ignoring: searching && extraCollapsesOnSearch,
+                                  child: FittedBox(
+                                    fit: BoxFit.scaleDown,
+                                    alignment: Alignment.center,
+                                    child: BottomBarExtraBtn(
+                                      config: widget.extraButton!,
+                                      quality: effectiveQuality,
+                                      iconColor:
+                                          widget.extraButton!.iconColor ??
+                                              resolvedUnselectedIconColor,
+                                      enableBlend: widget.enableBlend,
+                                      borderRadius: widget.barBorderRadius ==
+                                              TabBarSearchableLayout
+                                                  ._kDefaultBorderRadius
+                                          ? null
+                                          : widget.barBorderRadius,
+                                    ),
+                                  ),
                                 ),
                               ),
-                            ),
-                          ),
+                            );
+                          },
                         ),
 
-                      // 3. Tab pill (spring-driven width)
-                      Positioned(
-                        left: curTabLeft,
-                        bottom: 0,
-                        width: math.max(0.01, curTabW),
-                        height: animH,
-                        child: SearchableTabIndicator(
-                          quality: effectiveQuality,
-                          visible: widget.showIndicator && !searching,
-                          tabIndex: widget.selectedIndex,
-                          tabCount: widget.tabs.length,
-                          onTabChanged: widget.onTabSelected,
-                          barHeight: animH,
-                          barBorderRadius: widget.barBorderRadius,
-                          indicatorBorderRadius: widget.indicatorBorderRadius,
-                          tabPadding: widget.tabPadding,
-                          maskingQuality: widget.maskingQuality,
-                          magnification: widget.magnification,
-                          innerBlur: widget.innerBlur,
-                          indicatorColor: widget.indicatorColor,
-                          indicatorExpansion: widget.indicatorExpansion,
-                          indicatorSettings: widget.indicatorSettings,
-                          indicatorPinchStrength: widget.indicatorPinchStrength,
-                          backgroundKey: widget.backgroundKey,
-                          platformViewBackdrop: widget.platformViewBackdrop,
-                          isSearchActive: searching,
-                          interactionGlowColor:
-                              widget.interactionBehavior.hasGlow
-                                  ? effectiveInteractionGlowColor
-                                  : const Color(0x00000000),
-                          interactionGlowRadius: widget.interactionGlowRadius,
-                          interactionGlowBlurRadius: effectiveGlowBlurRadius,
-                          interactionGlowSpreadRadius:
-                              effectiveGlowSpreadRadius,
-                          interactionGlowOpacity: effectiveGlowOpacity,
-                          enableBackgroundAnimation:
-                              widget.interactionBehavior.hasScale,
-                          backgroundPressScale: widget.pressScale,
-                          collapsedLogoBuilder:
-                              widget.searchConfig.collapsedLogoBuilder ??
-                                  (context) {
-                                    final currentTab =
-                                        widget.tabs[widget.selectedIndex];
-                                    return Center(
-                                      child: IconTheme(
-                                        data: IconThemeData(
-                                          color: widget.unselectedIconColor,
-                                          size: widget.iconSize,
-                                        ),
-                                        child: currentTab.activeIcon ??
-                                            currentTab.icon,
-                                      ),
-                                    );
-                                  },
-                          onDismissSearch: () =>
-                              widget.searchConfig.onSearchToggle(false),
-                          childUnselected: _buildTabRow(
-                            selected: false,
-                            resolvedSelectedIconColor:
-                                resolvedSelectedIconColor,
-                            resolvedUnselectedIconColor:
-                                resolvedUnselectedIconColor,
-                          ),
-                          selectedTabBuilder: (ctx, intensity, alignment) =>
-                              _buildTabRow(
-                            selected: true,
-                            intensity: intensity,
-                            alignment: alignment,
-                            resolvedSelectedIconColor:
-                                resolvedSelectedIconColor,
-                            resolvedUnselectedIconColor:
-                                resolvedUnselectedIconColor,
-                          ),
+                      // 3. Tab pill — D1: rebuilt only when _tabWCtrl ticks.
+                      //    childUnselected is passed as ListenableBuilder.child so the
+                      //    unselected row is built once and reused across spring ticks.
+                      ListenableBuilder(
+                        listenable: _tabWCtrl,
+                        child: _buildTabRow(
+                          selected: false,
+                          resolvedSelectedIconColor: resolvedSelectedIconColor,
+                          resolvedUnselectedIconColor:
+                              resolvedUnselectedIconColor,
                         ),
+                        builder: (context, child) {
+                          final curTabW = (_controller.pillsInitialized
+                                  ? _tabWCtrl.value
+                                  : targetTabW)
+                              .clamp(0.0, totalW);
+                          final curTabLeft = centeredTab
+                              ? ((maxTabW - curTabW) / 2).clamp(0.0, maxTabW)
+                              : 0.0;
+                          return Positioned(
+                            left: curTabLeft,
+                            bottom: 0,
+                            width: math.max(0.01, curTabW),
+                            height: animH,
+                            child: SearchableTabIndicator(
+                              quality: effectiveQuality,
+                              visible: widget.showIndicator && !searching,
+                              tabIndex: widget.selectedIndex,
+                              tabCount: widget.tabs.length,
+                              onTabChanged: widget.onTabSelected,
+                              barHeight: animH,
+                              barBorderRadius: widget.barBorderRadius,
+                              indicatorBorderRadius:
+                                  widget.indicatorBorderRadius,
+                              tabPadding: widget.tabPadding,
+                              maskingQuality: widget.maskingQuality,
+                              magnification: widget.magnification,
+                              innerBlur: widget.innerBlur,
+                              indicatorColor: widget.indicatorColor,
+                              indicatorExpansion: widget.indicatorExpansion,
+                              indicatorSettings: widget.indicatorSettings,
+                              indicatorPinchStrength:
+                                  widget.indicatorPinchStrength,
+                              backgroundKey: widget.backgroundKey,
+                              platformViewBackdrop: widget.platformViewBackdrop,
+                              isSearchActive: searching,
+                              interactionGlowColor:
+                                  widget.interactionBehavior.hasGlow
+                                      ? effectiveInteractionGlowColor
+                                      : const Color(0x00000000),
+                              interactionGlowRadius:
+                                  widget.interactionGlowRadius,
+                              interactionGlowBlurRadius:
+                                  effectiveGlowBlurRadius,
+                              interactionGlowSpreadRadius:
+                                  effectiveGlowSpreadRadius,
+                              interactionGlowOpacity: effectiveGlowOpacity,
+                              enableBackgroundAnimation:
+                                  widget.interactionBehavior.hasScale,
+                              backgroundPressScale: widget.pressScale,
+                              collapsedLogoBuilder:
+                                  widget.searchConfig.collapsedLogoBuilder ??
+                                      (context) {
+                                        final currentTab =
+                                            widget.tabs[widget.selectedIndex];
+                                        return Center(
+                                          child: IconTheme(
+                                            data: IconThemeData(
+                                              color: widget.unselectedIconColor,
+                                              size: widget.iconSize,
+                                            ),
+                                            child: currentTab.activeIcon ??
+                                                currentTab.icon,
+                                          ),
+                                        );
+                                      },
+                              onDismissSearch: () =>
+                                  widget.searchConfig.onSearchToggle(false),
+                              childUnselected: child!,
+                              selectedTabBuilder: (ctx, intensity, alignment) =>
+                                  _buildTabRow(
+                                selected: true,
+                                intensity: intensity,
+                                alignment: alignment,
+                                resolvedSelectedIconColor:
+                                    resolvedSelectedIconColor,
+                                resolvedUnselectedIconColor:
+                                    resolvedUnselectedIconColor,
+                              ),
+                            ),
+                          );
+                        },
                       ),
 
                       // 4. Dismiss × pill

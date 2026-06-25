@@ -74,7 +74,7 @@ void main() {
             tabs: [_tab('Home'), _tab('Profile')],
             selectedIndex: 0,
             onTabSelected: (_) {},
-            extraButton: GlassBottomBarExtraButton(
+            extraButton: GlassTabBarExtraButton(
               icon: const Icon(Icons.add),
               onTap: () {},
               label: 'Add',
@@ -96,7 +96,7 @@ void main() {
             selectedIndex: 0,
             onTabSelected: (_) {},
             barBorderRadius: 10, // not the default 32
-            extraButton: GlassBottomBarExtraButton(
+            extraButton: GlassTabBarExtraButton(
               icon: const Icon(Icons.add),
               onTap: () {},
               label: 'Add',
@@ -142,7 +142,7 @@ void main() {
             selectedIndex: 0,
             onTabSelected: (_) {},
             enableBlend: false,
-            extraButton: GlassBottomBarExtraButton(
+            extraButton: GlassTabBarExtraButton(
               icon: const Icon(Icons.add),
               onTap: () {},
               label: 'Add',

@@ -4,9 +4,9 @@ part of '../glass_modal_sheet.dart';
 // Sheet States & Modes
 // ===========================================================================
 
-enum SheetState { hidden, peek, half, full }
+enum GlassSheetState { hidden, peek, half, full }
 
-enum SheetMode {
+enum GlassSheetMode {
   /// Scenario 1: hidden ↔ half ↔ full
   /// Can swipe down from half to hidden. From full → half → hidden.
   dismissible,
@@ -17,7 +17,7 @@ enum SheetMode {
   persistent,
 }
 
-enum FillTransition {
+enum GlassFillTransition {
   /// Gradual transition through gradient (current behavior)
   gradual,
 
@@ -31,7 +31,7 @@ enum FillTransition {
 
 /// Immutable state of the sheet at any given moment.
 class SheetSnapshot {
-  final SheetState state;
+  final GlassSheetState state;
   final double position; // 0.0 .. 1.0 fraction of screen height
   final double velocity; // pixels/second, positive = up
   final Size screenSize;
@@ -44,7 +44,7 @@ class SheetSnapshot {
   });
 
   SheetSnapshot copyWith({
-    SheetState? state,
+    GlassSheetState? state,
     double? position,
     double? velocity,
     Size? screenSize,
@@ -58,9 +58,9 @@ class SheetSnapshot {
 
   double get expandProgress {
     final halfPos =
-        SheetGeometry.positionFor(SheetState.half, screenSize.height);
+        SheetGeometry.positionFor(GlassSheetState.half, screenSize.height);
     final fullPos =
-        SheetGeometry.positionFor(SheetState.full, screenSize.height);
+        SheetGeometry.positionFor(GlassSheetState.full, screenSize.height);
     if (fullPos <= halfPos) return 0.0;
     return ((position - halfPos) / (fullPos - halfPos)).clamp(0.0, 1.0);
   }
@@ -72,7 +72,7 @@ class SheetSnapshot {
 
 /// Pure geometry calculations — no BuildContext, no side effects.
 class SheetGeometry {
-  final SheetMode mode;
+  final GlassSheetMode mode;
   final double halfSize;
   final double? fullSize;
   final double peekSize;
@@ -87,23 +87,23 @@ class SheetGeometry {
   });
 
   static double positionFor(
-    SheetState state,
+    GlassSheetState state,
     double screenHeight, {
-    SheetMode? mode,
+    GlassSheetMode? mode,
     double? halfSize,
     double? fullSize,
     double? peekSize,
   }) {
     switch (state) {
-      case SheetState.hidden:
+      case GlassSheetState.hidden:
         return 0.0;
-      case SheetState.peek:
+      case GlassSheetState.peek:
         double pos = peekSize ?? 5.0;
         return pos > 1.0 ? pos / screenHeight : pos;
-      case SheetState.half:
+      case GlassSheetState.half:
         double pos = halfSize ?? 0.45;
         return pos > 1.0 ? pos / screenHeight : pos;
-      case SheetState.full:
+      case GlassSheetState.full:
         double? target = fullSize;
         if (target != null) {
           return target > 1.0 ? target / screenHeight : target;
@@ -114,14 +114,14 @@ class SheetGeometry {
     }
   }
 
-  double positionForState(SheetState state, double screenHeight) {
-    final hiddenPos = positionFor(SheetState.hidden, screenHeight,
+  double positionForState(GlassSheetState state, double screenHeight) {
+    final hiddenPos = positionFor(GlassSheetState.hidden, screenHeight,
         mode: mode, halfSize: halfSize, fullSize: fullSize, peekSize: peekSize);
-    final peekPos = positionFor(SheetState.peek, screenHeight,
+    final peekPos = positionFor(GlassSheetState.peek, screenHeight,
         mode: mode, halfSize: halfSize, fullSize: fullSize, peekSize: peekSize);
-    final halfPos = positionFor(SheetState.half, screenHeight,
+    final halfPos = positionFor(GlassSheetState.half, screenHeight,
         mode: mode, halfSize: halfSize, fullSize: fullSize, peekSize: peekSize);
-    final fullPos = positionFor(SheetState.full, screenHeight,
+    final fullPos = positionFor(GlassSheetState.full, screenHeight,
         mode: mode, halfSize: halfSize, fullSize: fullSize, peekSize: peekSize);
 
     // Cascade constraint: ensure order hidden <= peek <= half <= full
@@ -130,38 +130,39 @@ class SheetGeometry {
     final safeFull = fullPos.clamp(safeHalf, 1.0);
 
     switch (state) {
-      case SheetState.hidden:
+      case GlassSheetState.hidden:
         return hiddenPos;
-      case SheetState.peek:
+      case GlassSheetState.peek:
         return safePeek;
-      case SheetState.half:
+      case GlassSheetState.half:
         return safeHalf;
-      case SheetState.full:
+      case GlassSheetState.full:
         return safeFull;
     }
   }
 
-  SheetState get minState => enablePeek ? SheetState.peek : SheetState.hidden;
+  GlassSheetState get minState =>
+      enablePeek ? GlassSheetState.peek : GlassSheetState.hidden;
 
   /// Computes target state based on current position and velocity.
-  SheetState resolveTarget(
+  GlassSheetState resolveTarget(
     SheetSnapshot current, {
     required double snapThreshold,
     required double velocityThreshold,
   }) {
     // Build the ordered sequence of available states for the current mode
-    final List<SheetState> states = [];
-    if (!enablePeek && mode == SheetMode.dismissible) {
-      states.add(SheetState.hidden);
+    final List<GlassSheetState> states = [];
+    if (!enablePeek && mode == GlassSheetMode.dismissible) {
+      states.add(GlassSheetState.hidden);
     }
     if (enablePeek) {
-      states.add(SheetState.peek);
+      states.add(GlassSheetState.peek);
     }
     // Skip half state when halfSize is 0 — allows direct full→hidden.
     if (halfSize > 0) {
-      states.add(SheetState.half);
+      states.add(GlassSheetState.half);
     }
-    states.add(SheetState.full);
+    states.add(GlassSheetState.full);
 
     final positions = states
         .map((s) => positionForState(s, current.screenSize.height))
@@ -174,7 +175,7 @@ class SheetGeometry {
       for (int i = 0; i < states.length - 1; i++) {
         if (current.position < positions[i + 1] - 0.001) return states[i + 1];
       }
-      return SheetState.full;
+      return GlassSheetState.full;
     }
     if (velocity < -velocityThreshold) {
       // Find the next state below current
@@ -217,7 +218,7 @@ class SheetGeometry {
 
     // Final fallback: return the closest state overall
     double minDistance = double.infinity;
-    SheetState closest = current.state;
+    GlassSheetState closest = current.state;
     for (int i = 0; i < states.length; i++) {
       final dist = (current.position - positions[i]).abs();
       if (dist < minDistance) {
@@ -235,7 +236,7 @@ class SheetGeometry {
     required double resistance,
   }) {
     final minPos = positionForState(minState, screenHeight);
-    final fullPos = positionForState(SheetState.full, screenHeight);
+    final fullPos = positionForState(GlassSheetState.full, screenHeight);
 
     if (rawPosition < minPos) {
       final overflow = minPos - rawPosition;
@@ -259,12 +260,13 @@ class GlassModalSheetController {
   void _attach(_GlassModalSheetState state) => _state = state;
   void _detach() => _state = null;
 
-  void snapToState(SheetState state,
+  void snapToState(GlassSheetState state,
       {bool animate = true, double velocity = 0}) {
     _state?._snapToState(state, animate: animate, velocity: velocity);
   }
 
-  SheetState get currentState => _state?._currentState ?? SheetState.hidden;
+  GlassSheetState get currentState =>
+      _state?._currentState ?? GlassSheetState.hidden;
 
   /// Internal expansion value (0.0 to 1.0).
   /// Primarily used for testing and synchronized animations.
@@ -314,7 +316,7 @@ class GestureArena {
   bool evaluateMove(
     double y,
     double x,
-    SheetState currentState,
+    GlassSheetState currentState,
     double threshold, {
     required bool canScrollListUp,
     required bool hasScrollClients,
@@ -327,7 +329,7 @@ class GestureArena {
     final dx = (x - dragStartX).abs();
 
     if (dy > threshold && dy > dx) {
-      if (currentState == SheetState.full) {
+      if (currentState == GlassSheetState.full) {
         if ((y - dragStartY) < 0) {
           // Swiping UP
           if (hasScrollClients) {

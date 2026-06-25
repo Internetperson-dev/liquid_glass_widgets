@@ -4,7 +4,7 @@
 import 'package:flutter/physics.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:liquid_glass_widgets/widgets/surfaces/glass_bottom_bar.dart'
-    show ExtraButtonPosition, GlassTabPillAnchor;
+    show GlassExtraButtonPosition, GlassTabPillAnchor;
 import 'package:liquid_glass_widgets/widgets/surfaces/shared/tab_bar_searchable_controller.dart';
 
 void main() {
@@ -211,7 +211,7 @@ void main() {
         collapsedTabWidth: null,
         tabPillAnchor: GlassTabPillAnchor.start,
         extraFullW: 0,
-        extraPos: ExtraButtonPosition.afterSearch,
+        extraPos: GlassExtraButtonPosition.afterSearch,
         extraCollapsesOnSearch: false,
         isKeyboardActive: true,
         keyboardH: 300,
@@ -234,7 +234,7 @@ void main() {
         collapsedTabWidth: 60,
         tabPillAnchor: GlassTabPillAnchor.center,
         extraFullW: 48,
-        extraPos: ExtraButtonPosition.beforeSearch,
+        extraPos: GlassExtraButtonPosition.beforeSearch,
         extraCollapsesOnSearch: true,
         isKeyboardActive: false,
         keyboardH: 0,

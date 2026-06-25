@@ -236,11 +236,11 @@ class _ReproHomeState extends State<_ReproHome> {
   Widget _buildScenario(_Scenario s, _GlobalConfig config) {
     return switch (s) {
       _Scenario.extraButtonLeft => _ScenarioExtraButton(
-          position: ExtraButtonPosition.beforeSearch,
+          position: GlassExtraButtonPosition.beforeSearch,
           config: config,
         ),
       _Scenario.extraButtonRight => _ScenarioExtraButton(
-          position: ExtraButtonPosition.afterSearch,
+          position: GlassExtraButtonPosition.afterSearch,
           config: config,
         ),
       _Scenario.springDesync => _ScenarioSpringDesync(config: config),
@@ -280,7 +280,7 @@ const _kTabs = [
 // ─────────────────────────────────────────────────────────────────────────────
 class _ScenarioExtraButton extends StatefulWidget {
   const _ScenarioExtraButton({required this.position, required this.config});
-  final ExtraButtonPosition position;
+  final GlassExtraButtonPosition position;
   final _GlobalConfig config;
 
   @override
@@ -294,8 +294,9 @@ class _ScenarioExtraButtonState extends State<_ScenarioExtraButton> {
 
   @override
   Widget build(BuildContext context) {
-    final posLabel =
-        widget.position == ExtraButtonPosition.beforeSearch ? 'left' : 'right';
+    final posLabel = widget.position == GlassExtraButtonPosition.beforeSearch
+        ? 'left'
+        : 'right';
     return Stack(
       children: [
         _buildBackground(),
@@ -353,7 +354,7 @@ class _ScenarioExtraButtonState extends State<_ScenarioExtraButton> {
               _searching = false;
             }),
             quality: GlassQuality.premium,
-            extraButton: GlassBottomBarExtraButton(
+            extraButton: GlassTabBarExtraButton(
               icon: const Icon(CupertinoIcons.plus),
               label: 'Add',
               onTap: () {},

@@ -67,20 +67,20 @@ class _IndicatorParityDemoPageState extends State<IndicatorParityDemoPage> {
   bool _isSearching = false;
 
   // ── Tab/segment data ───────────────────────────────────────────────────────
-  static const _segments = <GlassTab>[
-    GlassTab(label: 'Journals'),
-    GlassTab(label: 'Photos'),
-    GlassTab(label: 'Clips')
+  static const _segments = <GlassSegment>[
+    GlassSegment(label: 'Journals'),
+    GlassSegment(label: 'Photos'),
+    GlassSegment(label: 'Clips')
   ];
 
   static const _tabs = [
-    GlassTab(label: 'Featured', icon: Icon(CupertinoIcons.star_fill)),
-    GlassTab(label: 'Browse', icon: Icon(CupertinoIcons.square_grid_2x2)),
-    GlassTab(label: 'Charts', icon: Icon(CupertinoIcons.chart_bar_fill)),
-    GlassTab(label: 'Radio', icon: Icon(CupertinoIcons.radiowaves_left)),
+    GlassSegment(label: 'Featured', icon: Icon(CupertinoIcons.star_fill)),
+    GlassSegment(label: 'Browse', icon: Icon(CupertinoIcons.square_grid_2x2)),
+    GlassSegment(label: 'Charts', icon: Icon(CupertinoIcons.chart_bar_fill)),
+    GlassSegment(label: 'Radio', icon: Icon(CupertinoIcons.radiowaves_left)),
   ];
 
-  static const _barTabs = [
+  static const _barTabs = <GlassTab>[
     GlassTab(label: 'Home', icon: Icon(CupertinoIcons.home)),
     GlassTab(label: 'Discover', icon: Icon(CupertinoIcons.compass_fill)),
     GlassTab(label: 'Library', icon: Icon(CupertinoIcons.book_fill)),

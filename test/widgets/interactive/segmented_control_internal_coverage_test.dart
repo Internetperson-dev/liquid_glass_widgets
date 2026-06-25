@@ -13,9 +13,9 @@ void main() {
               width: 300,
               child: GlassSegmentedControl(
                 segments: [
-                  GlassTab(label: 'A'),
-                  GlassTab(label: 'B'),
-                  GlassTab(label: 'C')
+                  GlassSegment(label: 'A'),
+                  GlassSegment(label: 'B'),
+                  GlassSegment(label: 'C')
                 ],
                 selectedIndex: selected,
                 onSegmentSelected: (i) => selected = i,

@@ -32,7 +32,7 @@ void main() {
             children: [
               GlassModalSheet(
                 controller: controller,
-                initialState: SheetState.half,
+                initialState: GlassSheetState.half,
                 child: const Material(
                   child: Center(
                     child: SizedBox(
@@ -52,14 +52,14 @@ void main() {
       await tester.pumpAndSettle();
 
       // Verify we are at half (initially)
-      expect(controller.currentState, SheetState.half);
+      expect(controller.currentState, GlassSheetState.half);
 
       // Tap to gain focus
       await tester.tap(find.byType(TextField));
       await tester.pumpAndSettle();
 
       // Verify it snapped to full
-      expect(controller.currentState, SheetState.full);
+      expect(controller.currentState, GlassSheetState.full);
     });
 
     testWidgets(
@@ -78,7 +78,7 @@ void main() {
             children: [
               GlassModalSheet(
                 controller: controller,
-                initialState: SheetState.half,
+                initialState: GlassSheetState.half,
                 child: _CountingWidget(
                   onInitState: () => initStateCount++,
                 ),
@@ -93,14 +93,14 @@ void main() {
       expect(initStateCount, 1);
 
       // Expand to full — child State must NOT be torn down.
-      controller.snapToState(SheetState.full, animate: false);
+      controller.snapToState(GlassSheetState.full, animate: false);
       await tester.pump();
       await tester.pump(const Duration(milliseconds: 50));
       expect(initStateCount, 1,
           reason: 'Child initState must not fire again on sheet expansion');
 
       // Collapse back to half — still must not rebuild.
-      controller.snapToState(SheetState.half, animate: false);
+      controller.snapToState(GlassSheetState.half, animate: false);
       await tester.pump();
       await tester.pump(const Duration(milliseconds: 50));
       expect(initStateCount, 1,
@@ -321,7 +321,7 @@ void main() {
             children: [
               GlassModalSheet(
                 controller: controller,
-                initialState: SheetState.half,
+                initialState: GlassSheetState.half,
                 enablePeek: true,
                 child: const SizedBox.expand(),
               ),
@@ -330,19 +330,19 @@ void main() {
         ),
       );
       await tester.pumpAndSettle();
-      expect(controller.currentState, SheetState.half);
+      expect(controller.currentState, GlassSheetState.half);
 
       // Fling up to full
       await tester.flingFrom(
           const Offset(400, 450), const Offset(0, -500), 2000);
       await tester.pumpAndSettle();
-      expect(controller.currentState, SheetState.full);
+      expect(controller.currentState, GlassSheetState.full);
 
       // Fling down to peek
       await tester.flingFrom(
           const Offset(400, 100), const Offset(0, 600), 2000);
       await tester.pumpAndSettle();
-      expect(controller.currentState, SheetState.peek);
+      expect(controller.currentState, GlassSheetState.peek);
     });
 
     testWidgets('only allows scrolling when in full state', (tester) async {
@@ -354,7 +354,7 @@ void main() {
             children: [
               GlassModalSheet(
                 controller: controller,
-                initialState: SheetState.half,
+                initialState: GlassSheetState.half,
                 child: ListView.builder(
                   itemCount: 100,
                   itemBuilder: (context, i) => ListTile(
@@ -367,7 +367,7 @@ void main() {
         ),
       );
       await tester.pumpAndSettle();
-      expect(controller.currentState, SheetState.half);
+      expect(controller.currentState, GlassSheetState.half);
 
       // In half state, an upward drag on the sheet content should move the
       // SHEET (upward toward full), not scroll the list content.
@@ -378,7 +378,7 @@ void main() {
           const Offset(400, 450), const Offset(0, -400), 1500);
       await tester.pumpAndSettle();
 
-      expect(controller.currentState, SheetState.full,
+      expect(controller.currentState, GlassSheetState.full,
           reason:
               'Upward drag in half state should expand the sheet, not scroll content');
 
@@ -390,7 +390,7 @@ void main() {
           const Offset(400, 100), const Offset(0, 400), 1500);
       await tester.pumpAndSettle();
 
-      expect(controller.currentState, isNot(SheetState.full),
+      expect(controller.currentState, isNot(GlassSheetState.full),
           reason:
               'Downward drag in full state header area should collapse the sheet');
     });
@@ -402,7 +402,7 @@ void main() {
           child: Stack(
             children: [
               GlassModalSheet(
-                initialState: SheetState.full,
+                initialState: GlassSheetState.full,
                 enableTopFade: true,
                 child: const SizedBox.expand(),
               ),
@@ -425,8 +425,8 @@ void main() {
             children: [
               GlassModalSheet(
                 controller: controller,
-                initialState: SheetState.peek,
-                mode: SheetMode.persistent,
+                initialState: GlassSheetState.peek,
+                mode: GlassSheetMode.persistent,
                 child: const SizedBox.expand(),
               ),
             ],
@@ -436,11 +436,11 @@ void main() {
       await tester.pumpAndSettle();
 
       // Try to snap to hidden
-      controller.snapToState(SheetState.hidden);
+      controller.snapToState(GlassSheetState.hidden);
       await tester.pumpAndSettle();
 
       // Should have snapped back to peek instead of hidden
-      expect(controller.currentState, SheetState.peek);
+      expect(controller.currentState, GlassSheetState.peek);
     });
     testWidgets('respects instant transition mode', (tester) async {
       final controller = GlassModalSheetController();
@@ -451,8 +451,8 @@ void main() {
             children: [
               GlassModalSheet(
                 controller: controller,
-                initialState: SheetState.half,
-                fillTransition: FillTransition.instant,
+                initialState: GlassSheetState.half,
+                fillTransition: GlassFillTransition.instant,
                 fillThreshold: 0.5,
                 expandedColor: Colors.blue,
                 child: const SizedBox.expand(),
@@ -496,7 +496,7 @@ void main() {
             children: [
               GlassModalSheet(
                 controller: controller,
-                initialState: SheetState.half,
+                initialState: GlassSheetState.half,
                 enablePeek: true,
                 child: const SizedBox.expand(),
               ),
@@ -510,18 +510,18 @@ void main() {
       // Move to 0.7 (closer to full).
       controller.value = 0.7;
       await tester.pump();
-      expect(controller.currentState, SheetState.full);
+      expect(controller.currentState, GlassSheetState.full);
 
       // Move to 0.6 (closer to half).
       controller.value = 0.6;
       await tester.pump();
-      expect(controller.currentState, SheetState.half);
+      expect(controller.currentState, GlassSheetState.half);
 
       // Midpoint between peek (90px) and half (0.45).
       // On 800px height, 90px is ~0.11. Mid is (0.11 + 0.45)/2 = 0.28.
       controller.value = 0.2; // closer to peek
       await tester.pump();
-      expect(controller.currentState, SheetState.peek);
+      expect(controller.currentState, GlassSheetState.peek);
     });
 
     testWidgets('respects state-specific glass settings', (tester) async {
@@ -532,7 +532,7 @@ void main() {
             children: [
               GlassModalSheet(
                 controller: controller,
-                initialState: SheetState.half,
+                initialState: GlassSheetState.half,
                 halfSettings: const LiquidGlassSettings(blur: 50.0),
                 fullSettings: const LiquidGlassSettings(
                     blur: 0.0, glassColor: Colors.red),
@@ -551,7 +551,7 @@ void main() {
       expect(getFillDecoration().color?.a ?? 0, lessThan(0.05));
 
       // Expand to full (blur=0 => solid color fill should appear)
-      controller.snapToState(SheetState.full, animate: false);
+      controller.snapToState(GlassSheetState.full, animate: false);
       await tester.pump();
       await tester.pump(const Duration(milliseconds: 100));
 
@@ -620,7 +620,7 @@ void main() {
                 controller: controller,
                 peekSize: 300, // Very large peek
                 halfSize: 100, // Small half (should be clamped to >= peek)
-                initialState: SheetState.half,
+                initialState: GlassSheetState.half,
                 child: const SizedBox.expand(),
               ),
             ],
@@ -632,12 +632,12 @@ void main() {
       // Half should be at least as high as peek due to internal clamping in SheetGeometry
       // We can check the controller value or internal position if we had access,
       // but here we just ensure it doesn't crash and stays functional.
-      expect(controller.currentState, SheetState.half);
+      expect(controller.currentState, GlassSheetState.half);
 
       // Try to snap to peek
-      controller.snapToState(SheetState.peek);
+      controller.snapToState(GlassSheetState.peek);
       await tester.pumpAndSettle();
-      expect(controller.currentState, SheetState.peek);
+      expect(controller.currentState, GlassSheetState.peek);
     });
 
     testWidgets(
@@ -648,7 +648,7 @@ void main() {
           child: Stack(
             children: [
               GlassModalSheet(
-                initialState: SheetState.full,
+                initialState: GlassSheetState.full,
                 child: Column(
                   children: [
                     const Text('Top item'),
@@ -685,7 +685,7 @@ void main() {
           child: Stack(
             children: [
               GlassModalSheet(
-                initialState: SheetState.half,
+                initialState: GlassSheetState.half,
                 child: SingleChildScrollView(
                   child: Column(
                     children: List.generate(200, (i) => Text('Stress line $i')),
@@ -708,7 +708,7 @@ void main() {
           child: Stack(
             children: [
               GlassModalSheet(
-                initialState: SheetState.full,
+                initialState: GlassSheetState.full,
                 enableTopFade: true,
                 topFadeHeight: 123.0,
                 child: const SizedBox.expand(),
@@ -735,7 +735,7 @@ void main() {
             children: [
               GlassModalSheet(
                 controller: controller,
-                initialState: SheetState.full,
+                initialState: GlassSheetState.full,
                 maintainContentGlass: true,
                 fullStateContentSettings: const LiquidGlassSettings(blur: 25.0),
                 child: const SizedBox.expand(),
@@ -766,8 +766,8 @@ void main() {
             children: [
               GlassModalSheet(
                 controller: controller,
-                initialState: SheetState.full,
-                mode: SheetMode.persistent,
+                initialState: GlassSheetState.full,
+                mode: GlassSheetMode.persistent,
                 fullSize: 1.0,
                 resistance: 0.5,
                 child: const SizedBox.expand(),
@@ -796,7 +796,7 @@ void main() {
       expect(controller.value, 1.0);
 
       // 2. Test BOTTOM resistance (drag DOWN from peek)
-      controller.snapToState(SheetState.peek, animate: false);
+      controller.snapToState(GlassSheetState.peek, animate: false);
       await tester.pumpAndSettle();
       final peekValue = controller.value;
 
@@ -825,7 +825,7 @@ void main() {
             children: [
               GlassModalSheet(
                 controller: controller,
-                initialState: SheetState.full,
+                initialState: GlassSheetState.full,
                 enableInteractionGlow: true,
                 enableSaturationGlow: true,
                 child: const SizedBox.expand(),
@@ -848,7 +848,7 @@ void main() {
       expect(glassGlow.pulse, 0.0);
 
       // Now snap back to half and verify they are enabled
-      controller.snapToState(SheetState.half, animate: false);
+      controller.snapToState(GlassSheetState.half, animate: false);
       await tester.pump();
 
       final glassGlowHalf = tester.widget<GlassGlow>(glassGlowFinder);
@@ -888,7 +888,7 @@ void main() {
         createTestApp(
           child: GlassModalSheetScaffold(
             controller: controller,
-            initialState: SheetState.full,
+            initialState: GlassSheetState.full,
             body: const SizedBox.expand(),
             sheet: const Text('Full Sheet'),
           ),
@@ -896,7 +896,7 @@ void main() {
       );
       await tester.pumpAndSettle();
 
-      expect(controller.currentState, SheetState.full);
+      expect(controller.currentState, GlassSheetState.full);
     });
 
     testWidgets('snaps between states via controller', (tester) async {
@@ -906,33 +906,33 @@ void main() {
         createTestApp(
           child: GlassModalSheetScaffold(
             controller: controller,
-            initialState: SheetState.peek,
+            initialState: GlassSheetState.peek,
             body: const SizedBox.expand(),
             sheet: const SizedBox.expand(),
           ),
         ),
       );
       await tester.pumpAndSettle();
-      expect(controller.currentState, SheetState.peek);
+      expect(controller.currentState, GlassSheetState.peek);
 
-      controller.snapToState(SheetState.half);
+      controller.snapToState(GlassSheetState.half);
       await tester.pumpAndSettle();
-      expect(controller.currentState, SheetState.half);
+      expect(controller.currentState, GlassSheetState.half);
 
-      controller.snapToState(SheetState.full);
+      controller.snapToState(GlassSheetState.full);
       await tester.pumpAndSettle();
-      expect(controller.currentState, SheetState.full);
+      expect(controller.currentState, GlassSheetState.full);
     });
 
     testWidgets('onStateChanged fires when state changes', (tester) async {
       final controller = GlassModalSheetController();
-      final states = <SheetState>[];
+      final states = <GlassSheetState>[];
 
       await tester.pumpWidget(
         createTestApp(
           child: GlassModalSheetScaffold(
             controller: controller,
-            initialState: SheetState.half,
+            initialState: GlassSheetState.half,
             onStateChanged: states.add,
             body: const SizedBox.expand(),
             sheet: const SizedBox.expand(),
@@ -941,10 +941,10 @@ void main() {
       );
       await tester.pumpAndSettle();
 
-      controller.snapToState(SheetState.full);
+      controller.snapToState(GlassSheetState.full);
       await tester.pumpAndSettle();
 
-      expect(states, contains(SheetState.full));
+      expect(states, contains(GlassSheetState.full));
     });
 
     testWidgets(
@@ -956,13 +956,13 @@ void main() {
         // `_snapToState` found `_currentState == target` and skipped the
         // side-effects branch (haptics, onStateChanged, scroll-to-top).
         final controller = GlassModalSheetController();
-        final states = <SheetState>[];
+        final states = <GlassSheetState>[];
 
         await tester.pumpWidget(
           createTestApp(
             child: GlassModalSheetScaffold(
               controller: controller,
-              initialState: SheetState.full,
+              initialState: GlassSheetState.full,
               onStateChanged: states.add,
               body: const SizedBox.expand(),
               sheet: const SizedBox.expand(),
@@ -986,7 +986,7 @@ void main() {
 
         // The final transition to half MUST be reported regardless of
         // how many times _applyDrag updated _currentState mid-gesture.
-        expect(states, contains(SheetState.half),
+        expect(states, contains(GlassSheetState.half),
             reason: 'onStateChanged was not fired for the slow-drag-to-half '
                 'transition — _snapToState skipped its side-effects branch '
                 'because _applyDrag had already updated _currentState to '
@@ -1002,8 +1002,8 @@ void main() {
         createTestApp(
           child: GlassModalSheetScaffold(
             controller: controller,
-            initialState: SheetState.peek,
-            mode: SheetMode.persistent,
+            initialState: GlassSheetState.peek,
+            mode: GlassSheetMode.persistent,
             body: const SizedBox.expand(),
             sheet: const SizedBox.expand(),
           ),
@@ -1011,11 +1011,11 @@ void main() {
       );
       await tester.pumpAndSettle();
 
-      controller.snapToState(SheetState.hidden);
+      controller.snapToState(GlassSheetState.hidden);
       await tester.pumpAndSettle();
 
       // Persistent mode clamps at peek
-      expect(controller.currentState, SheetState.peek);
+      expect(controller.currentState, GlassSheetState.peek);
     });
 
     testWidgets('renders without crashing with custom glass settings',
@@ -1023,7 +1023,7 @@ void main() {
       await tester.pumpWidget(
         createTestApp(
           child: GlassModalSheetScaffold(
-            initialState: SheetState.half,
+            initialState: GlassSheetState.half,
             settings: const LiquidGlassSettings(blur: 20),
             halfSettings: const LiquidGlassSettings(blur: 30),
             fullSettings: const LiquidGlassSettings(blur: 0),
@@ -1063,20 +1063,20 @@ void main() {
         createTestApp(
           child: GlassModalSheetScaffold(
             controller: controller,
-            initialState: SheetState.peek,
+            initialState: GlassSheetState.peek,
             body: const SizedBox.expand(),
             sheet: const SizedBox.expand(),
           ),
         ),
       );
       await tester.pumpAndSettle();
-      expect(controller.currentState, SheetState.peek);
+      expect(controller.currentState, GlassSheetState.peek);
 
       // Programmatically expand — same path as a successful fling snap.
-      controller.snapToState(SheetState.full);
+      controller.snapToState(GlassSheetState.full);
       await tester.pumpAndSettle();
 
-      expect(controller.currentState, SheetState.full);
+      expect(controller.currentState, GlassSheetState.full);
     });
   });
 
@@ -1144,7 +1144,7 @@ void main() {
             children: [
               GlassModalSheet(
                 suppressInteractionOnChildren: true,
-                initialState: SheetState.half,
+                initialState: GlassSheetState.half,
                 child: GlassInteractionSilence(
                   child: const SizedBox(width: 200, height: 60),
                 ),

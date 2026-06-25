@@ -32,7 +32,7 @@ Widget _buildBar({
   TextEditingController? controller,
   FocusNode? focusNode,
   ValueChanged<String>? onChanged,
-  GlassBottomBarExtraButton? extraButton,
+  GlassTabBarExtraButton? extraButton,
   GlassQuality? quality,
 }) {
   return createTestApp(
@@ -217,7 +217,7 @@ void main() {
     testWidgets('displays extra button when provided', (tester) async {
       await tester.pumpWidget(
         _buildBar(
-          extraButton: GlassBottomBarExtraButton(
+          extraButton: GlassTabBarExtraButton(
             icon: const Icon(CupertinoIcons.add),
             label: 'Add',
             onTap: () {},
@@ -233,7 +233,7 @@ void main() {
 
       await tester.pumpWidget(
         _buildBar(
-          extraButton: GlassBottomBarExtraButton(
+          extraButton: GlassTabBarExtraButton(
             icon: const Icon(CupertinoIcons.add),
             label: 'Add',
             onTap: () => tapped = true,
@@ -504,11 +504,11 @@ void main() {
             selectedIndex: 0,
             onTabSelected: (_) {},
             maskingQuality: MaskingQuality.off,
-            extraButton: GlassBottomBarExtraButton(
+            extraButton: GlassTabBarExtraButton(
               icon: const Icon(CupertinoIcons.mic),
               label: 'Mic',
               onTap: () {},
-              position: ExtraButtonPosition.afterSearch,
+              position: GlassExtraButtonPosition.afterSearch,
             ),
             searchConfig: GlassSearchBarConfig(
               onSearchToggle: (_) {},
@@ -536,7 +536,7 @@ void main() {
                 onTabSelected: (_) {},
                 isSearchActive: searching,
                 maskingQuality: MaskingQuality.off,
-                extraButton: GlassBottomBarExtraButton(
+                extraButton: GlassTabBarExtraButton(
                   icon: const Icon(CupertinoIcons.add_circled),
                   label: 'Add',
                   onTap: () {},

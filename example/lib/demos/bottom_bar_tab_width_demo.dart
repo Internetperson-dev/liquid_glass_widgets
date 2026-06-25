@@ -224,7 +224,7 @@ class _TabWidthDemoPageState extends State<TabWidthDemoPage> {
                     onTabSelected: (i) => setState(() => _selected = i),
                     quality: GlassQuality.premium,
                     extraButton: _showExtraButton
-                        ? GlassBottomBarExtraButton(
+                        ? GlassTabBarExtraButton(
                             icon: const Icon(CupertinoIcons.plus),
                             label: 'Compose',
                             onTap: () {},
