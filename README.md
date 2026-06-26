@@ -159,7 +159,7 @@ Most apps should use `GlassCard` or `GlassGroupedSection` instead.
 
 ```yaml
 dependencies:
-  liquid_glass_widgets: ^0.19.0
+  liquid_glass_widgets: ^0.19.1
 ```
 
 ```bash
@@ -208,6 +208,19 @@ GlassScaffold(
 > device's Reduce Motion and Reduce Transparency settings — no extra setup
 > required. See [Accessibility](#accessibility) for details.
 
+### Choose the right widget
+
+The package is centred around **navigation chrome** — `GlassScaffold` with `GlassAppBar` and `GlassTabBar` is the primary pattern and where the iOS 26 liquid glass effect is most impactful.
+
+| Scenario | Widget to use |
+|---|---|
+| Screen with app bar and/or tab bar | **`GlassScaffold`** — the primary pattern |
+| Custom layout without standard scaffold structure | **`GlassPage`** — lower-level building block |
+| Standalone glass card or panel in an existing layout | **`GlassCard` / `GlassContainer`** — opt-in, not the core pattern |
+| `AdaptiveLiquidGlassLayer` | Internal infrastructure — do not use directly in app code |
+
+> `GlassContainer` / `GlassCard` are fully supported for localised glass UI (floating panels, settings cards, etc.) but most screens should start with `GlassScaffold`.
+
 ### Optional: quality & theming
 
 For production apps, pass `adaptiveQuality` and/or `theme` to `wrap()` at the same call site:
@@ -225,7 +238,6 @@ runApp(LiquidGlassWidgets.wrap(
 ```
 
 Both parameters are optional — omit them and the library uses sensible defaults.
-
 
 
 ## Theming
@@ -533,38 +545,7 @@ Each value maps to a fixed power-of-2 exponent. The GPU uses a zero-transcendent
 
 ### Automatic Quality Adaptation *(experimental)*
 
-> ### 📊 Help us tune the thresholds — takes 2 minutes
->
-> `GlassAdaptiveScope` is `@experimental` because its Phase 2 timing thresholds
-> are based on limited community data, not yet validated across the full Android
-> device landscape. Current defaults (v0.12.0):
->
-> | P75 warmup | Quality assigned |
-> |---|---|
-> | < 20 ms | `premium` *(based on 1 report — please share yours)* |
-> | 20–28 ms | `standard` *(provisional — no real-device data yet)* |
-> | > 28 ms | `minimal` |
->
-> **If you use `adaptiveQuality: true`, please post your results to our
-> [Threshold Calibration Discussion](https://github.com/sdegenaar/liquid_glass_widgets/discussions)
-> with the snippet below.** Every report directly informs the threshold calibration
-> and gets us closer to removing `@experimental`. Thank you 🙏
->
-> ```dart
-> // Add to your GlassAdaptiveScopeConfig while testing — remove before shipping:
-> // Option A: zero-wiring (recommended for quick reports)
-> GlassAdaptiveScopeConfig(
->   debugLogDiagnostics: true, // prints to console in debug builds only
-> )
->
-> // Option B: custom handler for analytics
-> GlassAdaptiveScopeConfig(
->   onDiagnostic: (d) {
->     // d.reason, d.p75Ms, d.p95Ms, d.framesMeasured, d.phase are all set
->     debugPrint('📊 ${d.from.name} → ${d.to.name} | reason: ${d.reason.name} | P75: ${d.p75Ms?.toStringAsFixed(1)}ms');
->   },
-> )
-> ```
+> 📊 **`GlassAdaptiveScope` is `@experimental`** — its timing thresholds need more real-device data to be finalised. If you use `adaptiveQuality: true`, please share your device model, Flutter version, and observed P75 ms in our [Threshold Calibration Discussion](https://github.com/sdegenaar/liquid_glass_widgets/discussions). See [`docs/ADAPTIVE_QUALITY.md`](docs/ADAPTIVE_QUALITY.md) for current threshold values and the reporting snippet.
 
 `GlassAdaptiveScope` (enabled via `wrap(adaptiveQuality: true)`) automatically
 benchmarks the device at startup and adjusts quality in real time:
@@ -704,9 +685,6 @@ LiquidGlassScope(
 On Impeller, `GlassQuality.premium` uses the native scene graph — no
 `LiquidGlassScope` needed.
 
-> **Migration note (0.7.0):** `LiquidGlassBackground` was renamed to
-> `GlassRefractionSource`. The old name still compiles (deprecated typedef)
-> and will be removed in 1.0.0.
 
 | When | Recommendation |
 |---|---|

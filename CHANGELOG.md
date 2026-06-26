@@ -1,4 +1,41 @@
+# 0.19.1
+
+## 🛡️ Stability Improvements
+
+Addresses production crash and ANR reports seen with v0.19.0 on Flutter 3.44.2
+(tracked in flutter/flutter#187140). These are exposure-window mitigations — the
+root cause is a Flutter engine issue and requires an engine-level fix.
+
+### Changes
+
+**`GlassEffect` & `LightweightLiquidGlass` — lifecycle-aware Ticker suspension**
+Both state classes now implement `WidgetsBindingObserver` and halt background-capture
+Tickers during `AppLifecycleState.inactive`, `paused`, and `hidden`. Captures restart
+one frame after `resumed`. This reduces GPU texture activity during surface transitions
+(rotation, split-screen, keyboard resize) which is the window where engine-level
+crashes and ANRs are most likely to occur.
+
+**`GlassEffect` & `LightweightLiquidGlass` — `_isDisposed` guard**
+A `_isDisposed` flag prevents Ticker callbacks and async `.then()` continuations
+from accessing GPU resources after `dispose()` has completed, guarding against
+post-frame-callback / dispose races during rapid navigation.
+
+**`LiquidGlassWidgets.initialize()` — faster startup**
+The Impeller pipeline warm-up is no longer `await`ed inside `initialize()`. It now
+runs after the first frame via `addPostFrameCallback`, removing a `~16ms` delay from
+the startup critical path. Shader disk-loads are still awaited as before.
+
+**Debug log cleanup**
+Removed stale `debugPrint` success messages from `GlassEffect` and `LightweightLiquidGlass`
+shader pre-warm paths (`✓ Shader precached`, `✓ Created unique shader instance`). These
+fired on every debug startup for every app using the package. Failures still surface via
+the existing `[LightweightGlass] Pre-warm failed:` error log. The `[LiquidGlass]`
+startup bracket (`Initializing...` / `Initialization complete.`) and the
+`PerformanceMonitor started` log are retained as actionable developer information.
+
+
 # 0.19.0
+
 
 ## 💥 Breaking: Pre-v1.0 Public API Cleanup
 

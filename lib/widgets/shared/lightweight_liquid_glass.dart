@@ -163,11 +163,6 @@ class LightweightLiquidGlass extends StatefulWidget {
       // On native platforms, create the shared shader instance
       if (!kIsWeb) {
         _sharedShader = program.fragmentShader();
-        debugPrint(
-            '[LightweightGlass] ✓ Shader precached (native shared mode)');
-      } else {
-        debugPrint(
-            '[LightweightGlass] ✓ Shader program loaded (web per-widget mode)');
       }
     } catch (e) {
       debugPrint('[LightweightGlass] Pre-warm failed: $e');
@@ -181,8 +176,9 @@ class LightweightLiquidGlass extends StatefulWidget {
 }
 
 class _LightweightLiquidGlassState extends State<LightweightLiquidGlass>
-    with SingleTickerProviderStateMixin {
+    with SingleTickerProviderStateMixin, WidgetsBindingObserver {
   ui.FragmentShader? _webShader; // Web only: per-widget instance
+  bool _isDisposed = false;
   bool _loggedCreation = false;
   ui.Image? _backgroundImage;
 
@@ -196,6 +192,7 @@ class _LightweightLiquidGlassState extends State<LightweightLiquidGlass>
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     _initShader();
     _ticker = createTicker(_handleTick);
     // Defer ticker start until after first frame so the RepaintBoundary is laid out.
@@ -244,6 +241,8 @@ class _LightweightLiquidGlassState extends State<LightweightLiquidGlass>
   int _stableFrameCount = 0;
 
   void _handleTick(Duration _) {
+    if (_isDisposed) return; // belt-and-suspenders: post-frame callbacks can
+    // outlive dispose() on rapid navigation; bail out before any GPU access.
     final key = widget.backgroundKey;
     if (key == null) return;
 
@@ -316,7 +315,7 @@ class _LightweightLiquidGlassState extends State<LightweightLiquidGlass>
     if (_capturePending) return; // Already capturing — wait for it to finish.
     _capturePending = true;
     boundary.toImage(pixelRatio: 1.0).then((image) {
-      if (!mounted) {
+      if (!mounted || _isDisposed) {
         image.dispose();
         _capturePending = false;
         return;
@@ -352,6 +351,33 @@ class _LightweightLiquidGlassState extends State<LightweightLiquidGlass>
     }
   }
 
+  /// Halts background-capture Tickers during app lifecycle transitions.
+  ///
+  /// Stopping captures on [AppLifecycleState.inactive] / [paused] prevents
+  /// GPU texture creation/destruction from racing with [surfaceChanged] on
+  /// the raster thread — the root cause of the ANR observed on Vulkan devices.
+  /// Captures restart one frame after [resumed] to let the new surface
+  /// stabilise before any [toImage] calls.
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    switch (state) {
+      case AppLifecycleState.inactive:
+      case AppLifecycleState.paused:
+      case AppLifecycleState.hidden:
+        if (_ticker.isActive) _ticker.stop();
+        break;
+      case AppLifecycleState.resumed:
+        // Restart one frame after resume so surfaceChanged has completed
+        // and the raster thread is not holding any surface locks.
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (mounted && !_isDisposed) _updateTicker();
+        });
+        break;
+      case AppLifecycleState.detached:
+        break;
+    }
+  }
+
   Future<void> _initShader() async {
     // Ensure program is loaded
     if (LightweightLiquidGlass._cachedProgram == null) {
@@ -375,6 +401,8 @@ class _LightweightLiquidGlassState extends State<LightweightLiquidGlass>
 
   @override
   void dispose() {
+    _isDisposed = true;
+    WidgetsBinding.instance.removeObserver(this);
     _ticker.dispose();
     // Null backgroundImage BEFORE disposing the shader to break the GPU
     // texture retention chain during isolate shutdown on Mali GPUs.

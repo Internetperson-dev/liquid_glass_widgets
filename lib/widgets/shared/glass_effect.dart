@@ -106,12 +106,6 @@ class GlassEffect extends StatefulWidget {
       }
       _cachedProgram = program;
 
-      if (!kIsWeb) {
-        debugPrint('[GlassEffect] ✓ Shader precached (native)');
-      } else {
-        debugPrint('[GlassEffect] ✓ Shader program loaded (web)');
-      }
-
       // Create a 1x1 transparent dummy image to satisfy sampler index 0.
       // toImageSync (not toImage) — synchronous, consistent with
       // LightweightLiquidGlass.preWarm(). For a 1×1 image the GPU cost
@@ -133,9 +127,9 @@ class GlassEffect extends StatefulWidget {
 }
 
 class _GlassEffectState extends State<GlassEffect>
-    with SingleTickerProviderStateMixin {
+    with SingleTickerProviderStateMixin, WidgetsBindingObserver {
   ui.FragmentShader? _localShader;
-  bool _loggedCreation = false;
+  bool _isDisposed = false;
   ui.Image? _backgroundImage;
   late Ticker _ticker;
   Size? _lastCaptureSize;
@@ -149,6 +143,7 @@ class _GlassEffectState extends State<GlassEffect>
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     // Skip shader init entirely in minimal quality — build() returns early via
     // the _FrostedFallback path and the shader is never used.
     if (widget.quality != GlassQuality.minimal) {
@@ -188,6 +183,33 @@ class _GlassEffectState extends State<GlassEffect>
     _updateTicker();
   }
 
+  /// Halts background-capture Tickers during app lifecycle transitions.
+  ///
+  /// Stopping captures on [AppLifecycleState.inactive] / [paused] prevents
+  /// GPU texture creation/destruction from racing with [surfaceChanged] on
+  /// the raster thread — the root cause of the ANR observed on Vulkan devices.
+  /// Captures restart one frame after [resumed] to let the new surface
+  /// stabilise before any [toImageSync] calls.
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    switch (state) {
+      case AppLifecycleState.inactive:
+      case AppLifecycleState.paused:
+      case AppLifecycleState.hidden:
+        if (_ticker.isActive) _ticker.stop();
+        break;
+      case AppLifecycleState.resumed:
+        // Restart one frame after resume so surfaceChanged has completed
+        // and the raster thread is not holding any surface locks.
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (mounted && !_isDisposed) _updateTicker();
+        });
+        break;
+      case AppLifecycleState.detached:
+        break;
+    }
+  }
+
   GlobalKey? get _effectiveKey => widget.backgroundKey ?? _cachedScopeKey;
 
   void _updateTicker() {
@@ -219,6 +241,8 @@ class _GlassEffectState extends State<GlassEffect>
   }
 
   void _handleTick(Duration elapsed) {
+    if (_isDisposed) return; // belt-and-suspenders: post-frame callbacks can
+    // outlive dispose() on rapid navigation; bail out before any GPU access.
     final key = _effectiveKey;
     if (key == null) return;
 
@@ -359,11 +383,6 @@ class _GlassEffectState extends State<GlassEffect>
         setState(() {
           // Always create a local shader instance for state isolation
           _localShader = GlassEffect._cachedProgram!.fragmentShader();
-          if (!_loggedCreation) {
-            debugPrint(
-                '[GlassEffect] ✓ Created unique shader instance for ${widget.shape.runtimeType}');
-            _loggedCreation = true;
-          }
         });
       }
     }
@@ -371,6 +390,8 @@ class _GlassEffectState extends State<GlassEffect>
 
   @override
   void dispose() {
+    _isDisposed = true;
+    WidgetsBinding.instance.removeObserver(this);
     _ticker.dispose();
     // Null backgroundImage BEFORE disposing the shader to break the reference
     // chain: _backgroundImage → render object → engine layer tree → GPU texture.
