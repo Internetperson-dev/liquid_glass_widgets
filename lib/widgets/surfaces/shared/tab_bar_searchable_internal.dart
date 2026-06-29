@@ -239,6 +239,7 @@ class SearchableTabIndicatorState extends State<SearchableTabIndicator>
               onTap: widget.onDismissSearch,
               child: AdaptiveGlass.grouped(
                 quality: widget.quality,
+                platformViewBackdrop: widget.platformViewBackdrop,
                 shape: currentShape,
                 child: _wrapWithGlow(
                   child: widget.collapsedLogoBuilder != null
@@ -293,17 +294,22 @@ class SearchableTabIndicatorState extends State<SearchableTabIndicator>
               onPointerDown: (_) {
                 if (mounted) setState(() => tabIsDown = true);
               },
-              onPointerUp: (_) {
-                if (!tabIsDragging && mounted) {
-                  setState(() => tabIsDown = false);
-                }
+              onPointerUp: (e) {
+                if (!mounted) return;
+                if (!tabIsDragging) setState(() => tabIsDown = false);
+                // If a gesture is still flagged active after the pointer lifts,
+                // its terminal callback was dropped (PlatformView arena race) —
+                // self-heal on the next frame, honoring the lift position so a
+                // recovering tap also navigates. No-ops on a clean gesture.
+                recoverIfGestureStuck(e.position);
               },
-              onPointerCancel: (_) {
-                if (!tabIsDragging && mounted) {
-                  setState(() => tabIsDown = false);
-                }
+              onPointerCancel: (e) {
+                if (!mounted) return;
+                if (!tabIsDragging) setState(() => tabIsDown = false);
+                recoverIfGestureStuck(e.position);
               },
               child: GestureDetector(
+                key: ValueKey(gestureEpoch),
                 behavior: HitTestBehavior.opaque,
                 onHorizontalDragDown: onBarDragDown,
                 onHorizontalDragStart: onBarDragStart,
@@ -338,6 +344,7 @@ class SearchableTabIndicatorState extends State<SearchableTabIndicator>
                             decoration: ShapeDecoration(shape: _barShape),
                             child: AdaptiveGlass.grouped(
                               quality: widget.quality,
+                              platformViewBackdrop: widget.platformViewBackdrop,
                               shape: _barShape,
                               child: Container(
                                 padding: widget.tabPadding,
@@ -682,6 +689,7 @@ class SearchableTabIndicatorState extends State<SearchableTabIndicator>
 /// [AdaptiveLiquidGlassLayer] so its glass rendering blends with the tab pill.
 class SearchPill extends StatefulWidget {
   const SearchPill({
+    super.key,
     required this.config,
     required this.isActive,
     required this.quality,
@@ -695,7 +703,7 @@ class SearchPill extends StatefulWidget {
     this.interactionGlowSpreadRadius = 0,
     this.interactionGlowOpacity = 1,
     this.platformViewBackdrop = false,
-    super.key,
+    this.iconColor,
   });
 
   final GlassSearchBarConfig config;
@@ -704,6 +712,7 @@ class SearchPill extends StatefulWidget {
   final GlassQuality quality;
   final bool enableBackgroundAnimation;
   final double backgroundPressScale;
+  final Color? iconColor;
 
   /// Render the pill's glass via the live BackdropFilter path so it composites
   /// over a PlatformView.
@@ -860,9 +869,26 @@ class SearchPillState extends State<SearchPill> {
 
   @override
   Widget build(BuildContext context) {
-    final iconColor = widget.config.searchIconColor ??
-        CupertinoColors.label.resolveFrom(context);
-    final micColor = widget.config.micIconColor ?? iconColor;
+    // Use GlassTheme.brightnessOf — the single brightness authority inside
+    // this package. CupertinoDynamicColor.resolve() / CupertinoTheme.brightnessOf()
+    // bypasses the glass cascade and reads system brightness, giving black icons
+    // on dark glass when the device OS brightness is light.
+    final brightness = GlassTheme.brightnessOf(context);
+
+    // Resolves a Color that may be a CupertinoDynamicColor using glass brightness.
+    Color resolveIconColor(Color c) {
+      if (c is CupertinoDynamicColor) {
+        return brightness == Brightness.dark ? c.darkColor : c.color;
+      }
+      return c;
+    }
+
+    final rawIconColor = widget.config.searchIconColor ??
+        widget.iconColor ??
+        CupertinoColors.label;
+    final iconColor = resolveIconColor(rawIconColor);
+    final micColor =
+        resolveIconColor(widget.config.micIconColor ?? rawIconColor);
     final shape =
         LiquidRoundedSuperellipse(borderRadius: widget.barBorderRadius);
 
@@ -878,7 +904,11 @@ class SearchPillState extends State<SearchPill> {
 
         if (!widget.isActive || w < kExpandThreshold) {
           final isOval = (w - constraints.maxHeight).abs() < 2;
-          final currentShape = isOval ? const LiquidOval() : shape;
+          final currentShape = isOval
+              ? (widget.platformViewBackdrop
+                  ? LiquidRoundedSuperellipse(borderRadius: w / 2)
+                  : const LiquidOval())
+              : shape;
 
           return Stack(
             fit: StackFit.expand,
@@ -899,17 +929,21 @@ class SearchPillState extends State<SearchPill> {
                       : () => widget.config.onSearchToggle(true),
                   child: AdaptiveGlass.grouped(
                     shape: currentShape,
-                    // Over a PlatformView the collapsed button uses the lightweight
-                    // veil so it matches the rest of the bar (premium can't sample
-                    // the PlatformView).
-                    quality: widget.platformViewBackdrop
-                        ? GlassQuality.standard
-                        : widget.quality,
+                    // Over a PlatformView AdaptiveGlass routes to the frost veil
+                    // automatically (platformViewBackdrop), so the requested
+                    // quality passes through unchanged here.
+                    quality: widget.quality,
                     platformViewBackdrop: widget.platformViewBackdrop,
                     child: _wrapWithGlow(
                       child: Center(
-                        child: widget.config.searchIcon ??
-                            Icon(CupertinoIcons.search, color: iconColor),
+                        // Even though we wrap with IconTheme, we also explicitly pass
+                        // color: iconColor to the fallback Icon. This guarantees it
+                        // receives the exact resolved white/black color.
+                        child: IconTheme(
+                          data: IconThemeData(color: iconColor),
+                          child: widget.config.searchIcon ??
+                              Icon(CupertinoIcons.search, color: iconColor),
+                        ),
                       ),
                     ),
                   ),
@@ -992,10 +1026,9 @@ class SearchPillState extends State<SearchPill> {
                 key: const ValueKey('clear'),
                 behavior: HitTestBehavior.opaque,
                 onTap: _handleClear,
-                child: Icon(
-                  CupertinoIcons.clear_circled_solid,
-                  color: iconColor,
-                  size: 18,
+                child: IconTheme(
+                  data: IconThemeData(color: iconColor, size: 18),
+                  child: const Icon(CupertinoIcons.clear_circled_solid),
                 ),
               )
             : GestureDetector(
@@ -1003,7 +1036,10 @@ class SearchPillState extends State<SearchPill> {
                 behavior: HitTestBehavior.opaque,
                 onTap: config.onMicTap,
                 child: config.onMicTap != null
-                    ? Icon(CupertinoIcons.mic_fill, color: micColor, size: 18)
+                    ? IconTheme(
+                        data: IconThemeData(color: micColor, size: 18),
+                        child: const Icon(CupertinoIcons.mic_fill),
+                      )
                     : const SizedBox.shrink(),
               ),
       );
@@ -1015,7 +1051,10 @@ class SearchPillState extends State<SearchPill> {
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.center,
         children: [
-          Icon(CupertinoIcons.search, color: iconColor, size: 18),
+          IconTheme(
+            data: IconThemeData(color: iconColor, size: 18),
+            child: Icon(CupertinoIcons.search, color: iconColor),
+          ),
           const SizedBox(width: 8),
           Expanded(
             child: CupertinoTextField(
