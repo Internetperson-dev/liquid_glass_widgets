@@ -1,3 +1,149 @@
+# 0.19.5
+
+- **`LiquidGlassSettings`** — adds `platformViewFallbackColor` (#138, @jfhair). Splits
+  `backerColor`'s dual role: `backerColor` remains the aesthetic backer pad; the new
+  field controls the `uBackgroundFallback` shader uniform (PlatformView fill).
+  Fully backwards-compatible — defaults to `null`, falling back to `backerColor`.
+
+- **`GlassModalSheet`** — removes the interior `BoxShadow` that bled through the glass
+  as a vignette (#137, @jfhair). Elevation now flows via `LiquidGlassSettings.shadowElevation`.
+  Pass `shadowElevation: 0` to disable entirely.
+
+# 0.19.4
+
+## ✨ Enhancements — `GlassButtonGroupItem.menu` & `GlassPullDownButton` improvements
+
+### `GlassButtonGroupItem.menu` — whole-pill liquid glass morph
+
+
+Adds a new `GlassButtonGroupItem.menu` named constructor that turns any item in a
+`GlassButtonGroup.icons` pill into a pull-down menu trigger.
+
+When tapped, the **entire pill morphs** into the menu — the full `GlassButton.custom`
+shell becomes the `GlassMenu` trigger, so the whole group shape liquefies and expands
+into the menu card. This matches the iOS 26 `GlassEffectContainer` morph pattern where
+the source shape, not just the tapped slot, participates in the transition.
+
+```dart
+GlassButtonGroup.icons(
+  items: [
+    GlassButtonGroupItem(icon: Icon(CupertinoIcons.chart_bar), onTap: () {}),
+    GlassButtonGroupItem(icon: Icon(CupertinoIcons.clock),     onTap: () {}),
+    GlassButtonGroupItem.menu(
+      icon: Icon(CupertinoIcons.ellipsis),
+      menuItems: [
+        GlassMenuItem(title: 'Add to Watchlist', icon: Icon(CupertinoIcons.star), onTap: () {}),
+        GlassMenuItem(title: 'Share',            icon: Icon(CupertinoIcons.share), onTap: () {}),
+        GlassMenuDivider(),
+        GlassMenuItem(title: 'Remove', icon: Icon(CupertinoIcons.trash), isDestructive: true, onTap: () {}),
+      ],
+      menuAlignment: GlassMenuAlignment.topRight, // optional
+      menuWidth: 200,                              // optional, default 200
+    ),
+  ],
+)
+```
+
+**Notes:**
+- Only the first `GlassButtonGroupItem.menu` in the list is used as the menu trigger; any subsequent menu items are treated as plain tap items.
+- Accepts both `GlassMenuItem` and `GlassMenuDivider`, matching `GlassMenu.items` directly.
+- Non-menu siblings in the group continue to fire their own `onTap` independently.
+- Works with both `Axis.horizontal` and `Axis.vertical` groups.
+
+**Alternatively — group + standalone `GlassPullDownButton`**
+
+For cases where the menu trigger is a separate, visually distinct action from the
+group (e.g. a trailing overflow button next to a row of chart controls), compose a
+`GlassButtonGroup` alongside a standalone `GlassPullDownButton`. The pull-down
+button morphs independently and fully, with no pill residue:
+
+```dart
+Row(
+  children: [
+    GlassButtonGroup.icons(
+      items: [
+        GlassButtonGroupItem(icon: Icon(CupertinoIcons.chart_bar), onTap: () {}),
+        GlassButtonGroupItem(icon: Icon(CupertinoIcons.clock),     onTap: () {}),
+      ],
+    ),
+    SizedBox(width: 8),
+    GlassPullDownButton(
+      icon: Icon(CupertinoIcons.ellipsis),
+      menuAlignment: GlassMenuAlignment.topRight,
+      items: [
+        GlassMenuItem(title: 'Add to Watchlist', icon: Icon(CupertinoIcons.star), onTap: () {}),
+        GlassMenuItem(title: 'Share',            icon: Icon(CupertinoIcons.share), onTap: () {}),
+        GlassMenuDivider(),
+        GlassMenuItem(title: 'Remove', icon: Icon(CupertinoIcons.trash), isDestructive: true, onTap: () {}),
+      ],
+    ),
+  ],
+)
+```
+
+| | `.menu` item (shared pill) | group + standalone |
+|---|---|---|
+| All actions in one pill | ✅ | ❌ |
+| Entire pill morphs | ✅ | — |
+| Menu button morphs independently | — | ✅ |
+| Best for | Overflow within a related set | Separate trailing action |
+
+### `GlassPullDownButton` improvements
+
+- **`items` widened to `List<Widget>`** — now accepts `GlassMenuDivider` alongside `GlassMenuItem`. Source-compatible: existing `List<GlassMenuItem>` code compiles and behaves identically. The `onSelected` callback is applied only to `GlassMenuItem` instances.
+- **`menuAlignment` exposed** — new `GlassMenuAlignment?` parameter forwarded to the underlying `GlassMenu`. Defaults to `null` (auto-detect from screen position) — fully backward-compatible.
+
+## 🐛 Bug Fixes — PlatformView Frost Halo & GlassButton Dispose-Race ([#134](https://github.com/sdegenaar/liquid_glass_widgets/pull/134), [#135](https://github.com/sdegenaar/liquid_glass_widgets/pull/135))
+
+Both fixes contributed by [@jfhair](https://github.com/jfhair).
+
+### `LiquidOval` rectangular blur halo over a PlatformView ([#134](https://github.com/sdegenaar/liquid_glass_widgets/pull/134))
+
+**Problem:** Any glass surface with a `LiquidOval` shape (the default for `GlassButton`,
+`GlassIconButton`, the collapsed search/dismiss pill, and `GlassBottomBarExtraButton`)
+rendered a rectangular blur halo when `platformViewBackdrop: true` routed it through the
+`_FrostedFallback` `BackdropFilter` path. The halo matched the widget's bounding box rather
+than its circular outline.
+
+**Root cause:** Flutter engine PR #177551 (3.41+) forwards `ClipRRect` clip data to the iOS
+PlatformView mutator stack, allowing a descendant `BackdropFilter` to be bounded correctly
+over a hybrid-composed view. The same forwarding does NOT apply to `ClipPath` — and
+`LiquidOval` (unlike `LiquidRoundedSuperellipse`) was routing through `ClipPath`, leaving
+the `BackdropFilter` unclipped.
+
+**Fix:** `_ShapeClip` now accepts a `platformViewBackdrop` flag. When set, any shape whose
+border radius can be expressed as a `BorderRadius` (including `LiquidOval` →
+`circular(9999)`, `LiquidRoundedRectangle`, and their vertical variants) is routed through
+`ClipRRect` instead of `ClipPath`. The clip is then forwarded to the PlatformView mutator
+stack and the frost is bounded cleanly to the shape. Off a PlatformView the original
+`ClipPath` is used (true ellipse). The flag is threaded through all `_ShapeClip` call sites
+in `_FrostedFallback` — the blur body, the content clip, and the specular rim — as well as
+the backer dimming pad in `AdaptiveGlass._wrapWithBacker`.
+
+Completes the partial fix shipped in 0.19.3 and fully resolves the rectangular-blur
+regression first reported in [#79](https://github.com/sdegenaar/liquid_glass_widgets/issues/79).
+
+### `GlassButton` crash when disposed mid-press ([#135](https://github.com/sdegenaar/liquid_glass_widgets/pull/135))
+
+**Problem:** Tapping a `GlassButton` that is removed by the very tap that activates it
+(e.g. a collapsed bar restore button that expands the bar and disposes itself) could throw:
+
+```
+AnimationController.reverse() called after AnimationController.dispose()
+(assert _ticker != null)
+```
+
+A queued `pointerUp` or `pointerCancel` was still dispatched to the now-disposed
+`RenderPointerListener`, and the press handler called `_saturationController.reverse()`
+after `dispose()`.
+
+**Fix:** All six tap/pointer press handlers in `_GlassButtonState` now guard on `!mounted`
+before touching `_saturationController`. A disposed `State` always has `mounted == false`,
+so the handler bails safely without touching the controller.
+
+Surfaces frequently in apps that morph or collapse a bar on the tap of a glass control
+over a PlatformView (the pattern introduced in #127/#79).
+
 # 0.19.3
 
 ## 🐛 Bug Fixes — Search Pill Colors & PlatformView Compositing

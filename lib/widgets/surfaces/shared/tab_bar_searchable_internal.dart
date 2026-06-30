@@ -936,9 +936,9 @@ class SearchPillState extends State<SearchPill> {
                     platformViewBackdrop: widget.platformViewBackdrop,
                     child: _wrapWithGlow(
                       child: Center(
-                        // Even though we wrap with IconTheme, we also explicitly pass
-                        // color: iconColor to the fallback Icon. This guarantees it
-                        // receives the exact resolved white/black color.
+                        // IconTheme ensures custom searchIcon widgets inherit
+                        // the resolved color. The fallback Icon also sets
+                        // color: explicitly for belt-and-braces safety.
                         child: IconTheme(
                           data: IconThemeData(color: iconColor),
                           child: widget.config.searchIcon ??
@@ -1026,9 +1026,10 @@ class SearchPillState extends State<SearchPill> {
                 key: const ValueKey('clear'),
                 behavior: HitTestBehavior.opaque,
                 onTap: _handleClear,
-                child: IconTheme(
-                  data: IconThemeData(color: iconColor, size: 18),
-                  child: const Icon(CupertinoIcons.clear_circled_solid),
+                child: Icon(
+                  CupertinoIcons.clear_circled_solid,
+                  color: iconColor,
+                  size: 18,
                 ),
               )
             : GestureDetector(
@@ -1036,9 +1037,10 @@ class SearchPillState extends State<SearchPill> {
                 behavior: HitTestBehavior.opaque,
                 onTap: config.onMicTap,
                 child: config.onMicTap != null
-                    ? IconTheme(
-                        data: IconThemeData(color: micColor, size: 18),
-                        child: const Icon(CupertinoIcons.mic_fill),
+                    ? Icon(
+                        CupertinoIcons.mic_fill,
+                        color: micColor,
+                        size: 18,
                       )
                     : const SizedBox.shrink(),
               ),
@@ -1051,10 +1053,7 @@ class SearchPillState extends State<SearchPill> {
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.center,
         children: [
-          IconTheme(
-            data: IconThemeData(color: iconColor, size: 18),
-            child: Icon(CupertinoIcons.search, color: iconColor),
-          ),
+          Icon(CupertinoIcons.search, color: iconColor, size: 18),
           const SizedBox(width: 8),
           Expanded(
             child: CupertinoTextField(

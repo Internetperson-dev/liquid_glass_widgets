@@ -22,6 +22,7 @@ class GlassPullDownButton extends StatelessWidget {
     this.buttonHeight = 44,
     this.buttonShape,
     this.menuWidth = 200,
+    this.menuAlignment,
     this.quality,
     this.onSelected,
   }) : icon = icon ?? const Icon(CupertinoIcons.ellipsis_circle);
@@ -37,8 +38,12 @@ class GlassPullDownButton extends StatelessWidget {
   /// Optional label to display next to the icon.
   final String? label;
 
-  /// The list of menu items.
-  final List<GlassMenuItem> items;
+  /// The list of items to display in the menu.
+  ///
+  /// Accepts [GlassMenuItem] and [GlassMenuDivider] widgets, matching the
+  /// [GlassMenu.items] contract directly. [GlassMenuDivider] items are passed
+  /// through as-is; only [GlassMenuItem] instances are wrapped by [onSelected].
+  final List<Widget> items;
 
   /// Width of the trigger button.
   final double buttonWidth;
@@ -48,6 +53,12 @@ class GlassPullDownButton extends StatelessWidget {
 
   /// Width of the expanded menu.
   final double menuWidth;
+
+  /// Controls where the menu expands relative to the trigger button.
+  ///
+  /// Defaults to [GlassMenuAlignment.none], which auto-detects the best
+  /// alignment based on the trigger's position on screen.
+  final GlassMenuAlignment? menuAlignment;
 
   /// Quality of the glass effect.
   final GlassQuality? quality;
@@ -71,6 +82,7 @@ class GlassPullDownButton extends StatelessWidget {
 
     return GlassMenu(
       menuWidth: menuWidth,
+      menuAlignment: menuAlignment,
       quality: effectiveQuality,
       triggerBuilder: (context, toggleMenu) {
         if (label != null && label!.isNotEmpty) {
@@ -115,8 +127,9 @@ class GlassPullDownButton extends StatelessWidget {
         );
       },
       items: items.map((item) {
-        // Wrap item tap to support onSelected callback if provided
-        if (onSelected != null) {
+        // Wrap GlassMenuItem taps to fire the onSelected callback.
+        // GlassMenuDivider and other non-GlassMenuItem widgets are passed through.
+        if (onSelected != null && item is GlassMenuItem) {
           return GlassMenuItem(
             title: item.title,
             icon: item.icon,

@@ -557,6 +557,144 @@ class _InteractivePageState extends State<InteractivePage> {
 
                       SizedBox(height: 40),
 
+                      // ── GlassButtonGroup ─────────────────────────────────
+                      const _SectionTitle(title: 'GlassButtonGroup'),
+                      SizedBox(height: 16),
+
+                      // Simple icons mode
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          GlassButtonGroup.icons(
+                            items: [
+                              GlassButtonGroupItem(
+                                icon: Icon(CupertinoIcons.bold),
+                                label: 'Bold',
+                                onTap: () {},
+                              ),
+                              GlassButtonGroupItem(
+                                icon: Icon(CupertinoIcons.italic),
+                                label: 'Italic',
+                                onTap: () {},
+                              ),
+                              GlassButtonGroupItem(
+                                icon: Icon(CupertinoIcons.underline),
+                                label: 'Underline',
+                                onTap: () {},
+                              ),
+                            ],
+                          ),
+                        ],
+                      ),
+
+                      SizedBox(height: 16),
+
+                      // Pattern A: GlassButtonGroupItem.menu
+                      // All actions share one pill. The pill stays visible under the
+                      // expanded menu (the slot fades, not the whole shell). Best when
+                      // the menu action is conceptually part of the group.
+                      const _SubSectionLabel(
+                        label: '.menu item — shared pill',
+                      ),
+                      SizedBox(height: 12),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          GlassButtonGroup.icons(
+                            items: [
+                              GlassButtonGroupItem(
+                                icon: Icon(CupertinoIcons.chart_bar),
+                                label: 'Chart',
+                                onTap: () {},
+                              ),
+                              GlassButtonGroupItem(
+                                icon: Icon(CupertinoIcons.clock),
+                                label: 'History',
+                                onTap: () {},
+                              ),
+                              GlassButtonGroupItem.menu(
+                                icon: Icon(CupertinoIcons.ellipsis),
+                                label: 'More',
+                                menuAlignment: GlassMenuAlignment.topRight,
+                                menuItems: [
+                                  GlassMenuItem(
+                                    title: 'Add to Watchlist',
+                                    icon: Icon(CupertinoIcons.star),
+                                    onTap: () {},
+                                  ),
+                                  GlassMenuItem(
+                                    title: 'Share',
+                                    icon: Icon(CupertinoIcons.share),
+                                    onTap: () {},
+                                  ),
+                                  GlassMenuDivider(),
+                                  GlassMenuItem(
+                                    title: 'Remove',
+                                    icon: Icon(CupertinoIcons.trash),
+                                    isDestructive: true,
+                                    onTap: () {},
+                                  ),
+                                ],
+                              ),
+                            ],
+                          ),
+                        ],
+                      ),
+
+                      SizedBox(height: 24),
+
+                      // Pattern B: GlassButtonGroup + GlassPullDownButton side-by-side
+                      // The trailing button morphs fully — no pill residue under the menu.
+                      const _SubSectionLabel(
+                        label: 'group + standalone menu',
+                      ),
+                      SizedBox(height: 12),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          GlassButtonGroup.icons(
+                            items: [
+                              GlassButtonGroupItem(
+                                icon: Icon(CupertinoIcons.chart_bar),
+                                label: 'Chart',
+                                onTap: () {},
+                              ),
+                              GlassButtonGroupItem(
+                                icon: Icon(CupertinoIcons.clock),
+                                label: 'History',
+                                onTap: () {},
+                              ),
+                            ],
+                          ),
+                          SizedBox(width: 8),
+                          GlassPullDownButton(
+                            icon: Icon(CupertinoIcons.ellipsis),
+                            menuAlignment: GlassMenuAlignment.topRight,
+                            items: [
+                              GlassMenuItem(
+                                title: 'Add to Watchlist',
+                                icon: Icon(CupertinoIcons.star),
+                                onTap: () {},
+                              ),
+                              GlassMenuItem(
+                                title: 'Share',
+                                icon: Icon(CupertinoIcons.share),
+                                onTap: () {},
+                              ),
+                              GlassMenuDivider(),
+                              GlassMenuItem(
+                                title: 'Remove',
+                                icon: Icon(CupertinoIcons.trash),
+                                isDestructive: true,
+                                onTap: () {},
+                              ),
+                            ],
+                          ),
+                        ],
+                      ),
+
+                      SizedBox(height: 40),
+
                       // ── GlassBadge ───────────────────────────────────────
                       const _SectionTitle(title: 'GlassBadge'),
                       SizedBox(height: 16),
@@ -763,6 +901,24 @@ class _SectionTitle extends StatelessWidget {
         fontSize: 24,
         fontWeight: FontWeight.bold,
         color: CupertinoColors.label.resolveFrom(context),
+      ),
+    );
+  }
+}
+
+class _SubSectionLabel extends StatelessWidget {
+  const _SubSectionLabel({required this.label});
+  final String label;
+
+  @override
+  Widget build(BuildContext context) {
+    return Text(
+      label,
+      style: TextStyle(
+        fontSize: 13,
+        fontWeight: FontWeight.w500,
+        color:
+            CupertinoColors.label.resolveFrom(context).withValues(alpha: 0.45),
       ),
     );
   }

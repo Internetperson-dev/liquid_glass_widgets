@@ -5,6 +5,7 @@ import '../../theme/glass_theme.dart';
 import '../../types/glass_button_style.dart';
 import '../../types/glass_quality.dart';
 import '../containers/glass_container.dart';
+import '../overlays/glass_menu.dart';
 import 'glass_button.dart';
 import '../../theme/glass_theme_helpers.dart';
 
@@ -19,6 +20,8 @@ import '../../theme/glass_theme_helpers.dart';
 /// [GlassButtonGroup] provides the glass surface and renders each item as a
 /// simple icon with a press-dim highlight.
 ///
+/// ## Basic tap item
+///
 /// ```dart
 /// GlassButtonGroup.icons(
 ///   items: [
@@ -28,14 +31,62 @@ import '../../theme/glass_theme_helpers.dart';
 ///   ],
 /// )
 /// ```
+///
+/// ## Menu item (iOS 26 UIBarButtonItem.menu equivalent)
+///
+/// Use [GlassButtonGroupItem.menu] to make an item open a [GlassMenu] pull-down
+/// when tapped. This mirrors `UIBarButtonItem.menu` within a `UIBarButtonItemGroup`.
+///
+/// ```dart
+/// GlassButtonGroup.icons(
+///   items: [
+///     GlassButtonGroupItem(icon: Icon(CupertinoIcons.chart_bar), onTap: () {}),
+///     GlassButtonGroupItem.menu(
+///       icon: Icon(CupertinoIcons.ellipsis),
+///       menuItems: [
+///         GlassMenuItem(title: 'Copy', onTap: () {}),
+///         GlassMenuDivider(),
+///         GlassMenuItem(title: 'Delete', isDestructive: true, onTap: () {}),
+///       ],
+///     ),
+///   ],
+/// )
+/// ```
 class GlassButtonGroupItem {
+  // No-op used by GlassButtonGroupItem.menu so onTap is always non-null.
+  static void _noOp() {}
+
   /// Creates a group item with an icon and tap callback.
   const GlassButtonGroupItem({
     required this.icon,
     required this.onTap,
     this.label,
     this.enabled = true,
-  });
+  })  : menuItems = null,
+        menuAlignment = null,
+        menuWidth = 200;
+
+  /// Creates a group item that opens a [GlassMenu] pull-down when tapped.
+  ///
+  /// This is the Flutter equivalent of `UIBarButtonItem.menu` inside a
+  /// `UIBarButtonItemGroup` — the standard iOS 26 pattern for toolbar
+  /// buttons that reveal a list of actions.
+  ///
+  /// [menuItems] accepts both [GlassMenuItem] and [GlassMenuDivider] widgets,
+  /// matching the [GlassMenu.items] contract directly.
+  ///
+  /// [menuAlignment] controls where the menu expands relative to the trigger.
+  /// Defaults to auto-detection based on screen position.
+  ///
+  /// [menuWidth] is the width of the expanded menu panel. Defaults to 200.
+  const GlassButtonGroupItem.menu({
+    required this.icon,
+    required List<Widget> this.menuItems,
+    this.menuAlignment,
+    this.menuWidth = 200,
+    this.label,
+  })  : onTap = _noOp,
+        enabled = true;
 
   /// The icon widget to display.
   ///
@@ -45,6 +96,8 @@ class GlassButtonGroupItem {
   final Widget icon;
 
   /// Called when the item is tapped.
+  ///
+  /// Not used when [menuItems] is non-null — the tap opens the menu instead.
   final VoidCallback onTap;
 
   /// Optional semantic label for accessibility.
@@ -56,6 +109,22 @@ class GlassButtonGroupItem {
   ///
   /// When false, the item renders at 50% opacity and ignores taps.
   final bool enabled;
+
+  /// When non-null, tapping this item opens a [GlassMenu] pull-down.
+  ///
+  /// Accepts [GlassMenuItem] and [GlassMenuDivider] widgets. Set via
+  /// [GlassButtonGroupItem.menu].
+  final List<Widget>? menuItems;
+
+  /// Controls where the menu expands relative to the trigger button.
+  ///
+  /// Defaults to auto-detection. Set via [GlassButtonGroupItem.menu].
+  final GlassMenuAlignment? menuAlignment;
+
+  /// Width of the expanded menu panel in logical pixels.
+  ///
+  /// Defaults to 200. Set via [GlassButtonGroupItem.menu].
+  final double menuWidth;
 }
 
 // =============================================================================
@@ -216,29 +285,59 @@ class GlassButtonGroup extends StatelessWidget {
     // via existing GlassButton infrastructure — one AnimationController for the
     // entire group instead of one per icon. Individual items handle their own
     // tap targets with lightweight GestureDetectors.
+    //
+    // When any item has menuItems, the ENTIRE pill becomes the GlassMenu trigger
+    // so the whole shape morphs into the menu on tap — matching the iOS 26
+    // GlassEffectContainer morph pattern. Only the first menu item is used as
+    // the menu trigger; subsequent menu items are treated as plain tap items.
     // ---------------------------------------------------------------------------
     if (items != null) {
       final shape = LiquidRoundedSuperellipse(borderRadius: borderRadius);
-      return GlassButton.custom(
-        onTap: () {}, // Items handle their own taps
-        shape: shape,
-        settings: settings,
-        useOwnLayer: useOwnLayer,
-        quality: effectiveQuality,
-        platformViewBackdrop: platformViewBackdrop,
-        width: null, // Size to content
-        height: null, // Size to content
-        // Reduce stretch for grouped buttons — full stretch looks too dramatic
-        // on a wide pill. This matches iOS 26 toolbar feel.
-        stretch: 0.15,
-        child: IntrinsicHeight(
-          child: Flex(
-            direction: direction,
-            mainAxisSize: MainAxisSize.min,
-            children: _buildItemWidgets(iconColor),
+      final menuItemIndex = items!.indexWhere((item) => item.menuItems != null);
+
+      // Helper that builds the pill shell — reused in both branches.
+      Widget buildPill({
+        VoidCallback? menuToggle,
+      }) {
+        return GlassButton.custom(
+          onTap: () {}, // Items handle their own taps
+          shape: shape,
+          settings: settings,
+          useOwnLayer: useOwnLayer,
+          quality: effectiveQuality,
+          platformViewBackdrop: platformViewBackdrop,
+          width: null, // Size to content
+          height: null, // Size to content
+          // Reduce stretch for grouped buttons — full stretch looks too dramatic
+          // on a wide pill. This matches iOS 26 toolbar feel.
+          stretch: 0.15,
+          child: IntrinsicHeight(
+            child: Flex(
+              direction: direction,
+              mainAxisSize: MainAxisSize.min,
+              children: _buildItemWidgets(
+                iconColor,
+                menuToggle: menuToggle,
+                menuItemIndex: menuItemIndex,
+              ),
+            ),
           ),
-        ),
-      );
+        );
+      }
+
+      if (menuItemIndex >= 0) {
+        final menuItem = items![menuItemIndex];
+        // Wrap the ENTIRE pill in GlassMenu so the whole shape morphs.
+        return GlassMenu(
+          menuAlignment: menuItem.menuAlignment,
+          menuWidth: menuItem.menuWidth,
+          items: menuItem.menuItems!,
+          triggerBuilder: (context, toggleMenu) =>
+              buildPill(menuToggle: toggleMenu),
+        );
+      }
+
+      return buildPill();
     }
 
     // ---------------------------------------------------------------------------
@@ -271,7 +370,11 @@ class GlassButtonGroup extends StatelessWidget {
   // Items mode — lightweight icons with press-dim highlight
   // ---------------------------------------------------------------------------
 
-  List<Widget> _buildItemWidgets(Color iconColor) {
+  List<Widget> _buildItemWidgets(
+    Color iconColor, {
+    VoidCallback? menuToggle,
+    int? menuItemIndex,
+  }) {
     final itemList = items!;
     final List<Widget> widgets = [];
 
@@ -284,12 +387,16 @@ class GlassButtonGroup extends StatelessWidget {
         );
       }
 
+      final item = itemList[i];
+      // Menu item slot: route its tap to toggleMenu so the whole pill morphs.
+      final isMenuTrigger = menuToggle != null && i == menuItemIndex;
       widgets.add(
         _GlassGroupItemWidget(
-          item: itemList[i],
+          item: item,
           iconColor: iconColor,
           iconSize: iconSize,
           padding: itemPadding,
+          onTapOverride: isMenuTrigger ? menuToggle : null,
         ),
       );
     }
@@ -335,6 +442,7 @@ class _GlassGroupItemWidget extends StatelessWidget {
     required this.iconColor,
     required this.iconSize,
     required this.padding,
+    this.onTapOverride,
   });
 
   final GlassButtonGroupItem item;
@@ -342,10 +450,16 @@ class _GlassGroupItemWidget extends StatelessWidget {
   final double iconSize;
   final EdgeInsetsGeometry padding;
 
+  /// When non-null, replaces [GlassButtonGroupItem.onTap] as the tap handler.
+  ///
+  /// Used for menu-trigger items to call the enclosing [GlassMenu]'s
+  /// toggleMenu callback so the whole pill morphs rather than the slot.
+  final VoidCallback? onTapOverride;
+
   @override
   Widget build(BuildContext context) {
     return GestureDetector(
-      onTap: item.enabled ? item.onTap : null,
+      onTap: item.enabled ? (onTapOverride ?? item.onTap) : null,
       behavior: HitTestBehavior.opaque,
       child: Semantics(
         button: true,
