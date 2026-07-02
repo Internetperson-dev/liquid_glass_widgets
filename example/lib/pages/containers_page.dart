@@ -278,7 +278,6 @@ class ContainersPage extends StatelessWidget {
                                 title: Text('Appearance'),
                                 subtitle: Text('Dark mode, accent colour'),
                                 trailing: GlassListTile.chevron,
-                                isLast: true,
                                 onTap: () {},
                               ),
                             ],
@@ -291,7 +290,7 @@ class ContainersPage extends StatelessWidget {
                         const _SectionTitle(title: 'GlassGroupedSection'),
                         SizedBox(height: 8),
                         Text(
-                          'Auto-manages isLast on final tile',
+                          'Dividers injected automatically between tiles',
                           style: TextStyle(
                             fontSize: 13,
                             color: CupertinoColors.label

@@ -1,6 +1,6 @@
 # Roadmap: 0.15.0 → 1.0.0
 
-> Last updated: 2026-06-29
+> Last updated: 2026-07-02
 
 This document tracks the planned work to get `liquid_glass_widgets` from the
 current 0.14.x series to a stable 1.0.0 release. The guiding principle is:
@@ -255,22 +255,7 @@ brightness-aware `GlassSearchBar` / `GlassTextField` defaults were all shipped.
     route back to the native shader and this quality cliff disappears.
   - Introduced in: `0.19.2` (PR [#128](https://github.com/sdegenaar/liquid_glass_widgets/pull/128) by [@jfhair](https://github.com/jfhair)).
 
-- [ ] **`backerColor` dual-use / API design debt** — `LiquidGlassSettings.backerColor` currently
-  serves two distinct purposes:
-  1. **Aesthetic dimming layer** — a tinted colour composited behind the glass surface for visual
-     depth, used across all quality tiers.
-  2. **PlatformView backdrop fill** — bound to `uBackgroundFallback` in the premium Impeller
-     shader to give the lens a colour to refract when the captured backdrop is transparent black
-     (i.e. over a PlatformView).
-  These are conceptually different; sharing one field makes the API ambiguous and makes the
-  behaviour surprising (why does `backerColor` fix black glass over a map?). Before 1.0, consider
-  splitting into:
-  - `backerColor` — aesthetic dimming only (current meaning).
-  - `platformViewFallbackColor` — explicit PlatformView fill colour, only honoured when
-    `platformViewBackdrop: true`.
-  This is a breaking parameter rename, so it should land in a coordinated `0.20.0` or `1.0.0`
-  breaking release.
-  - Introduced in: `0.19.2` (PR [#129](https://github.com/sdegenaar/liquid_glass_widgets/pull/129) by [@jfhair](https://github.com/jfhair)).
+- ~~**`backerColor` dual-use / API design debt**~~ ✅ **Resolved in 0.19.5** — `platformViewFallbackColor` added (#138, @jfhair). `backerColor` remains the aesthetic backer pad; `platformViewFallbackColor` controls the `uBackgroundFallback` shader uniform for PlatformView fill. Fully backwards-compatible.
 
 ### RTL / Internationalisation
 
@@ -325,6 +310,60 @@ widget-level RTL testing exists.
 - [ ] **Funding metadata** — add `funding:` to pubspec if applicable.
 - [ ] **Analysis score** — ensure 160/160 pub points (no warnings, full
   dartdoc coverage, all platforms declared).
+
+---
+
+## 0.20.0 — Breaking-Change Release
+
+A coordinated breaking release to clean up API design debt before 1.0. All
+changes here are either already deprecated or have been flagged as design
+mistakes. No new widgets.
+
+### `GlassListTile` — Remove `isLast` and `showDivider`
+
+**Problem:** `isLast` and `showDivider` are positional/layout concepts that
+belong to the container, not the tile. `GlassListTile` currently has to know
+whether it is the last item in a group to suppress its own bottom divider —
+that is the container's responsibility. `GlassGroupedSection` already works
+around this via an internal `_LastTileWrapper` that reconstructs the tile with
+`isLast: true`, which is a code smell confirming the design was wrong.
+
+The correct pattern (used by Flutter's own `ListTile` + `ListView.separated`):
+the tile is a clean content widget; the parent decides whether and how to draw
+separators between items.
+
+**Plan:**
+1. **Deprecate** `isLast` and `showDivider` on `GlassListTile` in a pre-0.20
+   patch. Annotate with `@Deprecated` pointing to `GlassGroupedSection`.
+2. **Move** all divider logic into `GlassGroupedSection` (it already handles
+   90% of this via `_LastTileWrapper`). Add a `dividerStyle` parameter for
+   customisation (standard, inset, none).
+3. **Delete** `isLast`, `showDivider`, and `dividerIndent` from `GlassListTile`
+   in 0.20.0. Remove the `_LastTileWrapper` internal workaround.
+
+**Migration:**
+```dart
+// BEFORE — tile decides its own divider
+GlassListTile(title: Text('Wi-Fi'), isLast: true, showDivider: false)
+
+// AFTER — container decides (GlassGroupedSection already handles this automatically)
+GlassGroupedSection(
+  children: [
+    GlassListTile(title: Text('Wi-Fi')), // clean — no divider params needed
+  ],
+)
+```
+
+Standalone `GlassListTile` (outside a `GlassGroupedSection`) never showed a
+divider anyway — `GlassListTile.standalone` already hardcodes `isLast: true,
+showDivider: false`. So this change only affects tiles used inside grouped
+sections, which is precisely where `GlassGroupedSection` should own the
+decision.
+
+### Cleanup
+
+- Remove `GlassBackdropScope` — deprecated since 0.14.0 (no-op shim).
+- Remove any remaining pre-0.15 deprecated symbols.
 
 ---
 

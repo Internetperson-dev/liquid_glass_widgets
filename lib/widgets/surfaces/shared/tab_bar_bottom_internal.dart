@@ -188,6 +188,11 @@ class BottomBarTabItem extends StatelessWidget {
     final iconColor = selected ? selectedIconColor : unselectedIconColor;
     final iconWidget = selected ? (tab.activeIcon ?? tab.icon) : tab.icon;
 
+    // When no icon is provided the builder passes SizedBox.shrink() as a
+    // sentinel. Exclude it from the Column so the label is truly centred
+    // and the iconLabelSpacing gap doesn't push it below mid-point.
+    final bool hasIcon = iconWidget is! SizedBox;
+
     // Label style resolution — most-specific-wins:
     //   1. Base typography: caller [textStyle], else the built-in default keyed
     //      to the per-state icon color.
@@ -232,71 +237,72 @@ class BottomBarTabItem extends StatelessWidget {
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               mainAxisSize: MainAxisSize.min,
-              spacing: iconLabelSpacing,
+              spacing: hasIcon ? iconLabelSpacing : 0,
               children: [
-                ExcludeSemantics(
-                  child: Stack(
-                    clipBehavior: Clip.none,
-                    children: [
-                      if (tab.glowColor != null)
-                        Positioned(
-                          top: -24,
-                          right: -24,
-                          left: -24,
-                          bottom: -24,
-                          child: RepaintBoundary(
-                            child: AnimatedContainer(
-                              duration: glowDuration,
-                              transformAlignment: Alignment.center,
-                              curve: Curves.easeOutCirc,
-                              transform: selected
-                                  ? Matrix4.identity()
-                                  : (Matrix4.identity()
-                                    ..scale(0.4)
-                                    ..rotateZ(-math.pi)),
-                              child: AnimatedOpacity(
+                if (hasIcon)
+                  ExcludeSemantics(
+                    child: Stack(
+                      clipBehavior: Clip.none,
+                      children: [
+                        if (tab.glowColor != null)
+                          Positioned(
+                            top: -24,
+                            right: -24,
+                            left: -24,
+                            bottom: -24,
+                            child: RepaintBoundary(
+                              child: AnimatedContainer(
                                 duration: glowDuration,
-                                opacity: selected ? 1 : 0,
-                                child: Container(
-                                  decoration: BoxDecoration(
-                                    shape: BoxShape.circle,
-                                    boxShadow: [
-                                      BoxShadow(
-                                        color: tab.glowColor!.withOpacity(
-                                          selected ? glowOpacity : 0,
+                                transformAlignment: Alignment.center,
+                                curve: Curves.easeOutCirc,
+                                transform: selected
+                                    ? Matrix4.identity()
+                                    : (Matrix4.identity()
+                                      ..scale(0.4)
+                                      ..rotateZ(-math.pi)),
+                                child: AnimatedOpacity(
+                                  duration: glowDuration,
+                                  opacity: selected ? 1 : 0,
+                                  child: Container(
+                                    decoration: BoxDecoration(
+                                      shape: BoxShape.circle,
+                                      boxShadow: [
+                                        BoxShadow(
+                                          color: tab.glowColor!.withOpacity(
+                                            selected ? glowOpacity : 0,
+                                          ),
+                                          blurRadius: glowBlurRadius,
+                                          spreadRadius: glowSpreadRadius,
                                         ),
-                                        blurRadius: glowBlurRadius,
-                                        spreadRadius: glowSpreadRadius,
-                                      ),
-                                    ],
+                                      ],
+                                    ),
                                   ),
                                 ),
                               ),
                             ),
                           ),
-                        ),
-                      IconTheme(
-                        data: IconThemeData(
-                          color: iconColor,
-                          size: iconSize,
-                          // Use the extracted top-level function for testability
-                          shadows: buildIconShadows(
-                            iconColor: iconColor,
-                            thickness: tab.thickness,
-                            selected: selected,
-                            activeIcon: tab.activeIcon,
+                        IconTheme(
+                          data: IconThemeData(
+                            color: iconColor,
+                            size: iconSize,
+                            // Use the extracted top-level function for testability
+                            shadows: buildIconShadows(
+                              iconColor: iconColor,
+                              thickness: tab.thickness,
+                              selected: selected,
+                              activeIcon: tab.activeIcon,
+                            ),
+                          ),
+                          child: DefaultTextStyle(
+                            style: DefaultTextStyle.of(context)
+                                .style
+                                .copyWith(color: iconColor),
+                            child: iconWidget,
                           ),
                         ),
-                        child: DefaultTextStyle(
-                          style: DefaultTextStyle.of(context)
-                              .style
-                              .copyWith(color: iconColor),
-                          child: iconWidget,
-                        ),
-                      ),
-                    ],
+                      ],
+                    ),
                   ),
-                ),
                 if (tab.label != null)
                   Text(
                     tab.label!,

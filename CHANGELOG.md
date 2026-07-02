@@ -1,3 +1,101 @@
+# 0.20.0
+
+## 💥 Breaking — `GlassListTile` divider refactor
+
+`GlassListTile` no longer draws its own divider. The `isLast`, `showDivider`,
+and `dividerIndent` parameters have been removed.
+
+**Rationale:** A list tile should be a clean, position-agnostic item. Divider
+rendering is a layout concern that belongs to the parent container.
+
+### Migration
+
+**Inside `GlassGroupedSection` — no changes needed.**
+`GlassGroupedSection` now automatically injects `GlassDivider`s between tiles
+with smart leading-indent detection (56px if the preceding tile has a leading
+widget, 16px otherwise). The last tile never gets a trailing divider.
+
+**Standalone column layouts — compose `GlassDivider` explicitly:**
+
+```dart
+// Before:
+Column(children: [
+  GlassListTile(title: Text('A')),                    // showDivider: true (default)
+  GlassListTile(title: Text('B'), isLast: true),      // suppresses divider
+])
+
+// After (standard Flutter composition pattern):
+Column(children: [
+  GlassListTile(title: Text('A')),
+  GlassDivider(indent: 16),
+  GlassListTile(title: Text('B')),
+])
+```
+
+This aligns with Flutter's own `ListTile` + `Divider` composition model.
+
+---
+
+## ✨ New — `GlassTabBar.inline`
+
+A compact glass tab bar for pinned content-filter sections — sits fixed between
+a page header and its scrollable list, not inside the scroll view itself.
+
+> **Performance note:** `GlassQuality.premium` re-runs the full shader pipeline
+> whenever the backdrop changes. Placing the bar inside a scroll view invalidates
+> the backdrop on every scroll frame. Pin it outside the scrollable region or
+> drop to `GlassQuality.standard` if embedding inside a list.
+
+```dart
+GlassTabBar.inline(
+  tabs: const [
+    GlassTab(label: 'For You'),
+    GlassTab(label: 'Following'),
+    GlassTab(label: 'New'),
+  ],
+  selectedIndex: _selectedIndex,
+  onTabSelected: (i) => setState(() => _selectedIndex = i),
+)
+```
+
+**Key differences from `GlassTabBar.bottom`:**
+- Zero padding — sits flush in its parent container.
+- Compact height (40px) with a full stadium shape (`barBorderRadius: 100`, clamped to `height/2`).
+- Indicator pill automatically matches the track corner radius (`indicatorBorderRadius` defaults to `barBorderRadius`).
+- Indicator expansion `h:12, v:10` — same horizontal weight as `GlassSegmentedControl` and `GlassTabBar.bottom`, +2px vertical to compensate for the shorter bar height giving the glass pill proportional visual mass.
+- `indicatorPinchStrength: 0.4` — aligned with all other pill controls.
+- Magnification disabled (`1.0x`) — text labels never grow on selection.
+- Text-only tabs render with correct vertical centering (no icon slot consuming space).
+- `extraButton` not supported (structural navigation feature only).
+
+All standard physics parameters (`indicatorPinchStrength`, `indicatorExpansion`,
+`indicatorSettings`, `quality`) are still fully configurable.
+
+See the updated **Indicator Parity** demo (`indicator_parity_demo.dart`) where
+`GlassTabBar.inline` now appears alongside the other five pill widgets — including
+a text-only variant (40px) and an icon + text variant (52px) — with live tuning sliders.
+
+---
+
+# 0.19.7
+
+
+## 🐛 Bug Fixes
+
+- **`GlassTabBar.bottom` / `GlassBottomBar`** — fixes RTL support (#143, @naeemeltaief).
+  The pill and tap/drag hit-testing now correctly align with the visually reversed tab order
+  under RTL. The bottom layout normalises the tab data, selected index and callback for RTL,
+  and pins only the two inner tab `Row`s to LTR — leaving `indicatorExpansion`, `tabPadding`
+  and all text to resolve against the ambient direction as expected. Consumers no longer
+  need to force `Directionality.ltr` and reverse tabs by hand. +2 tests.
+
+- **`AnimatedGlassIndicator`** — restores the resting selection pill inside a `GlassContainer`
+  (#144, @jfhair). The background pill was permanently hidden whenever an ancestor set
+  `avoidsRefraction`, which is a steady-state layout flag on `GlassContainer` — not a
+  transient capture signal. The guard was incorrect and is removed. The pill now renders
+  correctly in all contexts. No API change. +1 test.
+
+
 # 0.19.6
 
 ## ✨ New — `GlassLargeTitle` + `GlassLargeTitleController`
@@ -61,10 +159,7 @@ GlassLargeTitle(
   **⚠️ Anti-Pattern** sections documenting the glass-in-glass restriction: placing interactive
   glass controls inside a container degrades refraction and clips jelly animations.
 
-
 # 0.19.5
-
-
 
 - **`LiquidGlassSettings`** — adds `platformViewFallbackColor` (#138, @jfhair). Splits
   `backerColor`'s dual role: `backerColor` remains the aesthetic backer pad; the new

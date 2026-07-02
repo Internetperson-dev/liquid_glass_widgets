@@ -82,7 +82,6 @@ void main() {
               title: const Text('Title'),
               subtitle: const Text('Sub'),
               trailing: GlassListTile.chevron,
-              isLast: true,
             ),
           ),
         ),
@@ -101,7 +100,6 @@ void main() {
             body: GlassListTile(
               title: const Text('Tap me'),
               onTap: () => tapped = true,
-              isLast: true,
             ),
           ),
         ),
@@ -110,26 +108,92 @@ void main() {
       expect(tapped, isTrue);
     });
 
-    testWidgets('shows divider when not last', (tester) async {
+    testWidgets(
+        'GlassGroupedSection injects dividers between tiles, not after last',
+        (tester) async {
+      // GlassGroupedSection is the source of truth for divider rendering.
+      // It should inject (n-1) GlassDividers for n tiles.
       await tester.pumpWidget(
-        const MaterialApp(
+        MaterialApp(
           home: Scaffold(
-            body: GlassListTile(title: Text('Item'), showDivider: true),
+            body: GlassGroupedSection(
+              children: const [
+                GlassListTile(title: Text('First')),
+                GlassListTile(title: Text('Middle')),
+                GlassListTile(title: Text('Last')),
+              ],
+            ),
           ),
         ),
       );
-      expect(find.byType(GlassDivider), findsOneWidget);
+      await tester.pump();
+      // 3 tiles → 2 dividers injected between them, none after the last.
+      expect(find.byType(GlassDivider), findsNWidgets(2));
     });
 
-    testWidgets('suppresses divider when isLast is true', (tester) async {
+    testWidgets('GlassGroupedSection with 1 tile injects no dividers',
+        (tester) async {
       await tester.pumpWidget(
         const MaterialApp(
           home: Scaffold(
-            body: GlassListTile(title: Text('Last'), isLast: true),
+            body: GlassGroupedSection(
+              children: [
+                GlassListTile(title: Text('Only')),
+              ],
+            ),
           ),
         ),
       );
+      await tester.pump();
       expect(find.byType(GlassDivider), findsNothing);
+    });
+
+    testWidgets('GlassGroupedSection uses smart indent based on leading widget',
+        (tester) async {
+      await tester.pumpWidget(
+        const MaterialApp(
+          home: Scaffold(
+            body: GlassGroupedSection(
+              children: [
+                GlassListTile(
+                    leading: Icon(Icons.star), title: Text('With Icon')),
+                GlassListTile(title: Text('No Icon')),
+                GlassListTile(title: Text('Last')),
+              ],
+            ),
+          ),
+        ),
+      );
+      await tester.pump();
+
+      final dividers =
+          tester.widgetList<GlassDivider>(find.byType(GlassDivider)).toList();
+      expect(dividers.length, 2);
+      expect(dividers[0].indent, 56.0); // Preceding tile has leading icon
+      expect(dividers[1].indent, 16.0); // Preceding tile has no leading icon
+    });
+
+    testWidgets('GlassGroupedSection respects user-placed dividers',
+        (tester) async {
+      await tester.pumpWidget(
+        const MaterialApp(
+          home: Scaffold(
+            body: GlassGroupedSection(
+              children: [
+                GlassListTile(title: Text('A')),
+                GlassDivider(indent: 40.0), // Manual divider
+                GlassListTile(title: Text('B')),
+              ],
+            ),
+          ),
+        ),
+      );
+      await tester.pump();
+
+      final dividers =
+          tester.widgetList<GlassDivider>(find.byType(GlassDivider)).toList();
+      expect(dividers.length, 1);
+      expect(dividers[0].indent, 40.0);
     });
   });
 

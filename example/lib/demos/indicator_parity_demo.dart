@@ -1,11 +1,12 @@
 /// Indicator Parity Demo
 ///
-/// Shows all four [AnimatedGlassIndicator]-powered widgets side-by-side with
+/// Shows all five [AnimatedGlassIndicator]-powered widgets side-by-side with
 /// live tuning sliders so you can compare and calibrate iOS 26 parity:
-///   • GlassSegmentedControl
-///   • GlassTabBar
-///   • GlassBottomBar
-///   • GlassSearchableBottomBar
+///   • GlassSegmentedControl (flat track)
+///   • GlassSegmentedControl with icons + labels
+///   • GlassTabBar.inline (compact glass track, text-only)
+///   • GlassTabBar.bottom
+///   • GlassTabBar.searchable
 ///
 /// Run standalone:
 ///   flutter run -t example/lib/demos/indicator_parity_demo.dart
@@ -62,6 +63,8 @@ class _IndicatorParityDemoPageState extends State<IndicatorParityDemoPage> {
   // ── Per-widget state ───────────────────────────────────────────────────────
   int _segSelected = 0;
   int _tabSelected = 0;
+  int _inlineSelected = 0;
+  int _inlineIconSelected = 0;
   int _barSelected = 0;
   int _searchBarSelected = 0;
   bool _isSearching = false;
@@ -85,6 +88,13 @@ class _IndicatorParityDemoPageState extends State<IndicatorParityDemoPage> {
     GlassTab(label: 'Discover', icon: Icon(CupertinoIcons.compass_fill)),
     GlassTab(label: 'Library', icon: Icon(CupertinoIcons.book_fill)),
     GlassTab(label: 'Profile', icon: Icon(CupertinoIcons.person_fill)),
+  ];
+
+  // Text-only tabs — highlights the label-centric inline use case.
+  static const _inlineTabs = <GlassTab>[
+    GlassTab(label: 'For You'),
+    GlassTab(label: 'Following'),
+    GlassTab(label: 'New'),
   ];
 
   // ── Derived ────────────────────────────────────────────────────────────────
@@ -176,7 +186,7 @@ class _IndicatorParityDemoPageState extends State<IndicatorParityDemoPage> {
                 ),
                 const SizedBox(height: 4),
                 Text(
-                  'iOS 26 calibration — all four pill widgets, live tuning',
+                  'iOS 26 calibration — all six pill widgets, live tuning',
                   style: TextStyle(
                     color: Colors.white.withValues(alpha: 0.5),
                     fontSize: 13,
@@ -258,7 +268,60 @@ class _IndicatorParityDemoPageState extends State<IndicatorParityDemoPage> {
 
                 const SizedBox(height: 16),
 
-                // ── GlassBottomBar ───────────────────────────────────────────
+                // ── GlassTabBar.inline ───────────────────────────────────────
+                _WidgetSection(
+                  label: 'GlassTabBar.inline',
+                  color: const Color(0xFF30B0C7),
+                  child: Column(
+                    children: [
+                      // Extra breathing room — the 40px glass track refracts
+                      // anything within ~20px. Push label clear of the surface.
+                      const SizedBox(height: 24),
+                      Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 16),
+                        child: GlassTabBar.inline(
+                          tabs: _inlineTabs,
+                          selectedIndex: _inlineSelected,
+                          onTabSelected: (i) =>
+                              setState(() => _inlineSelected = i),
+                          quality: GlassQuality.premium,
+                          // indicatorPinchStrength and indicatorExpansion
+                          // use the constructor defaults (0.4 / h:8 v:10)
+                          indicatorSettings: _indicatorSettings,
+                        ),
+                      ),
+                      const SizedBox(height: 12),
+                    ],
+                  ),
+                ),
+
+                const SizedBox(height: 16),
+
+                _WidgetSection(
+                  label: 'GlassTabBar.inline (icon + text)',
+                  color: const Color(0xFF5AC8FA),
+                  child: Column(
+                    children: [
+                      const SizedBox(height: 24),
+                      GlassTabBar.inline(
+                        tabs: _barTabs,
+                        selectedIndex: _inlineIconSelected,
+                        onTabSelected: (i) =>
+                            setState(() => _inlineIconSelected = i),
+                        quality: GlassQuality.premium,
+                        barHeight: 52,
+                        // indicatorPinchStrength and indicatorExpansion
+                        // use the constructor defaults (0.4 / h:8 v:10)
+                        indicatorSettings: _indicatorSettings,
+                      ),
+                      const SizedBox(height: 12),
+                    ],
+                  ),
+                ),
+
+                const SizedBox(height: 16),
+
+                // ── GlassTabBar.bottom ───────────────────────────────────────
                 _WidgetSection(
                   label: 'GlassBottomBar',
                   color: const Color(0xFFFF375F),
@@ -269,7 +332,7 @@ class _IndicatorParityDemoPageState extends State<IndicatorParityDemoPage> {
                     quality: GlassQuality.premium,
                     indicatorPinchStrength: _pinchStrength,
                     indicatorExpansion: _expansion,
-                    // indicatorSettings: _indicatorSettings,
+                    indicatorSettings: _indicatorSettings,
                   ),
                 ),
 
@@ -388,7 +451,7 @@ class _TunerPanelState extends State<_TunerPanel> {
                       const SizedBox(width: 6),
                       Expanded(
                         child: Text(
-                          'LIVE TUNER — applies to all four widgets',
+                          'LIVE TUNER — bottom bar, searchable & segmented controls',
                           style: TextStyle(
                             color: Colors.white.withValues(alpha: 0.55),
                             fontSize: 11,
@@ -638,7 +701,7 @@ class _WidgetSection extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        // Label
+        // Coloured dot + label for identification in the demo
         Row(
           children: [
             Container(
@@ -662,26 +725,10 @@ class _WidgetSection extends StatelessWidget {
           ],
         ),
         const SizedBox(height: 8),
-        // Preview card with colourful gradient so glass refracts visually
-        Container(
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(20),
-            gradient: LinearGradient(
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-              colors: [
-                color.withValues(alpha: 0.12),
-                color.withValues(alpha: 0.04),
-              ],
-            ),
-            border: Border.all(
-              color: color.withValues(alpha: 0.2),
-            ),
-          ),
-          clipBehavior:
-              Clip.none, // Allow jelly physics and glow to overshoot the card
-          child: child,
-        ),
+        // Glass sits directly against the demo backdrop — no wrapper container.
+        // Wrapping in a styled container would create a glass-in-glass situation
+        // and cause the indicator glow to refract the container colour.
+        child,
       ],
     );
   }

@@ -1,6 +1,8 @@
 // Tests for the v0.18.0 unified GlassTabBar named constructors.
 //
 // Coverage targets:
+//   • GlassTabBar.inline()  — renders, onTabSelected fires, compact defaults,
+//     text-only tabs, assertion guards, placement dispatch
 //   • GlassTabBar.bottom()  — renders, onTabSelected fires, key params wired
 //   • GlassTabBar.searchable() — renders, searchConfig wired, tab switch works
 //   • _GlassTabBarPlacement dispatch — correct engine for each constructor
@@ -405,6 +407,179 @@ void main() {
   });
 
   // -------------------------------------------------------------------------
+  // GlassTabBar.inline() — rendering
+  // -------------------------------------------------------------------------
+
+  group('GlassTabBar.inline() — rendering', () {
+    testWidgets('renders with minimum tabs without crashing', (tester) async {
+      await tester.pumpWidget(_wrap(_box(
+        GlassTabBar.inline(
+          tabs: [_tab('For You'), _tab('Following')],
+          selectedIndex: 0,
+          onTabSelected: (_) {},
+        ),
+      )));
+      await tester.pump();
+
+      expect(find.text('For You'), findsWidgets);
+      expect(find.text('Following'), findsWidgets);
+    });
+
+    testWidgets('renders with 3 tabs without crashing', (tester) async {
+      await tester.pumpWidget(_wrap(_box(
+        GlassTabBar.inline(
+          tabs: [_tab('For You'), _tab('Following'), _tab('New')],
+          selectedIndex: 1,
+          onTabSelected: (_) {},
+        ),
+      )));
+      await tester.pump();
+
+      expect(find.text('Following'), findsWidgets);
+    });
+
+    testWidgets('onTabSelected fires with correct index', (tester) async {
+      int received = -1;
+
+      await tester.pumpWidget(_wrap(_box(
+        StatefulBuilder(
+          builder: (context, setState) => GlassTabBar.inline(
+            tabs: [_tab('A'), _tab('B'), _tab('C')],
+            selectedIndex: 0,
+            onTabSelected: (i) => setState(() => received = i),
+          ),
+        ),
+      )));
+      await tester.pump();
+
+      await tester.tap(find.text('B').first);
+      await tester.pumpAndSettle();
+
+      expect(received, 1);
+    });
+
+    testWidgets('text-only tabs (no icons) render without crashing',
+        (tester) async {
+      await tester.pumpWidget(_wrap(_box(
+        GlassTabBar.inline(
+          tabs: const [
+            GlassTab(label: 'Timeline'),
+            GlassTab(label: 'Mentions'),
+            GlassTab(label: 'Trending'),
+          ],
+          selectedIndex: 0,
+          onTabSelected: (_) {},
+        ),
+      )));
+      await tester.pump();
+
+      expect(find.text('Timeline'), findsWidgets);
+      expect(tester.takeException(), isNull);
+    });
+
+    testWidgets('selectedIndex=2 starts on third tab', (tester) async {
+      int received = -1;
+
+      await tester.pumpWidget(_wrap(_box(
+        StatefulBuilder(
+          builder: (context, setState) => GlassTabBar.inline(
+            tabs: [_tab('One'), _tab('Two'), _tab('Three')],
+            selectedIndex: 2,
+            onTabSelected: (i) => setState(() => received = i),
+          ),
+        ),
+      )));
+      await tester.pump();
+
+      await tester.tap(find.text('One').first);
+      await tester.pumpAndSettle();
+
+      expect(received, 0);
+    });
+
+    testWidgets('tabWidth limits slot width without crash', (tester) async {
+      await tester.pumpWidget(_wrap(_box(
+        GlassTabBar.inline(
+          tabs: [_tab('Home'), _tab('Search'), _tab('Me')],
+          selectedIndex: 0,
+          onTabSelected: (_) {},
+          tabWidth: 80,
+        ),
+      )));
+      await tester.pump();
+
+      expect(find.text('Home'), findsWidgets);
+    });
+
+    testWidgets('quality: premium renders without crash', (tester) async {
+      await tester.pumpWidget(_wrap(_box(
+        GlassTabBar.inline(
+          tabs: [_tab('A'), _tab('B')],
+          selectedIndex: 0,
+          onTabSelected: (_) {},
+          quality: GlassQuality.premium,
+        ),
+      )));
+      await tester.pump();
+
+      expect(find.text('A'), findsWidgets);
+    });
+
+    testWidgets('magnification defaults to 1.0 — no-zoom path renders cleanly',
+        (tester) async {
+      await tester.pumpWidget(_wrap(_box(
+        GlassTabBar.inline(
+          tabs: const [GlassTab(label: 'Songs'), GlassTab(label: 'Albums')],
+          selectedIndex: 0,
+          onTabSelected: (_) {},
+        ),
+      )));
+      await tester.pump();
+
+      expect(tester.takeException(), isNull);
+    });
+  });
+
+  // -------------------------------------------------------------------------
+  // GlassTabBar.inline() — assertion guards
+  // -------------------------------------------------------------------------
+
+  group('GlassTabBar.inline() — assertion guards', () {
+    test('asserts minimum 1 tab', () {
+      expect(
+        () => GlassTabBar.inline(
+          tabs: const [],
+          selectedIndex: 0,
+          onTabSelected: (_) {},
+        ),
+        throwsAssertionError,
+      );
+    });
+
+    test('asserts selectedIndex in bounds', () {
+      expect(
+        () => GlassTabBar.inline(
+          tabs: [_tab('A'), _tab('B')],
+          selectedIndex: 5,
+          onTabSelected: (_) {},
+        ),
+        throwsAssertionError,
+      );
+    });
+
+    test('selectedIndex=0 with 1 tab does not throw', () {
+      expect(
+        () => GlassTabBar.inline(
+          tabs: [_tab('Only')],
+          selectedIndex: 0,
+          onTabSelected: (_) {},
+        ),
+        returnsNormally,
+      );
+    });
+  });
+
+  // -------------------------------------------------------------------------
   // GlassTabBar.searchable() — rendering
   // -------------------------------------------------------------------------
 
@@ -577,6 +752,22 @@ void main() {
       // (no bridge class) — GlassSearchableBottomBar does NOT appear in the tree.
       expect(find.byType(GlassTabBar), findsOneWidget);
       expect(find.byType(GlassSearchableBottomBar), findsNothing);
+    });
+
+    testWidgets('.inline() dispatches to TabBarBottomLayout', (tester) async {
+      await tester.pumpWidget(_wrap(_box(
+        GlassTabBar.inline(
+          tabs: [_tab('Home'), _tab('Me')],
+          selectedIndex: 0,
+          onTabSelected: (_) {},
+        ),
+      )));
+      await tester.pump();
+
+      // GlassTabBar.inline() routes through TabBarBottomLayout with compact
+      // defaults — no GlassBottomBar bridge in the tree.
+      expect(find.byType(GlassTabBar), findsOneWidget);
+      expect(find.byType(GlassBottomBar), findsNothing);
     });
   });
 

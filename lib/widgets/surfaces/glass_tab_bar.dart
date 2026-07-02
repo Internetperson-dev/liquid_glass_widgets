@@ -24,15 +24,15 @@ export 'shared/glass_search_bar_config.dart';
 
 /// The iOS 26 structural navigation bar widget.
 ///
-/// [GlassTabBar] is the **bottom navigation** control. It mirrors Apple's
-/// `UITabBarController` and renders a floating glass pill at the bottom of the
-/// screen with jelly-physics indicator, `MaskingQuality` icon rendering, and
-/// optional search morphing.
+/// [GlassTabBar] covers three placement contexts via named constructors:
 ///
-/// > **Inline / in-page tab bars** (e.g. "Timeline | Mentions") should use
-/// > [GlassSegmentedControl] or [GlassSegmentedControl.scrollable] instead.
-/// > Those map to `UISegmentedControl` and are not the responsibility of this
-/// > widget.
+/// - **[GlassTabBar.bottom]** — floating glass pill at the bottom of the screen.
+///   Mirrors Apple's `UITabBarController`.
+/// - **[GlassTabBar.searchable]** — bottom pill that morphs into a search bar.
+/// - **[GlassTabBar.inline]** — compact, in-page glass tab bar with a refracting
+///   `AdaptiveGlass.grouped` track. Use this when you need a glass-backed content
+///   switcher (e.g. Apple Music-style section picker). For a flat native-fidelity
+///   filter control, use [GlassSegmentedControl] instead.
 ///
 /// ## Constructors
 ///
@@ -40,6 +40,7 @@ export 'shared/glass_search_bar_config.dart';
 /// |---|---|---|
 /// | [GlassTabBar.bottom] | `UITabBar` | App-level bottom navigation |
 /// | [GlassTabBar.searchable] | `UITabBar` + search | Bottom nav + morphing search bar |
+/// | [GlassTabBar.inline] | Glass-backed `UISegmentedControl` / inline `UITabBar` | In-page content switcher with glass track |
 ///
 /// ## Usage
 ///
@@ -70,9 +71,19 @@ export 'shared/glass_search_bar_config.dart';
 /// )
 /// ```
 ///
-/// ### Inline / in-page tab switching (use GlassSegmentedControl)
+/// ### Inline / in-page tab switching
 /// ```dart
-/// // ✅ Correct widget for inline content switching
+/// // ✅ Glass-backed track with jelly indicator — Apple Music style
+/// GlassTabBar.inline(
+///   tabs: const [
+///     GlassTab(label: 'Timeline'),
+///     GlassTab(label: 'Mentions'),
+///   ],
+///   selectedIndex: _selectedIndex,
+///   onTabSelected: (i) => setState(() => _selectedIndex = i),
+/// )
+///
+/// // ✅ Flat native UISegmentedControl fidelity — filter/mode selection
 /// GlassSegmentedControl(
 ///   segments: const [
 ///     GlassSegment(label: 'Timeline'),
@@ -81,18 +92,11 @@ export 'shared/glass_search_bar_config.dart';
 ///   selectedIndex: _selectedIndex,
 ///   onSegmentSelected: (i) => setState(() => _selectedIndex = i),
 /// )
-///
-/// // ✅ Scrollable variant for many categories
-/// GlassSegmentedControl.scrollable(
-///   segments: List.generate(10, (i) => GlassSegment(label: 'Category ${i+1}')),
-///   selectedIndex: _selectedIndex,
-///   onSegmentSelected: (i) => setState(() => _selectedIndex = i),
-/// )
 /// ```
 // ---------------------------------------------------------------------------
 // Placement discriminant — private, drives constructor dispatch
 // ---------------------------------------------------------------------------
-enum _GlassTabBarPlacement { bottom, searchable }
+enum _GlassTabBarPlacement { bottom, searchable, inline }
 
 /// The iOS 26 structural bottom navigation bar.
 ///
@@ -232,6 +236,137 @@ class GlassTabBar extends StatefulWidget {
           interactionGlowRadius: interactionGlowRadius,
           interactionBehavior: interactionBehavior,
           pressScale: pressScale,
+          platformViewBackdrop: platformViewBackdrop,
+          adaptiveBrightness: adaptiveBrightness,
+          onBrightnessChanged: onBrightnessChanged,
+          brightnessOverride: brightnessOverride,
+        );
+
+  // ─── Inline constructor ────────────────────────────────────────────────────
+
+  /// Creates a compact, in-page glass tab bar with a refracting glass track.
+  ///
+  /// Use this when you need a **glass-backed** content switcher embedded inside
+  /// a page — e.g. an Apple Music-style section picker or a search results
+  /// segment bar that sits on a glass surface.
+  ///
+  /// The track refracts the background behind it via `AdaptiveGlass.grouped`,
+  /// and the indicator uses the same jelly-physics spring as [GlassTabBar.bottom].
+  ///
+  /// For a flat, native-fidelity filter/mode control (matching the default
+  /// `UISegmentedControl` appearance), use [GlassSegmentedControl] instead.
+  ///
+  /// ## Usage
+  ///
+  /// ```dart
+  /// GlassTabBar.inline(
+  ///   tabs: const [
+  ///     GlassTab(label: 'For You'),
+  ///     GlassTab(label: 'Following'),
+  ///     GlassTab(label: 'New'),
+  ///   ],
+  ///   selectedIndex: _selectedIndex,
+  ///   onTabSelected: (i) => setState(() => _selectedIndex = i),
+  /// )
+  /// ```
+  const GlassTabBar.inline({
+    required List<GlassTab> tabs,
+    required int selectedIndex,
+    required ValueChanged<int> onTabSelected,
+    Key? key,
+    // Compact defaults suited for inline placement
+    double horizontalPadding = 0,
+    double verticalPadding = 0,
+    double barHeight = 40,
+    double barBorderRadius = 100,
+    double labelFontSize = 13,
+    double iconSize = 18,
+    EdgeInsetsGeometry tabPadding = const EdgeInsets.symmetric(horizontal: 8),
+    EdgeInsetsGeometry indicatorExpansion =
+        const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+    // No magnification for compact label-centric layout
+    double magnification = 1.0,
+    double innerBlur = 0.0,
+    // Standard shared params
+    double spacing = 4,
+    double blendAmount = 10,
+    bool enableBlend = true,
+    bool showIndicator = true,
+    Color? indicatorColor,
+    LiquidGlassSettings? indicatorSettings,
+    double indicatorPinchStrength = 0.4,
+    double? indicatorBorderRadius,
+    Color? selectedIconColor,
+    Color? unselectedIconColor,
+    Color? selectedLabelColor,
+    Color? unselectedLabelColor,
+    TextStyle? selectedLabelStyle,
+    TextStyle? unselectedLabelStyle,
+    TextStyle? textStyle,
+    double? tabWidth,
+    LiquidGlassSettings? settings,
+    GlassQuality? quality,
+    MaskingQuality maskingQuality = MaskingQuality.high,
+    GlobalKey? backgroundKey,
+    double iconLabelSpacing = 4,
+    Duration glowDuration = const Duration(milliseconds: 300),
+    double glowBlurRadius = 20,
+    double glowSpreadRadius = 4,
+    double glowOpacity = 0.5,
+    GlassInteractionBehavior interactionBehavior =
+        GlassInteractionBehavior.full,
+    double pressScale = 1.02,
+    Color? interactionGlowColor,
+    double interactionGlowRadius = 1.0,
+    bool platformViewBackdrop = false,
+    bool adaptiveBrightness = false,
+    ValueChanged<Brightness>? onBrightnessChanged,
+    ValueListenable<Brightness>? brightnessOverride,
+  }) : this._(
+          key: key,
+          placement: _GlassTabBarPlacement.inline,
+          tabs: tabs,
+          selectedIndex: selectedIndex,
+          onTabSelected: onTabSelected,
+          horizontalPadding: horizontalPadding,
+          verticalPadding: verticalPadding,
+          barHeight: barHeight,
+          barBorderRadius: barBorderRadius,
+          labelFontSize: labelFontSize,
+          iconSize: iconSize,
+          tabPadding: tabPadding,
+          indicatorExpansion: indicatorExpansion,
+          magnification: magnification,
+          innerBlur: innerBlur,
+          spacing: spacing,
+          blendAmount: blendAmount,
+          enableBlend: enableBlend,
+          showIndicator: showIndicator,
+          indicatorColor: indicatorColor,
+          indicatorSettings: indicatorSettings,
+          indicatorPinchStrength: indicatorPinchStrength,
+          indicatorBorderRadius: indicatorBorderRadius ?? barBorderRadius,
+          selectedIconColor: selectedIconColor,
+          unselectedIconColor: unselectedIconColor,
+          selectedLabelColor: selectedLabelColor,
+          unselectedLabelColor: unselectedLabelColor,
+          selectedLabelStyle: selectedLabelStyle,
+          unselectedLabelStyle: unselectedLabelStyle,
+          textStyle: textStyle,
+          tabWidth: tabWidth,
+          settings: settings,
+          quality: quality,
+          maskingQuality: maskingQuality,
+          backgroundKey: backgroundKey,
+          iconLabelSpacing: iconLabelSpacing,
+          glowDuration: glowDuration,
+          glowBlurRadius: glowBlurRadius,
+          glowSpreadRadius: glowSpreadRadius,
+          glowOpacity: glowOpacity,
+          interactionBehavior: interactionBehavior,
+          pressScale: pressScale,
+          interactionGlowColor: interactionGlowColor,
+          interactionGlowRadius: interactionGlowRadius,
           platformViewBackdrop: platformViewBackdrop,
           adaptiveBrightness: adaptiveBrightness,
           onBrightnessChanged: onBrightnessChanged,
@@ -680,6 +815,8 @@ class _GlassTabBarState extends State<GlassTabBar> {
         return _buildBottom(context);
       case _GlassTabBarPlacement.searchable:
         return _buildSearchable(context);
+      case _GlassTabBarPlacement.inline:
+        return _buildInline(context);
     }
   }
 
@@ -742,6 +879,72 @@ class _GlassTabBarState extends State<GlassTabBar> {
       adaptiveBrightness: widget.adaptiveBrightness,
       onBrightnessChanged: widget.onBrightnessChanged,
       brightnessOverride: widget.brightnessOverride,
+    );
+  }
+
+  /// Dispatches to [TabBarBottomLayout] with inline-appropriate defaults —
+  /// compact height, no floating margins, no icon magnification.
+  ///
+  /// The track glass comes from [AdaptiveGlass.grouped] inside [TabBarBottomLayout]
+  /// exactly as in the bottom placement — no new rendering path needed.
+  Widget _buildInline(BuildContext context) {
+    final tabs = widget.tabs
+        .map((t) => GlassBottomBarTab(
+              icon: t.icon ?? const SizedBox.shrink(),
+              label: t.label,
+              activeIcon: t.activeIcon,
+              glowColor: t.glowColor,
+              thickness: t.thickness,
+            ))
+        .toList();
+    return TabBarBottomLayout(
+      tabs: tabs,
+      selectedIndex: widget.selectedIndex,
+      onTabSelected: widget.onTabSelected,
+      spacing: widget.spacing,
+      horizontalPadding: widget.horizontalPadding,
+      verticalPadding: widget.verticalPadding,
+      barHeight: widget.barHeight,
+      barBorderRadius: widget.barBorderRadius,
+      tabPadding: widget.tabPadding,
+      iconLabelSpacing: widget.iconLabelSpacing,
+      enableBlend: widget.enableBlend,
+      blendAmount: widget.blendAmount,
+      settings: widget.settings,
+      showIndicator: widget.showIndicator,
+      indicatorColor: widget.indicatorColor,
+      indicatorSettings: widget.indicatorSettings,
+      indicatorPinchStrength: widget.indicatorPinchStrength,
+      selectedIconColor: widget.selectedIconColor,
+      unselectedIconColor: widget.unselectedIconColor,
+      selectedLabelColor: widget.selectedLabelColor,
+      unselectedLabelColor: widget.unselectedLabelColor,
+      selectedLabelStyle: widget.selectedLabelStyle,
+      unselectedLabelStyle: widget.unselectedLabelStyle,
+      iconSize: widget.iconSize,
+      labelFontSize: widget.labelFontSize,
+      textStyle: widget.textStyle,
+      glowDuration: widget.glowDuration,
+      glowBlurRadius: widget.glowBlurRadius,
+      glowSpreadRadius: widget.glowSpreadRadius,
+      glowOpacity: widget.glowOpacity,
+      quality: widget.quality,
+      magnification: widget.magnification,
+      innerBlur: widget.innerBlur,
+      maskingQuality: widget.maskingQuality,
+      backgroundKey: widget.backgroundKey,
+      tabWidth: widget.tabWidth,
+      indicatorBorderRadius: widget.indicatorBorderRadius,
+      indicatorExpansion: widget.indicatorExpansion,
+      interactionGlowColor: widget.interactionGlowColor,
+      interactionGlowRadius: widget.interactionGlowRadius,
+      interactionBehavior: widget.interactionBehavior,
+      pressScale: widget.pressScale,
+      platformViewBackdrop: widget.platformViewBackdrop,
+      adaptiveBrightness: widget.adaptiveBrightness,
+      onBrightnessChanged: widget.onBrightnessChanged,
+      brightnessOverride: widget.brightnessOverride,
+      // No extra button in inline placement
     );
   }
 

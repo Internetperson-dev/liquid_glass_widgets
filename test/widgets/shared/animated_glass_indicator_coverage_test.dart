@@ -396,4 +396,41 @@ void main() {
       );
     });
   });
+
+  // ── Regression: resting pill visible inside avoidsRefraction context ─────
+  // PR #144 — the background pill was permanently hidden whenever an ancestor
+  // set avoidsRefraction (e.g. inside a GlassContainer). avoidsRefraction is a
+  // steady-state layout flag, not a transient capture signal, so hiding the
+  // pill was wrong. This test fails if the guard is re-introduced.
+
+  group('AnimatedGlassIndicator — resting pill with avoidsRefraction', () {
+    testWidgets(
+        'DecoratedBox background pill is present when avoidsRefraction=true',
+        (tester) async {
+      // AdaptiveLiquidGlassLayer sets avoidsRefraction=true for its subtree —
+      // the same ancestor context a GlassContainer produces.
+      await tester.pumpWidget(
+        createTestApp(
+          child: AdaptiveLiquidGlassLayer(
+            settings: const LiquidGlassSettings(),
+            child: SizedBox(
+              width: 400,
+              height: 80,
+              child: Stack(
+                children: [
+                  _make(thickness: 0.0, paintBackground: true),
+                ],
+              ),
+            ),
+          ),
+        ),
+      );
+      await tester.pump();
+
+      // The resting pill is a DecoratedBox with indicatorColor fill.
+      // Before the fix this returned SizedBox.expand() — no DecoratedBox.
+      expect(find.byType(DecoratedBox), findsWidgets);
+      expect(tester.takeException(), isNull);
+    });
+  });
 }

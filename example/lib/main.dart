@@ -812,7 +812,7 @@ class _ExamplesTab extends StatelessWidget {
                   _LargeDemoCard(
                     title: 'Indicator Parity',
                     subtitle:
-                        'All 4 pill widgets — live pinch / expansion / aberration tuner',
+                        'All 5 pill widgets — live pinch / expansion / aberration tuner',
                     icon: CupertinoIcons.dial_fill,
                     gradient: const [
                       Color(0xFF5E3AFF),
