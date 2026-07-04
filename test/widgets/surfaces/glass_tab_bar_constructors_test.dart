@@ -538,6 +538,23 @@ void main() {
 
       expect(tester.takeException(), isNull);
     });
+
+    testWidgets('forwards springDescription to TabIndicator', (tester) async {
+      const customSpring =
+          SpringDescription(mass: 2, stiffness: 200, damping: 20);
+
+      await tester.pumpWidget(_wrap(_box(
+        GlassTabBar.inline(
+          tabs: const [GlassTab(label: 'Songs'), GlassTab(label: 'Albums')],
+          selectedIndex: 0,
+          onTabSelected: (_) {},
+          springDescription: customSpring,
+        ),
+      )));
+      await tester.pump();
+
+      expect(tester.takeException(), isNull);
+    });
   });
 
   // -------------------------------------------------------------------------

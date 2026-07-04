@@ -353,13 +353,16 @@ class BottomBarExtraBtn extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // When platformViewBackdrop is true the frosted fallback (BackdropFilter)
-    // is used instead of the Impeller shader. BackdropFilter + ClipPath bleeds
-    // the blur effect to the full rectangular render-object bounds — the visible
-    // "light square" around the circular button. ClipRRect (used by
-    // LiquidRoundedSuperellipse) creates a compositing-layer clip that constrains
-    // the blur to the rounded shape. Use a radius of half the button size to
-    // approximate the circle that LiquidOval would normally produce.
+    // Shape selection for the frosted fallback (BackdropFilter) path:
+    //
+    // When platformViewBackdrop is true, LiquidOval is swapped for
+    // LiquidRoundedSuperellipse (radius = size / 2). Both produce a circle,
+    // but LiquidRoundedSuperellipse forwards its clip path to the engine's
+    // PlatformView mutator stack via _ShapeClip. This constrains the UIKitView
+    // compositing sample area to the circle boundary, preventing a rectangular
+    // "light square" bleed from the BackdropFilter's rectangular capture region.
+    // LiquidOval relies on a shader-side SDF clip which the mutator stack cannot
+    // propagate to the native view layer, so it must not be used here.
     final effectiveShape = borderRadius != null
         ? LiquidRoundedRectangle(borderRadius: borderRadius!)
         : (platformViewBackdrop
@@ -379,32 +382,7 @@ class BottomBarExtraBtn extends StatelessWidget {
       platformViewBackdrop: platformViewBackdrop,
     );
 
-    if (!platformViewBackdrop) {
-      // Shadows are now handled at the parent bar level as sibling Positioned
-      // elements, BELOW the glass layer. No per-widget Stack wrapper needed.
-      return button;
-    }
-
-    // ── PlatformView backdrop: dual-layer clip ─────────────────────────────
-    // The inner ClipRRect (inside _ShapeClip → inside GlassButton's
-    // RepaintBoundary) clips the frosted surface correctly. However,
-    // BackdropFilter's CAPTURE AREA is determined by the RepaintBoundary
-    // bounds — always rectangular. On iOS, this rectangular capture region
-    // maps to a rectangular UIKitView sample, which shows as a light square
-    // around the circular button when the map is visible.
-    //
-    // This outer ClipRRect is in the PARENT compositor layer (above the
-    // RepaintBoundary). The iOS engine's PlatformView mutator stack picks up
-    // ancestor ClipRRect nodes and forwards them as UIView.layer.mask
-    // operations on the UIKitView itself, constraining the map content that
-    // can be sampled by the BackdropFilter to the circle before compositing.
-    //
-    // The borderRadius must match: size / 2 makes a perfect circle for the
-    // square button (same value as the inner LiquidRoundedSuperellipse).
-    return ClipRRect(
-      borderRadius: BorderRadius.circular(config.size / 2),
-      child: button,
-    );
+    return button;
   }
 }
 
@@ -451,6 +429,7 @@ class TabIndicator extends StatefulWidget {
     this.interactionGlowOpacity = 1,
     this.interactionScale = 1.0,
     this.platformViewBackdrop = false,
+    this.springDescription,
     super.key,
   });
 
@@ -470,6 +449,7 @@ class TabIndicator extends StatefulWidget {
   final double magnification;
   final double innerBlur;
   final MaskingQuality maskingQuality;
+  final SpringDescription? springDescription;
   final GlobalKey? backgroundKey;
 
   /// How far the jelly indicator's leading and trailing edges expand
@@ -512,6 +492,8 @@ class TabIndicatorState extends State<TabIndicator>
   int get tabCount => widget.tabCount;
   @override
   int get tabIndex => widget.tabIndex;
+  @override
+  bool get isPlatformViewBackdrop => widget.platformViewBackdrop;
   @override
   void notifyTabChanged(int index) => widget.onTabChanged(index);
 
@@ -566,28 +548,18 @@ class TabIndicatorState extends State<TabIndicator>
           offset: Offset(swayValue, 0),
           child: LiquidStretch(
             interactionScale: widget.interactionScale,
-            stretch: 0.0,
+            stretch:
+                0.0, // stretch disabled on platformViewBackdrop to prevent BackdropFilter pixel-snap jitter
             resistance: 0.08,
             anchorStretch: false, // Tab bars use jelly-follow, not anchored
             child: Listener(
               // Raw pointer events fire BEFORE gesture recognizers and never compete
               // in the gesture arena, so tabIsDown is always set on the very first event.
-              onPointerDown: (_) {
-                if (mounted) setState(() => tabIsDown = true);
-              },
-              // On finger/button lift, clear tabIsDown if not mid-drag.
-              // Listener fires regardless of which gesture recognizer won the arena.
-              onPointerUp: (_) {
-                if (!tabIsDragging && mounted) {
-                  setState(() => tabIsDown = false);
-                }
-              },
-              onPointerCancel: (_) {
-                if (!tabIsDragging && mounted) {
-                  setState(() => tabIsDown = false);
-                }
-              },
+              onPointerDown: (e) => onBarPointerDown(e.position),
+              onPointerUp: (e) => onBarPointerUp(e.position),
+              onPointerCancel: (e) => onBarPointerCancel(e.position),
               child: GestureDetector(
+                key: ValueKey(gestureEpoch),
                 behavior: HitTestBehavior.opaque,
                 onHorizontalDragDown: onBarDragDown,
                 onHorizontalDragStart: onBarDragStart,
@@ -598,12 +570,15 @@ class TabIndicatorState extends State<TabIndicator>
                 onHorizontalDragCancel: onBarDragCancel,
                 onTapDown:
                     onBarTapDown, // DX1: makes jelly visible on desktop taps
+                onTapUp: onBarTapUp,
+                onTapCancel: onBarTapCancel,
                 child: VelocitySpringBuilder(
                   value: tabXAlign,
                   springWhenActive: GlassSpring.interactive(),
-                  springWhenReleased: GlassSpring.snappy(
-                    duration: const Duration(milliseconds: 350),
-                  ),
+                  springWhenReleased: widget.springDescription ??
+                      GlassSpring.snappy(
+                        duration: const Duration(milliseconds: 350),
+                      ),
                   active: tabIsDragging,
                   builder: (context, value, velocity, child) {
                     final alignment = Alignment(value, 0);

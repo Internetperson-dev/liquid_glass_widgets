@@ -1,3 +1,36 @@
+# 0.21.0
+
+## ✨ New Features
+
+- **`GlassModalSheet` drag progress** — controller now exposes a `progress` getter and `progressListenable` reporting the live 0–1 drag position between half↔full snap points, so hosts can drive coordinated UI in real time. ([#148](https://github.com/sdegenaar/liquid_glass_widgets/pull/148), [@jfhair](https://github.com/jfhair))
+- **`GlassTabBar.inline` spring control** — the `.inline` factory now accepts `springDescription`, matching the other factory constructors. Previously inline tab bars were locked to the shared default spring. ([#149](https://github.com/sdegenaar/liquid_glass_widgets/pull/149), [@jfhair](https://github.com/jfhair))
+- **`LiquidGlassSettings.ambientRim`** — tunable full-perimeter rim on the moving indicator pill. Defaults match Apple Music's segmented control (brighter in light mode, off in dark). ([#150](https://github.com/sdegenaar/liquid_glass_widgets/pull/150), [@jfhair](https://github.com/jfhair))
+- **`AnimatedGlassIndicator` shadow** — `shadowElevation`/`shadow` in `indicatorSettings` now correctly paints a drop shadow on the glass jelly. Previously these values were silently ignored. ([#151](https://github.com/sdegenaar/liquid_glass_widgets/pull/151), [@jfhair](https://github.com/jfhair))
+
+## 🐛 Bug Fixes — PlatformView gesture stability
+
+- **Tab bar freeze fixed:** Intermittent freeze where the tab indicator stopped
+  responding after interacting over an iOS `PlatformView` (e.g. a map or WebView).
+  The iOS gesture arena can silently drop terminal callbacks, leaving the recognizer
+  wedged. Fixed with proactive cleanup on `PointerDown`, post-frame recovery, and
+  a gesture ID guard to prevent rapid-tap state corruption.
+- **Hybrid gesture mode on `platformViewBackdrop: true`:** When the tab bar
+  floats over a `PlatformView`, the visual indicator now animates to its new
+  position instantly on touch-down (matching native iOS responsiveness), while the
+  actual tab content swap is deferred safely to touch-up. This prevents the iOS
+  UIKit view system from dropping the touch stream mid-gesture due to a mid-frame
+  unmount of the `PlatformView`. No impact on any screen where
+  `platformViewBackdrop` is `false` — those continue to swap instantly on down.
+- **Stretch disabled on `platformViewBackdrop: true`:** Flutter's `BackdropFilter`
+  must re-acquire the native pixel buffer every time its bounding box changes.
+  Stretch animations resize the glass container, causing a one-frame flicker over
+  a `PlatformView`. Stretch is now skipped on all bar elements when
+  `platformViewBackdrop` is set; press-scale (`interactionScale`) is unaffected
+  because it is a GPU-level transform that leaves the backdrop bounds stable.
+  No impact on any other screen or platform.
+
+---
+
 # 0.20.1
 
 ## 🐛 Bug Fix — `GlassButton.custom` layout expansion

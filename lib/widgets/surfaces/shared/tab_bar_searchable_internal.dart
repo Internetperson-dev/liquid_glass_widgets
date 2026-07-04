@@ -191,6 +191,8 @@ class SearchableTabIndicatorState extends State<SearchableTabIndicator>
   @override
   int get tabIndex => widget.tabIndex;
   @override
+  bool get isPlatformViewBackdrop => widget.platformViewBackdrop;
+  @override
   void notifyTabChanged(int index) => widget.onTabChanged(index);
 
   static const _fallbackIndicatorColor = Color(0x1AFFFFFF);
@@ -287,27 +289,14 @@ class SearchableTabIndicatorState extends State<SearchableTabIndicator>
             interactionScale: widget.enableBackgroundAnimation
                 ? widget.backgroundPressScale
                 : 1.0,
-            stretch: 0.0,
+            stretch:
+                0.0, // stretch disabled on platformViewBackdrop to prevent BackdropFilter pixel-snap jitter
             resistance: 0.08,
             anchorStretch: false, // Tab bars use jelly-follow, not anchored
             child: Listener(
-              onPointerDown: (_) {
-                if (mounted) setState(() => tabIsDown = true);
-              },
-              onPointerUp: (e) {
-                if (!mounted) return;
-                if (!tabIsDragging) setState(() => tabIsDown = false);
-                // If a gesture is still flagged active after the pointer lifts,
-                // its terminal callback was dropped (PlatformView arena race) —
-                // self-heal on the next frame, honoring the lift position so a
-                // recovering tap also navigates. No-ops on a clean gesture.
-                recoverIfGestureStuck(e.position);
-              },
-              onPointerCancel: (e) {
-                if (!mounted) return;
-                if (!tabIsDragging) setState(() => tabIsDown = false);
-                recoverIfGestureStuck(e.position);
-              },
+              onPointerDown: (e) => onBarPointerDown(e.position),
+              onPointerUp: (e) => onBarPointerUp(e.position),
+              onPointerCancel: (e) => onBarPointerCancel(e.position),
               child: GestureDetector(
                 key: ValueKey(gestureEpoch),
                 behavior: HitTestBehavior.opaque,
@@ -317,6 +306,8 @@ class SearchableTabIndicatorState extends State<SearchableTabIndicator>
                 onHorizontalDragEnd: onBarDragEnd,
                 onHorizontalDragCancel: onBarDragCancel,
                 onTapDown: onBarTapDown,
+                onTapUp: onBarTapUp,
+                onTapCancel: onBarTapCancel,
                 child: VelocitySpringBuilder(
                   value: tabXAlign,
                   springWhenActive: GlassSpring.interactive(),
@@ -917,7 +908,7 @@ class SearchPillState extends State<SearchPill> {
                 interactionScale: widget.enableBackgroundAnimation
                     ? widget.backgroundPressScale
                     : 1.0,
-                stretch: 0.5, // Matches GlassButton default stretch
+                stretch: widget.platformViewBackdrop ? 0.0 : 0.5,
                 resistance: 0.01,
                 anchorStretch:
                     true, // Matches GlassButton default (keeps it attached so it morphs)

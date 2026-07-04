@@ -83,6 +83,7 @@ class TabBarBottomLayout extends StatefulWidget {
     this.adaptiveBrightness = false,
     this.onBrightnessChanged,
     this.brightnessOverride,
+    this.springDescription,
   });
 
   static const double _kDefaultBorderRadius = 32.0;
@@ -134,6 +135,7 @@ class TabBarBottomLayout extends StatefulWidget {
   final bool adaptiveBrightness;
   final ValueChanged<Brightness>? onBrightnessChanged;
   final ValueListenable<Brightness>? brightnessOverride;
+  final SpringDescription? springDescription;
 
   @override
   State<TabBarBottomLayout> createState() => _TabBarBottomLayoutState();
@@ -298,6 +300,7 @@ class _TabBarBottomLayoutState extends State<TabBarBottomLayout> {
                         height: widget.barHeight,
                         child: TabIndicator(
                           quality: effectiveQuality,
+                          springDescription: widget.springDescription,
                           visible: widget.showIndicator,
                           tabIndex: selectedIndex,
                           tabCount: tabs.length,

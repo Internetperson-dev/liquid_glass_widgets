@@ -123,24 +123,29 @@ class _AdaptiveLiquidGlassLayerState extends State<AdaptiveLiquidGlassLayer> {
         themeData.qualityFor(context) ??
         GlassQuality.standard;
 
-    // ---- MINIMAL FAST-PATH --------------------------------------------------
-    // GlassQuality.minimal skips LiquidGlassLayer entirely.
+    // ---- TRANSPARENT PASS-THROUGH FAST-PATHS --------------------------------
+    // Two cases share the same pass-through structure (no LiquidGlassLayer
+    // wrapper, no blend group — just InheritedLiquidGlass so descendants can
+    // read settings and quality):
     //
-    // IMPORTANT: The layer has no shape — it wraps the full bounds including
-    // any padding around pill/circle children. Painting a BackdropFilter +
-    // tinted Container here bleeds into that padding area, creating the dark
-    // rectangle visible above/around the individual glass shapes.
+    // 1. GlassQuality.minimal:
+    //    Skips LiquidGlassLayer entirely. The layer has no shape — it wraps
+    //    the full bounds including any padding around pill/circle children.
+    //    Painting a BackdropFilter + tinted Container here bleeds into that
+    //    padding area, creating the dark rectangle visible above/around the
+    //    individual glass shapes. Glass tinting and blur come entirely from
+    //    child AdaptiveGlass widgets, each rendered as _FrostedFallback with
+    //    correct shape-aware clipping.
     //
-    // The correct approach matches how LiquidGlassLayer works in the normal
-    // path: the layer is a TRANSPARENT compositng context. Glass tinting and
-    // blur come entirely from the child AdaptiveGlass widgets, each of which
-    // renders as _FrostedFallback with correct shape-aware clipping.
-    //
-    // In minimal mode there are no blend groups, so the layer is a true
-    // pass-through — just InheritedLiquidGlass so descendants can read
-    // settings and quality.
+    // 2. platformViewBackdrop == true (e.g. glass over an iOS map/video):
+    //    LiquidGlassLayer pushes an Impeller fragment-shader ImageFilter layer.
+    //    Attempting to run a shader filter over a UIKitView crashes on iOS.
+    //    We bypass it entirely; child AdaptiveGlass widgets already route to
+    //    _FrostedFallback (live BackdropFilter) when platformViewBackdrop is
+    //    set, which correctly samples through the PlatformView compositor.
     // -------------------------------------------------------------------------
-    if (effectiveQuality == GlassQuality.minimal) {
+    if (effectiveQuality == GlassQuality.minimal ||
+        widget.platformViewBackdrop) {
       return GlassIsolationScope(
         isolated: false,
         child: InheritedLiquidGlass(
@@ -152,10 +157,10 @@ class _AdaptiveLiquidGlassLayerState extends State<AdaptiveLiquidGlassLayer> {
       );
     }
 
-    // Detect if we should use the full Impeller-native rendering pipeline
+    // Detect if we should use the full Impeller-native rendering pipeline.
+    // platformViewBackdrop is never true here — that case returned above.
     final bool useFullRenderer = AdaptiveLiquidGlassLayer._canUseImpeller &&
-        effectiveQuality == GlassQuality.premium &&
-        !widget.platformViewBackdrop;
+        effectiveQuality == GlassQuality.premium;
 
     // Resolve shadow for SDF rendering. Shadows only apply in light mode.
     final bool isDark = GlassTheme.brightnessOf(context) == Brightness.dark;

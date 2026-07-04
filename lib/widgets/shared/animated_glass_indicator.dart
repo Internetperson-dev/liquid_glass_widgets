@@ -1,9 +1,13 @@
+import 'dart:math' as math;
+
+import 'package:flutter/foundation.dart' show listEquals;
 import 'dart:ui' show ImageFilter;
 
 import 'package:flutter/material.dart';
 import '../../src/renderer/liquid_glass_renderer.dart';
 
 import '../../constants/glass_defaults.dart';
+import '../../theme/glass_theme.dart';
 import '../../types/glass_quality.dart';
 import '../../utils/draggable_indicator_physics.dart';
 import 'glass_effect.dart';
@@ -205,6 +209,9 @@ class AnimatedGlassIndicator extends StatelessWidget {
           override.ambientStrength != _settingsDefaults.ambientStrength
               ? override.ambientStrength
               : null,
+      ambientRim: override.ambientRim != _settingsDefaults.ambientRim
+          ? override.ambientRim
+          : null,
       refractiveIndex:
           override.refractiveIndex != _settingsDefaults.refractiveIndex
               ? override.refractiveIndex
@@ -332,8 +339,14 @@ class AnimatedGlassIndicator extends StatelessWidget {
       backgroundKey: backgroundKey,
       clipExpansion: _jellyClipExpansion,
       rimThickness: (settings?.effectiveThickness ?? 0.8).clamp(0.8, 8.0),
-      // iOS 26 Standard glass matching GlassSwitch/Slider pattern
-      ambientRim: isStdPath ? 0.08 : 0.1,
+      // iOS 26 Standard glass matching GlassSwitch/Slider pattern.
+      // settings.ambientRim (default 0) overrides the hardcoded floor — the
+      // omnidirectional ring that the directional key/kick highlights can't
+      // provide. Same field boosts the premium Fresnel rim, so one knob
+      // brightens the ring on either quality path.
+      ambientRim: (effectiveSettings.ambientRim > 0)
+          ? effectiveSettings.ambientRim
+          : (isStdPath ? 0.08 : 0.1),
       baseAlphaMultiplier:
           isStdPath ? 0.08 : 0.2, // Match GlassSlider (near clear center)
       edgeAlphaMultiplier:
@@ -344,13 +357,42 @@ class AnimatedGlassIndicator extends StatelessWidget {
       ),
     );
 
+    // Drop shadow for the moving glass jelly. GlassEffect itself never paints
+    // LiquidGlassSettings.effectiveShadow (only container widgets like
+    // AdaptiveGlass do), so without this the jelly renders shadowless no
+    // matter what the caller sets. Gated on an EXPLICIT shadow/shadowElevation
+    // in the caller's indicator settings — the constructor default (1.0) must
+    // not grow a shadow under every existing indicator. Alpha tracks [fade] so
+    // the shadow materialises with the glass and vanishes at rest.
+    // Shadows only apply in light mode — same rule as every other
+    // effectiveShadow consumer (AdaptiveGlass, AdaptiveLiquidGlassLayer,
+    // the tab-bar shadow overlay).
+    final jellyShadowIsDark =
+        GlassTheme.brightnessOf(context) == Brightness.dark;
+    final explicitJellyShadows = (!jellyShadowIsDark &&
+            settings != null &&
+            (settings!.shadow != null ||
+                settings!.shadowElevation != _settingsDefaults.shadowElevation))
+        ? effectiveSettings.effectiveShadow
+        : const <BoxShadow>[];
+    final shadowedGlass = explicitJellyShadows.isEmpty
+        ? glassWidget
+        : CustomPaint(
+            painter: _OuterShadowPainter(
+              borderRadius: borderRadius,
+              shadows: explicitJellyShadows,
+              opacity: fade,
+            ),
+            child: glassWidget,
+          );
+
     // Mount early (0.01) so geometry is built before the indicator is visible.
     // We MUST NOT wrap this in a RepaintBoundary because the jelly Transform
     // below will apply a sub-pixel shift/scale. If we pre-rasterise the glass
     // with a RepaintBoundary, the pre-computed AA will misalign with the pixel
     // grid during the transform, causing stair-stepping on the edges.
     final interactiveIndicator =
-        thickness > 0.01 ? glassWidget : const SizedBox.expand();
+        thickness > 0.01 ? shadowedGlass : const SizedBox.expand();
 
     // Standard: background inside Transform to get jelly physics
     final glassChild = Stack(
@@ -448,4 +490,58 @@ class AnimatedGlassIndicator extends StatelessWidget {
       ),
     );
   }
+}
+
+/// Paints [shadows] around a rounded-rect silhouette with the shape's own
+/// interior clipped out (even-odd), so a TRANSLUCENT child shows no shadow
+/// body through itself — outer halo only. A plain BoxShadow behind clear
+/// glass reads as an inner shadow because its filled blurred body is visible
+/// through the glass.
+class _OuterShadowPainter extends CustomPainter {
+  const _OuterShadowPainter({
+    required this.borderRadius,
+    required this.shadows,
+    required this.opacity,
+  });
+
+  final double borderRadius;
+  final List<BoxShadow> shadows;
+  final double opacity;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final rrect = RRect.fromRectAndRadius(
+      Offset.zero & size,
+      Radius.circular(borderRadius),
+    );
+    var slack = 0.0;
+    for (final s in shadows) {
+      slack = math.max(
+        slack,
+        s.blurRadius + s.spreadRadius + s.offset.distance,
+      );
+    }
+    final clip = Path()
+      ..fillType = PathFillType.evenOdd
+      ..addRect((Offset.zero & size).inflate(slack + 16))
+      ..addRRect(rrect);
+    canvas.save();
+    canvas.clipPath(clip);
+    for (final s in shadows) {
+      final paint = Paint()
+        ..color = s.color.withValues(alpha: s.color.a * opacity)
+        ..maskFilter = MaskFilter.blur(BlurStyle.normal, s.blurSigma);
+      canvas.drawRRect(
+        rrect.shift(s.offset).inflate(s.spreadRadius),
+        paint,
+      );
+    }
+    canvas.restore();
+  }
+
+  @override
+  bool shouldRepaint(_OuterShadowPainter oldDelegate) =>
+      oldDelegate.borderRadius != borderRadius ||
+      oldDelegate.opacity != opacity ||
+      !listEquals(oldDelegate.shadows, shadows);
 }
