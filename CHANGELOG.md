@@ -1,3 +1,13 @@
+# 0.21.1
+
+## 🐛 Bug Fixes — Standard indicator parity
+
+- **Two-pills misalignment fixed** — at `GlassQuality.standard`, the background rim and glass lens now share the same shape geometry (`ShapeDecoration`) and ride the same jelly `Transform`, eliminating the visible separation mid-morph. Regression reported against `GlassTabBar.inline` / segmented controls.
+- **Indicator collapse on drag fixed** — the glass indicator no longer morphs back to the resting pill when dragging over the selected tab. The thickness gate now includes `tabIsDragging` so the indicator stays fully active for the entire gesture duration.
+- **Standard rim thickness normalised** — the indicator rim on `GlassQuality.standard` is now proportionally mapped from `indicatorSettings.thickness` (same value as Premium) rather than scaling from the raw glass-depth value, which produced a ~2.8 px border. The result is a fine hairline that gracefully matches the Premium look on Standard-quality devices.
+
+---
+
 # 0.21.0
 
 ## ✨ New Features

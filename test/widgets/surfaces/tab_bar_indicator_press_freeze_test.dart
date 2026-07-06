@@ -166,4 +166,61 @@ void main() {
           'not setState() during the locked teardown',
     );
   });
+
+  testWidgets(
+      'tabIsDragging stays true throughout drag — indicator never collapses '
+      'when dragging over the selected tab', (tester) async {
+    // Regression guard for the thickness-spring gate fix (0.21.1).
+    //
+    // Before fix — gate was:
+    //   tabIsDown || (alignment.x - targetAlignment).abs() > 0.05
+    // When dragging back over the selected tab, alignment ≈ targetAlignment,
+    // so the gate returned false → spring targeted 0.0 → glass indicator
+    // morphed back to the resting pill mid-gesture.
+    //
+    // After fix — gate is:
+    //   tabIsDown || tabIsDragging || (alignment.x - targetAlignment).abs() > 0.05
+    // tabIsDragging stays true for the full gesture, keeping the spring at 1.0.
+    late _RecoverHarnessState harness;
+    await tester.pumpWidget(_wrap(
+      _RecoverHarness(onChange: (_) {}, onState: (s) => harness = s),
+    ));
+
+    // Drag start — tabIsDragging must flip true.
+    harness.onBarDragStart(
+      DragStartDetails(globalPosition: Offset.zero, localPosition: Offset.zero),
+    );
+    await tester.pump();
+    expect(harness.tabIsDragging, isTrue,
+        reason: 'tabIsDragging must be true at drag start');
+
+    // Mid-drag moving right (away from selected tab).
+    harness.onBarDragUpdate(DragUpdateDetails(
+      globalPosition: const Offset(40, 0),
+      localPosition: const Offset(40, 0),
+      delta: const Offset(40, 0),
+      primaryDelta: 40.0,
+    ));
+    await tester.pump();
+    expect(harness.tabIsDragging, isTrue,
+        reason: 'tabIsDragging must stay true while dragging away');
+
+    // Drag back toward the selected tab — the collapse trigger before the fix.
+    harness.onBarDragUpdate(DragUpdateDetails(
+      globalPosition: const Offset(2, 0),
+      localPosition: const Offset(2, 0),
+      delta: const Offset(-38, 0),
+      primaryDelta: -38.0,
+    ));
+    await tester.pump();
+    expect(harness.tabIsDragging, isTrue,
+        reason: 'tabIsDragging must stay true when dragging back over the '
+            'selected tab — this is the regression this test guards');
+
+    // Drag end — only now should tabIsDragging clear.
+    harness.onBarDragEnd(DragEndDetails(primaryVelocity: 0));
+    await tester.pump();
+    expect(harness.tabIsDragging, isFalse,
+        reason: 'tabIsDragging must be false only after drag ends');
+  });
 }

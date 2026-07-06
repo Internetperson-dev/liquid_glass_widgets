@@ -283,6 +283,17 @@ class AnimatedGlassIndicator extends StatelessWidget {
       thickness,
     );
 
+    final bool isStdPath =
+        quality == GlassQuality.standard || quality == GlassQuality.minimal;
+
+    // Provide the doubled radius to layout layers when superellipse is active
+    // so they match the shader's true shape exactly.
+    final effectiveRadius = useSuperellipse ? borderRadius * 2 : borderRadius;
+
+    final shape = useSuperellipse
+        ? LiquidRoundedSuperellipse(borderRadius: borderRadius * 2)
+        : LiquidRoundedRectangle(borderRadius: borderRadius);
+
     // 1. Background Indicator (Resting state)
     // Fade out as the drag spring thickness increases toward 0.15.
     final backgroundOpacity = (1.0 - (thickness / 0.15)).clamp(0.0, 1.0);
@@ -290,10 +301,10 @@ class AnimatedGlassIndicator extends StatelessWidget {
       child: Opacity(
         opacity: backgroundOpacity,
         child: DecoratedBox(
-          decoration: BoxDecoration(
+          decoration: ShapeDecoration(
             color: indicatorColor,
-            borderRadius: BorderRadius.circular(borderRadius),
-            boxShadow: shadows,
+            shape: shape,
+            shadows: shadows,
           ),
           child: const SizedBox.expand(),
         ),
@@ -324,13 +335,6 @@ class AnimatedGlassIndicator extends StatelessWidget {
         .copyWith(visibility: fade)
         .copyWithPinch(stablePinchFade * pinchStrength);
 
-    final shape = useSuperellipse
-        ? LiquidRoundedSuperellipse(borderRadius: borderRadius * 2)
-        : LiquidRoundedRectangle(borderRadius: borderRadius);
-
-    final bool isStdPath =
-        quality == GlassQuality.standard || quality == GlassQuality.minimal;
-
     final glassWidget = GlassEffect(
       shape: shape,
       settings: effectiveSettings,
@@ -338,7 +342,23 @@ class AnimatedGlassIndicator extends StatelessWidget {
       interactionIntensity: thickness,
       backgroundKey: backgroundKey,
       clipExpansion: _jellyClipExpansion,
-      rimThickness: (settings?.effectiveThickness ?? 0.8).clamp(0.8, 8.0),
+      // rimThickness translation: Premium uses thickness as 3D glass depth
+      // (Impeller SDF — no visible border drawn). Standard uses rimThickness
+      // as a literal pixel-width border in the GLSL shader, so the same raw
+      // value (default 30) would produce a ~2.8 px ring (clamped 8.0 × 0.35).
+      //
+      // For graceful fallback parity — the primary use case is Premium quality
+      // with Standard as an automatic device fallback — we proportionally map
+      // the depth intent to an equivalent rim weight:
+      //   anchor : thickness=30 (default) → 0.5 pre-norm → 0.175 px actual
+      //   floor  : 0.35 → minimum hairline even at very low thickness (5–20),
+      //            where Premium still reads via optical depth but Standard
+      //            would otherwise have a sub-pixel invisible rim.
+      //   cap    : 1.5 → prevents extreme thickness values producing thick rings.
+      rimThickness: isStdPath
+          ? ((settings?.effectiveThickness ?? 30.0) * (0.5 / 30.0))
+              .clamp(0.35, 1.5)
+          : (settings?.effectiveThickness ?? 0.8).clamp(0.8, 8.0),
       // iOS 26 Standard glass matching GlassSwitch/Slider pattern.
       // settings.ambientRim (default 0) overrides the hardcoded floor — the
       // omnidirectional ring that the directional key/kick highlights can't
@@ -379,7 +399,7 @@ class AnimatedGlassIndicator extends StatelessWidget {
         ? glassWidget
         : CustomPaint(
             painter: _OuterShadowPainter(
-              borderRadius: borderRadius,
+              borderRadius: effectiveRadius,
               shadows: explicitJellyShadows,
               opacity: fade,
             ),
@@ -394,7 +414,11 @@ class AnimatedGlassIndicator extends StatelessWidget {
     final interactiveIndicator =
         thickness > 0.01 ? shadowedGlass : const SizedBox.expand();
 
-    // Standard: background inside Transform to get jelly physics
+    // Standard: background pill included inside Transform so the solid pill
+    // carries the jelly squish visually. The glass lens alone is too
+    // translucent on Standard (baseAlpha 0.08) to show the squish.
+    // Premium: glass lens only inside Transform — the Impeller SDF lens has
+    // full 3D optical contrast and carries the squish without the solid pill.
     final glassChild = Stack(
       clipBehavior: Clip.none,
       children: [
@@ -437,20 +461,27 @@ class AnimatedGlassIndicator extends StatelessWidget {
               ),
             ),
           ),
-        // Premium: background painted statically (no Transform), fading out
+        // Premium: background pill is rigid (outside Transform). The Impeller
+        // glass lens has enough 3D contrast to carry the jelly on its own.
         if (paintBackground && !isStdPath && backgroundOpacity > 0)
           Positioned.fromRelativeRect(
             rect: rect!,
             child: backgroundIndicator,
           ),
-        // Jelly-physics glass layer
+        // Jelly-physics Transform.
+        // Standard: wraps both the solid background pill + glass lens so the
+        //   pill itself flexes (the only element with enough visual weight).
+        //   maxDistortion is capped at 0.35 — enough to feel organic, below the
+        //   threshold where 2D ClipPath corners start looking boxy.
+        // Premium: wraps only the glass lens. The 3D SDF shader absorbs the
+        //   full 0.8 distortion naturally via optical pinch.
         Positioned.fromRelativeRect(
           rect: rect!,
           child: Transform(
             alignment: Alignment.center,
             transform: DraggableIndicatorPhysics.buildJellyTransform(
               velocity: Offset(velocity, 0),
-              maxDistortion: 0.8,
+              maxDistortion: isStdPath ? 0.35 : 0.8,
               velocityScale: 10,
             ),
             child: glassChild,

@@ -321,15 +321,32 @@ class _IndicatorParityDemoPageState extends State<IndicatorParityDemoPage> {
 
                 const SizedBox(height: 16),
 
-                // ── GlassTabBar.bottom ───────────────────────────────────────
+                // ── GlassTabBar.bottom (Premium) ─────────────────────────────
                 _WidgetSection(
-                  label: 'GlassBottomBar',
+                  label: 'GlassBottomBar — Premium',
                   color: const Color(0xFFFF375F),
                   child: GlassTabBar.bottom(
                     tabs: _barTabs,
                     selectedIndex: _barSelected,
                     onTabSelected: (i) => setState(() => _barSelected = i),
                     quality: GlassQuality.premium,
+                    indicatorPinchStrength: _pinchStrength,
+                    indicatorExpansion: _expansion,
+                    indicatorSettings: _indicatorSettings,
+                  ),
+                ),
+
+                const SizedBox(height: 16),
+
+                // ── GlassTabBar.bottom (Standard) ─────────────────────────────
+                _WidgetSection(
+                  label: 'GlassBottomBar — Standard',
+                  color: const Color(0xFFFF9F0A),
+                  child: GlassTabBar.bottom(
+                    tabs: _barTabs,
+                    selectedIndex: _barSelected,
+                    onTabSelected: (i) => setState(() => _barSelected = i),
+                    quality: GlassQuality.standard,
                     indicatorPinchStrength: _pinchStrength,
                     indicatorExpansion: _expansion,
                     indicatorSettings: _indicatorSettings,

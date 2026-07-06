@@ -271,8 +271,6 @@ class SearchableTabIndicatorState extends State<SearchableTabIndicator>
     final targetAlignment = computeTabAlignment(widget.tabIndex);
     final indicatorRadius =
         widget.indicatorBorderRadius ?? widget.barBorderRadius;
-    final backgroundRadius = indicatorRadius * 2;
-    final glassRadius = indicatorRadius;
 
     // Lateral sway: the bar body subtly follows the interactive pill during
     // horizontal drags, mimicking iOS 26 bottom bar physics. The SpringBuilder
@@ -359,8 +357,7 @@ class SearchableTabIndicatorState extends State<SearchableTabIndicator>
                               targetAlignment: Alignment(targetAlignment, 0),
                               thickness: thickness,
                               velocity: velocity,
-                              backgroundRadius: backgroundRadius,
-                              glassRadius: glassRadius,
+                              indicatorRadius: indicatorRadius,
                               indicatorColor: indicatorColor,
                             );
                           case MaskingQuality.high:
@@ -369,8 +366,7 @@ class SearchableTabIndicatorState extends State<SearchableTabIndicator>
                               thickness: thickness,
                               velocity: velocity,
                               jellyTransform: jellyTransform,
-                              backgroundRadius: backgroundRadius,
-                              glassRadius: glassRadius,
+                              indicatorRadius: indicatorRadius,
                               indicatorColor: indicatorColor,
                             );
                         }
@@ -437,8 +433,7 @@ class SearchableTabIndicatorState extends State<SearchableTabIndicator>
     required Alignment targetAlignment,
     required double thickness,
     required double velocity,
-    required double backgroundRadius,
-    required double glassRadius,
+    required double indicatorRadius,
     required Color indicatorColor,
   }) {
     return SizedBox(
@@ -486,7 +481,7 @@ class SearchableTabIndicatorState extends State<SearchableTabIndicator>
               indicatorColor: indicatorColor,
               isBackgroundIndicator: false,
               innerBlur: widget.innerBlur,
-              borderRadius: thickness < 1 ? backgroundRadius : glassRadius,
+              borderRadius: indicatorRadius,
               padding: const EdgeInsets.all(4),
               expansion: widget.indicatorExpansion,
               settings: widget.indicatorSettings,
@@ -521,11 +516,10 @@ class SearchableTabIndicatorState extends State<SearchableTabIndicator>
     required double thickness,
     required double velocity,
     required Matrix4 jellyTransform,
-    required double backgroundRadius,
-    required double glassRadius,
+    required double indicatorRadius,
     required Color indicatorColor,
   }) {
-    final effRadius = thickness < 1 ? backgroundRadius : glassRadius;
+    final effRadius = indicatorRadius;
     return SizedBox(
       height: widget.barHeight,
       child: Stack(
@@ -600,7 +594,7 @@ class SearchableTabIndicatorState extends State<SearchableTabIndicator>
                                     expansion: widget.indicatorExpansion
                                         .resolve(Directionality.of(context)),
                                     transform: jellyTransform,
-                                    borderRadius: effRadius,
+                                    borderRadius: effRadius * 2,
                                     inverse: true,
                                   ),
                                   child: Container(
@@ -618,7 +612,7 @@ class SearchableTabIndicatorState extends State<SearchableTabIndicator>
                                     expansion: widget.indicatorExpansion
                                         .resolve(Directionality.of(context)),
                                     transform: jellyTransform,
-                                    borderRadius: effRadius,
+                                    borderRadius: effRadius * 2,
                                   ),
                                   child: Container(
                                     padding: widget.tabPadding,

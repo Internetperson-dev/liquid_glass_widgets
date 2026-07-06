@@ -9,7 +9,7 @@ import 'liquid_glass_renderer.dart';
 import 'liquid_glass_render_scope.dart';
 
 /// Represents the settings for a liquid glass effect.
-class LiquidGlassSettings with EquatableMixin {
+class LiquidGlassSettings extends Equatable {
   /// Creates a new [LiquidGlassSettings] with the given settings.
   /// Public constructor — all material glass properties.
   ///
@@ -83,7 +83,7 @@ class LiquidGlassSettings with EquatableMixin {
   /// Figma's internal `depth` and `frost` use proprietary units with no public
   /// pixel-equivalent formula. Pass [depth] and [frost] as the logical-pixel
   /// values you want — typical ranges: depth 10–40, frost 2–8.
-  LiquidGlassSettings.figma({
+  const LiquidGlassSettings.figma({
     required double refraction,
     required double depth,
     required double dispersion,

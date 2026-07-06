@@ -529,11 +529,8 @@ class TabIndicatorState extends State<TabIndicator>
 
     // AnimatedGlassIndicator multiplies by 2 for the glass superellipse shape,
     // but uses the value directly for the background DecoratedBox.
-    final effectiveIndicatorRadius =
+    final indicatorRadius =
         widget.indicatorBorderRadius ?? widget.barBorderRadius;
-    final backgroundRadius = effectiveIndicatorRadius * 2; // 64
-    final glassRadius =
-        effectiveIndicatorRadius; // 32 → becomes 64 after internal *2
 
     // Lateral sway: the bar body subtly follows the interactive pill during
     // horizontal drags, mimicking iOS 26 bottom bar physics. The SpringBuilder
@@ -589,10 +586,13 @@ class TabIndicatorState extends State<TabIndicator>
                       ),
                       // Keep thickness active while:
                       //  - tabIsDown (tap pressed, 420 ms window for spring travel), OR
+                      //  - tabIsDragging (finger is physically moving — keep glass alive
+                      //    even when passing back over the selected tab), OR
                       //  - the spring still has meaningful separation from target.
                       // Threshold 0.05 (was 0.10) catches the full deceleration tail.
                       value: widget.visible &&
                               (tabIsDown ||
+                                  tabIsDragging ||
                                   (alignment.x - targetAlignment).abs() > 0.05)
                           ? 1.0
                           : 0.0,
@@ -635,8 +635,7 @@ class TabIndicatorState extends State<TabIndicator>
                               targetAlignment: Alignment(targetAlignment, 0),
                               thickness: thickness,
                               velocity: velocity,
-                              backgroundRadius: backgroundRadius,
-                              glassRadius: glassRadius,
+                              indicatorRadius: indicatorRadius,
                               indicatorColor: indicatorColor,
                             );
 
@@ -646,8 +645,7 @@ class TabIndicatorState extends State<TabIndicator>
                               thickness: thickness,
                               velocity: velocity,
                               jellyTransform: jellyTransform,
-                              backgroundRadius: backgroundRadius,
-                              glassRadius: glassRadius,
+                              indicatorRadius: indicatorRadius,
                               indicatorColor: indicatorColor,
                             );
                         }
@@ -719,8 +717,7 @@ class TabIndicatorState extends State<TabIndicator>
     required Alignment targetAlignment,
     required double thickness,
     required double velocity,
-    required double backgroundRadius,
-    required double glassRadius,
+    required double indicatorRadius,
     required Color indicatorColor,
   }) {
     return SizedBox(
@@ -769,7 +766,7 @@ class TabIndicatorState extends State<TabIndicator>
               indicatorColor: indicatorColor,
               isBackgroundIndicator: false,
               innerBlur: widget.innerBlur,
-              borderRadius: thickness < 1 ? backgroundRadius : glassRadius,
+              borderRadius: indicatorRadius,
               padding: const EdgeInsets.all(4),
               expansion: widget.indicatorExpansion,
               settings: widget.indicatorSettings,
@@ -811,8 +808,7 @@ class TabIndicatorState extends State<TabIndicator>
     required double thickness,
     required double velocity,
     required Matrix4 jellyTransform,
-    required double backgroundRadius,
-    required double glassRadius,
+    required double indicatorRadius,
     required Color indicatorColor,
   }) {
     return SizedBox(
@@ -849,8 +845,7 @@ class TabIndicatorState extends State<TabIndicator>
                     paintBackground: true,
                     paintGlass: false,
                     innerBlur: widget.innerBlur,
-                    borderRadius:
-                        thickness < 1 ? backgroundRadius : glassRadius,
+                    borderRadius: indicatorRadius,
                     padding: const EdgeInsets.all(4),
                     expansion: widget.indicatorExpansion,
                     settings: widget.indicatorSettings,
@@ -875,9 +870,7 @@ class TabIndicatorState extends State<TabIndicator>
                               expansion: widget.indicatorExpansion
                                   .resolve(Directionality.of(context)),
                               transform: jellyTransform,
-                              borderRadius: thickness < 1
-                                  ? backgroundRadius
-                                  : glassRadius,
+                              borderRadius: indicatorRadius * 2,
                               inverse: true,
                             ),
                             child: Container(
@@ -896,9 +889,7 @@ class TabIndicatorState extends State<TabIndicator>
                               expansion: widget.indicatorExpansion
                                   .resolve(Directionality.of(context)),
                               transform: jellyTransform,
-                              borderRadius: thickness < 1
-                                  ? backgroundRadius
-                                  : glassRadius,
+                              borderRadius: indicatorRadius * 2,
                             ),
                             child: Container(
                               padding: widget.tabPadding,
@@ -928,7 +919,7 @@ class TabIndicatorState extends State<TabIndicator>
             isBackgroundIndicator: false,
             paintBackground: false,
             paintGlass: true,
-            borderRadius: thickness < 1 ? backgroundRadius : glassRadius,
+            borderRadius: indicatorRadius,
             padding: const EdgeInsets.all(4),
             expansion:
                 widget.indicatorExpansion.resolve(Directionality.of(context)),
