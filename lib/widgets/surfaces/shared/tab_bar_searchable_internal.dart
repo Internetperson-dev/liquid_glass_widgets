@@ -321,6 +321,7 @@ class SearchableTabIndicatorState extends State<SearchableTabIndicator>
                       ),
                       value: widget.visible &&
                               (tabIsDown ||
+                                  tabIsDragging ||
                                   (alignment.x - targetAlignment).abs() > 0.05)
                           ? 1.0
                           : 0.0,

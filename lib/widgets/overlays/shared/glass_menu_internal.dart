@@ -763,8 +763,9 @@ class _GlassMenuState extends State<GlassMenu> with TickerProviderStateMixin {
                                   const EdgeInsets.symmetric(horizontal: 12),
                               child: SingleChildScrollView(
                                 controller: _scrollController,
-                                physics:
-                                    const ClampingScrollPhysics(), // iOS-style
+                                physics: _isScrollable
+                                    ? const ClampingScrollPhysics() // iOS-style
+                                    : const NeverScrollableScrollPhysics(),
                                 child: Column(
                                   mainAxisSize: MainAxisSize.min,
                                   crossAxisAlignment:

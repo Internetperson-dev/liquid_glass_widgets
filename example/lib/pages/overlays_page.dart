@@ -603,8 +603,10 @@ class _OverlaysPageState extends State<OverlaysPage> {
                       Center(
                         child: GlassPopover(
                           quality: GlassQuality.premium,
+                          barrierDismissible:
+                              false, // Testing the non-dismissible gap
                           popoverWidth: 220,
-                          popoverHeight: 240,
+                          // popoverHeight removed to test auto-height measurement gap
                           triggerBuilder: (context, toggle) => GlassButton(
                             icon: Icon(CupertinoIcons.person_circle),
                             onTap: toggle,
@@ -663,13 +665,21 @@ class _OverlaysPageState extends State<OverlaysPage> {
                                   height: 36,
                                   shape: const LiquidRoundedSuperellipse(
                                       borderRadius: 18),
-                                  child: Text(
-                                    'Done',
-                                    style: TextStyle(
-                                      fontSize: 14,
-                                      fontWeight: FontWeight.w600,
-                                      color: CupertinoColors.label
-                                          .resolveFrom(context),
+                                  child: Container(
+                                    alignment: Alignment.center,
+                                    decoration: BoxDecoration(
+                                      color:
+                                          Colors.white.withValues(alpha: 0.1),
+                                      borderRadius: BorderRadius.circular(18),
+                                    ),
+                                    child: Text(
+                                      'Done',
+                                      style: TextStyle(
+                                        fontSize: 14,
+                                        fontWeight: FontWeight.w600,
+                                        color: CupertinoColors.label
+                                            .resolveFrom(context),
+                                      ),
                                     ),
                                   ),
                                 ),

@@ -924,11 +924,17 @@ class JellyClipper extends CustomClipper<Path> {
       paddedRect.bottom + (expansion.bottom * thickness),
     );
 
+    // Clamp radius to avoid invalid RRect paths on Impeller.
+    // We subtract 0.1 to prevent the radius from being EXACTLY half the shortest side,
+    // which triggers an empty path bug in some Impeller versions during animation.
+    final maxRadius = (inflatedRect.shortestSide / 2) - 0.1;
+    final safeRadius = borderRadius > maxRadius ? maxRadius : borderRadius;
+
     // Create rounded rect path
     final path = Path()
       ..addRRect(RRect.fromRectAndRadius(
         inflatedRect,
-        Radius.circular(borderRadius),
+        Radius.circular(safeRadius > 0 ? safeRadius : 0),
       ));
 
     // Apply jelly physics transform around the center
