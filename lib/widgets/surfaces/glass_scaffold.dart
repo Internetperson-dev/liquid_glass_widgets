@@ -250,6 +250,14 @@ class GlassScaffold extends StatelessWidget {
   /// Defaults to `true`, matching iOS 26's design where content scrolls
   /// behind the transparent navigation bar. When `false`, the body occupies
   /// only the area between the bars (no overlap, no edge fading).
+  ///
+  /// Set to `false` when the body widget manages its own internal layout
+  /// and does not know to add a manual top spacer for the app bar — for
+  /// example, a third-party chat widget, a full-screen form, or any widget
+  /// that renders to the full height of the space it is given. With
+  /// `extendBody: false` the scaffold positions the body precisely between
+  /// the bottom of the app bar and the top of the bottom bar, so the widget
+  /// fills exactly the visible content area without being obscured.
   final bool extendBody;
 
   /// The preferred height of the app bar, used for padding calculations.

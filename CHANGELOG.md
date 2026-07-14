@@ -1,3 +1,27 @@
+# 0.21.5
+
+## 🐛 Bug Fixes
+
+- **`GlassTabBar` loses shadow when OS is Dark but app is `ThemeMode.light`** — fixed an issue where glass components incorrectly resolved to `Brightness.dark` when the device OS was in Dark Mode but the `MaterialApp` was explicitly set to `ThemeMode.light`. The brightness cascade in `resolveGlassBrightness` was checking the `CupertinoTheme` before the Material `ThemeMode`; inside a `MaterialApp` the Cupertino theme is implicitly derived from the OS, causing it to return the wrong brightness. The cascade now correctly prioritises `ThemeMode` in `MaterialApp` contexts. Thanks to @minhtritc97 for the detailed report!
+
+---
+
+# 0.21.4
+
+## ✨ New Features
+
+- **Vertical `GlassSegmentedControl`** — fixed controls now accept `direction: Axis.vertical` and an optional `segmentExtent`. Layout, fractional indicator positioning, jelly expansion, drag velocity, snapping, and gesture recognition all follow the vertical axis. The horizontal default and scrollable constructor remain unchanged. Thanks to @F1orian!
+
+## 🐛 Bug Fixes
+
+- **Impeller shadow corruption fixed** — `shadowElevation` on `LiquidGlass` and `GlassButton` rendered as solid black circles on Windows, Web, and certain Android emulators due to two known Flutter engine bugs (`saveLayer` texture corruption on Vulkan and `Path.combine` clipping failures). The package now selectively bypasses the GPU shadow cutout on affected platforms and uses a safe `evenOdd` winding rule for the fallback, producing perfect shadows without engine issues.
+
+## 🧪 Example
+
+- Added an icon-only vertical segmented control to the Interactive page for tap, drag, indicator, and accessibility testing on a physical device.
+
+---
+
 # 0.21.3
 
 ## 🐛 Bug Fixes
