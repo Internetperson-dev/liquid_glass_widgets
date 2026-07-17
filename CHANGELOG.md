@@ -1,3 +1,57 @@
+# 0.22.0
+
+## ✨ New Features
+
+- **`ProgressiveBlur`** — a graduated backdrop blur that is strongest at one
+  edge and dissolves to sharp at the opposite edge (the iOS 26 / Signal header
+  look). Self-contained — no `LiquidGlassLayer` ancestor required.
+
+  ```dart
+  Positioned(
+    top: 0, left: 0, right: 0, height: 96,
+    child: ProgressiveBlur(maxSigma: 20),
+  )
+  ```
+
+  - **`maxSigma`** — blur sigma at the strong edge (`0` ⇒ passthrough).
+  - **`direction`** — which edge is strongest
+    (`topToBottom` / `bottomToTop` / `leftToRight` / `rightToLeft`).
+  - **`falloff`** — gradient gamma (default `1.2`).
+
+  Pre-warmed by `LiquidGlassWidgets.initialize()` at no extra startup cost;
+  `ProgressiveBlur.preload()` is available for standalone use. Degrades to a
+  uniform `BackdropFilter` on Skia / web. See
+  [`docs/PROGRESSIVE_BLUR.md`](docs/PROGRESSIVE_BLUR.md).
+  Thanks to @Ahmadre (#162).
+
+## ⚡ Performance
+
+- **`GlassPopover` blur ramp** — the backdrop blur now eases in over the opening
+  morph instead of rendering at full strength from frame one. Raster avg halved
+  (10.1 ms → 5.8 ms), worst-case halved, missed-budget frames 15 → 6 on the
+  reference device. See [`docs/POPOVER_BLUR_RAMP.md`](docs/POPOVER_BLUR_RAMP.md).
+
+  Two new backwards-compatible params:
+  - **`blurRampDuration`** (default `Duration(milliseconds: 260)`) — set to
+    `Duration.zero` to restore the previous always-full-blur behaviour.
+  - **`blurRampCurve`** (default `Curves.easeOut`).
+
+  Automatically disabled when "reduce motion" is active. Thanks to @Ahmadre (#161).
+
+## 🐛 Bug Fixes
+
+- **`GlassPopover` drifted off its trigger in nested overlays** — the morph
+  portal now targets `OverlayChildLocation.rootOverlay` to match the
+  root-relative coordinates it is placed at. Top-level usage is unaffected.
+  Thanks to @Ahmadre (#163).
+
+- **Intrinsic-height `GlassPopover` overflowed on live content growth** — the
+  popover now re-measures via `SizeChangedLayoutNotifier` when content grows
+  while open, instead of clamping to the height frozen at open time.
+  Fixed-`popoverHeight` popovers are unchanged. Thanks to @Ahmadre (#163).
+
+---
+
 # 0.21.6
 
 ## 🐛 Bug Fixes
